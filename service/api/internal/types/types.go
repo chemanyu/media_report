@@ -18,12 +18,14 @@ type KsAccountReportResp struct {
 }
 
 type KsReportDataItem struct {
-	Charge          float64 `json:"charge"`           // 消耗 * 1.5
-	AdShow          float64 `json:"ad_show"`          // 曝光数
-	Bclick          int64   `json:"bclick"`           // 点击数
-	Activation      int64   `json:"activation"`       // 激活数
-	ConversionCost  float64 `json:"conversion_cost"`  // 转化成本 * 1.5
-	ConversionRatio float64 `json:"conversion_ratio"` // 转化率 * 100
+	Time            string  `json:"时间"`    // 时间
+	Account         string  `json:"账户"`    // 账户名称
+	Charge          float64 `json:"消耗"`    // 消耗 * 1.5
+	Activation      int64   `json:"注册转化数"` // 注册转化数（激活数）
+	ConversionCost  float64 `json:"转化成本"`  // 转化成本 * 1.5
+	AdShow          int64   `json:"曝光"`    // 曝光数
+	Bclick          int64   `json:"点击"`    // 点击数
+	ConversionRatio string  `json:"转化率"`   // 转化率（格式化为百分比字符串）
 }
 
 // 快手 API 原始响应结构
