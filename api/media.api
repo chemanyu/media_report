@@ -1,0 +1,44 @@
+syntax = "v1"
+
+info (
+	title:   "媒体报表服务"
+	desc:    "基于快手广告API的媒体报表数据查询服务"
+	author:  "chemanyu"
+	version: "v1.0"
+)
+
+type (
+	// 快手账户报表请求
+	KsAccountReportReq {
+		StartDate           string `json:"start_date"`
+		EndDate             string `json:"end_date"`
+		AdvertiserId        int64  `json:"advertiser_id"`
+		TemporalGranularity string `json:"temporal_granularity,default=DAILY"`
+	}
+	// 快手账户报表响应数据项
+	KsReportDataItem {
+		Charge          float64 `json:"charge"` // 消耗 * 1.5
+		AdShow          float64 `json:"ad_show"` // 曝光数
+		Bclick          int64   `json:"bclick"` // 点击数
+		Activation      int64   `json:"activation"` // 激活数
+		ConversionCost  float64 `json:"conversion_cost"` // 转化成本 * 1.5
+		ConversionRatio float64 `json:"conversion_ratio"` // 转化率 * 100
+	}
+	// 快手账户报表响应
+	KsAccountReportResp {
+		Code    int                 `json:"code"`
+		Message string              `json:"message"`
+		Data    []*KsReportDataItem `json:"data"`
+	}
+)
+
+@server (
+	prefix: /api/v1
+	group:  report
+)
+service media-api {
+	@doc "获取快手账户报表"
+	@handler getKsAccountReport
+	post /report/ks/account (KsAccountReportReq) returns (KsAccountReportResp)
+}
+

@@ -1,0 +1,15 @@
+Name: media-api
+Host: 0.0.0.0
+Port: 8888
+
+Log:
+  ServiceName: media-api
+  Mode: console
+  Level: info
+
+# 快手广告 API 配置
+Kuaishou:
+  BaseUrl: https://ad.e.kuaishou.com
+  AccessToken: dd9343cf9a121ef64cbc2e4bfaad7697
+  Timeout: 30  # 请求超时时间（秒）
+
