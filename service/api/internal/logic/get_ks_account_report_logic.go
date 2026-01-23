@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"math"
 
+	"media_report/service/api/internal/model"
 	"media_report/service/api/internal/svc"
 	"media_report/service/api/internal/types"
 
@@ -55,6 +56,20 @@ func (l *GetKsAccountReportLogic) GetKsAccountReport(req *types.KsAccountReportR
 		"advertiser_id":        req.AdvertiserId,
 		"temporal_granularity": req.TemporalGranularity,
 	}
+
+	// 从数据库获取当前有效的 access token
+	accessToken, _, err := model.GetTokensByMedia(l.svcCtx.DB, "kuaishou")
+	if err != nil {
+		return &types.KsAccountReportResp{
+			Code:    500,
+			Message: "获取accessToken失败：: " + err.Error(),
+			Data:    []*types.KsReportDataItem{},
+		}, nil
+	}
+
+	// 设置快手 API 需要的请求头
+	l.svcCtx.HTTPClient.SetHeader("Access-Token", accessToken)
+	l.svcCtx.HTTPClient.SetHeader("Content-Type", "application/json")
 
 	// 调用快手 API
 	var ksResp types.KsApiResponse

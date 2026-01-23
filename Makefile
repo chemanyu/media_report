@@ -3,7 +3,9 @@
 # 项目变量
 PROJECT_NAME=media_report
 API_BINARY=media-api
+SCHEDULER_BINARY=scheduler
 API_DIR=service/api
+CMD_DIR=cmd
 
 # 颜色输出
 GREEN=\033[0;32m
@@ -25,6 +27,14 @@ build-api: ## 编译 API 服务
 run-api: ## 运行 API 服务
 	@echo "$(GREEN)启动 API 服务...$(NC)"
 	cd $(API_DIR) && go run media.go -f etc/media-api.yaml
+
+build-scheduler: ## 编译定时任务服务
+	@echo "$(GREEN)编译定时任务服务...$(NC)"
+	cd $(CMD_DIR)/scheduler && go build -o ../../bin/$(SCHEDULER_BINARY) main.go
+
+run-scheduler: ## 运行定时任务服务
+	@echo "$(GREEN)启动定时任务服务...$(NC)"
+	cd $(CMD_DIR)/scheduler && go run main.go -f ../../service/api/etc/scheduler.yaml
 
 dev-api: ## 开发模式运行 API（使用 air 热重载）
 	@echo "$(GREEN)开发模式启动 API 服务...$(NC)"

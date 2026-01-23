@@ -51,3 +51,17 @@ type KsApiReportDetail struct {
 	ConversionRatio float64 `json:"conversion_ratio"` // 转化率
 	StatDate        string  `json:"stat_date"`        // 统计日期
 }
+
+// 更新token相应结构体
+// TokenRefreshResponse token 刷新响应
+type TokenRefreshResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+	Data    struct {
+		AccessToken           string `json:"access_token"`
+		RefreshToken          string `json:"refresh_token"`
+		AccessTokenExpiresIn  int    `json:"access_token_expires_in"`
+		RefreshTokenExpiresIn int    `json:"refresh_token_expires_in"`
+	} `json:"data"`
+	RequestId string `json:"request_id"`
+}

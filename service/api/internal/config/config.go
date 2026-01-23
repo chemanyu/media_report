@@ -7,11 +7,27 @@ import "github.com/zeromicro/go-zero/rest"
 
 type Config struct {
 	rest.RestConf
-	Kuaishou KuaishouConfig
+	Kuaishou    KuaishouConfig
+	OAuthConfig OAuthConfig
+	MySQL       MySQLConfig // 数据库配置
 }
 
 type KuaishouConfig struct {
-	BaseUrl     string
-	AccessToken string
-	Timeout     int
+	BaseUrl      string
+	Timeout      int
+	AdvertiserId int64 // 广告主 ID
+}
+
+type OAuthConfig struct {
+	AppId  int64  // 应用 ID
+	Secret string // 应用密钥
+}
+
+type MySQLConfig struct {
+	Host     string // 数据库地址
+	Port     int    // 端口
+	User     string // 用户名
+	Password string // 密码
+	Database string // 数据库名
+	Charset  string // 字符集
 }

@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 
+	"media_report/common/database"
 	"media_report/service/api/internal/config"
 	"media_report/service/api/internal/handler"
+	"media_report/service/api/internal/script"
 	"media_report/service/api/internal/svc"
 
 	"github.com/zeromicro/go-zero/core/conf"
@@ -17,15 +19,31 @@ var configFile = flag.String("f", "etc/media-api.yaml", "the config file")
 func main() {
 	flag.Parse()
 
-	var c config.Config
-	conf.MustLoad(*configFile, &c)
+	// 配置文件数据获取
+	var config config.Config
+	conf.MustLoad(*configFile, &config)
 
-	server := rest.MustNewServer(c.RestConf)
+	// server ctx 获取
+	server := rest.MustNewServer(config.RestConf)
 	defer server.Stop()
 
-	ctx := svc.NewServiceContext(c)
+	// 初始化数据库连接
+	dbConfig := database.MySQLConfig{
+		Host:     config.MySQL.Host,
+		Port:     config.MySQL.Port,
+		User:     config.MySQL.User,
+		Password: config.MySQL.Password,
+		Database: config.MySQL.Database,
+		Charset:  config.MySQL.Charset,
+	}
+	db := database.MustNewMySQLConnection(dbConfig)
+
+	// 获取上下文，注册接口
+	ctx := svc.NewServiceContext(config, db)
 	handler.RegisterHandlers(server, ctx)
 
-	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
+	// 定时任务
+	script.Cron(config, db)
+	fmt.Printf("Starting server at %s:%d...\n", config.Host, config.Port)
 	server.Start()
 }

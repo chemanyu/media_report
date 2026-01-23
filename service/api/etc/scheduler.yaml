@@ -1,0 +1,12 @@
+Name: report-scheduler
+
+Log:
+  ServiceName: report-scheduler
+  Mode: console
+  Level: info
+
+# 定时任务配置
+Schedule:
+  ReportCron: "*/1 * * * *"  # 测试用：每1分钟执行一次报表任务
+  TokenRefreshCron: "0 0 * * *"  # 每天0点刷新 token
+

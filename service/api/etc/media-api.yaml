@@ -10,6 +10,20 @@ Log:
 # 快手广告 API 配置
 Kuaishou:
   BaseUrl: https://ad.e.kuaishou.com
-  AccessToken: dd9343cf9a121ef64cbc2e4bfaad7697
   Timeout: 30  # 请求超时时间（秒）
+  AdvertiserId: 95790770  # 广告主 ID
+
+OAuth:
+  AppId: 165914637
+  Secret: J73@=A$~zY7l+7-V
+  # RefreshToken: ded6cc9286b86a9ed92bd43b00bedb5b
+
+# MySQL 数据库配置
+MySQL:
+  Host: 127.0.0.1
+  Port: 3306
+  User: root
+  Password: "123456"
+  Database: release_atd
+  Charset: utf8mb4
 

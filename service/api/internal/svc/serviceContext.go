@@ -4,6 +4,8 @@
 package svc
 
 import (
+	"gorm.io/gorm"
+
 	"media_report/common/httpclient"
 	"media_report/service/api/internal/config"
 )
@@ -11,17 +13,16 @@ import (
 type ServiceContext struct {
 	Config     config.Config
 	HTTPClient *httpclient.Client
+	DB         *gorm.DB // 数据库连接
 }
 
-func NewServiceContext(c config.Config) *ServiceContext {
+func NewServiceContext(c config.Config, db *gorm.DB) *ServiceContext {
 	// 创建通用 HTTP 客户端
 	client := httpclient.NewClient(c.Kuaishou.BaseUrl, c.Kuaishou.Timeout)
-	// 设置快手 API 需要的请求头
-	client.SetHeader("Access-Token", c.Kuaishou.AccessToken)
-	client.SetHeader("Content-Type", "application/json")
 
 	return &ServiceContext{
 		Config:     c,
 		HTTPClient: client,
+		DB:         db,
 	}
 }
