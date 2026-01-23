@@ -123,7 +123,7 @@ func (c *Client) DoRequest(ctx context.Context, method, path string, params map[
 	}
 
 	// 记录响应日志
-	logx.WithContext(ctx).Infof("HTTP Response: status=%d, body=%s", resp.StatusCode, string(respBody))
+	logx.WithContext(ctx).Infof("HTTP Response: status=%d", resp.StatusCode)
 
 	// 检查 HTTP 状态码
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
