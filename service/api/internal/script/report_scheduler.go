@@ -2,15 +2,12 @@ package script
 
 import (
 	"context"
-	"flag"
 	"fmt"
 	"log"
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/core/service"
 	"gorm.io/gorm"
 
 	"media_report/common/httpclient"
@@ -19,68 +16,46 @@ import (
 	"media_report/service/api/internal/types"
 )
 
-var configFile = flag.String("f", "etc/scheduler.yaml", "the config file")
-
-// ScheduleConfig 定时任务配置
-type ScheduleConfig struct {
-	ReportCron       string // 报表任务 cron 表达式
-	TokenRefreshCron string // token 刷新 cron 表达式
-}
-
-// Config 配置结构
-type CronConfig struct {
-	service.ServiceConf
-	Schedule ScheduleConfig
-}
-
 func Cron(config config.Config, db *gorm.DB) {
-	flag.Parse()
-
-	// 加载配置
-	var c CronConfig
-	conf.MustLoad(*configFile, &c)
-
-	// 设置日志
-	logx.MustSetup(c.Log)
-	defer logx.Close()
+	// 检查是否配置了定时任务
+	if config.Schedule.ReportCron == "" && config.Schedule.TokenRefreshCron == "" {
+		logx.Info("未配置定时任务，跳过启动")
+		return
+	}
 
 	// 创建 cron 调度器
 	cronScheduler := cron.New()
 
 	// 添加报表任务
-	_, err := cronScheduler.AddFunc(c.Schedule.ReportCron, func() {
-		executeReportJob(db, config.Kuaishou)
-	})
-	if err != nil {
-		log.Fatalf("添加报表定时任务失败: %v", err)
+	if config.Schedule.ReportCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.ReportCron, func() {
+			executeReportJob(db, config.Kuaishou)
+		})
+		if err != nil {
+			log.Fatalf("添加报表定时任务失败: %v", err)
+		}
+		logx.Infof("快手报表定时任务已启动，Cron 表达式: %s", config.Schedule.ReportCron)
 	}
 
 	// 添加 token 刷新任务
-	_, err = cronScheduler.AddFunc(c.Schedule.TokenRefreshCron, func() {
-		refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
-	})
-	if err != nil {
-		log.Fatalf("添加 token 刷新定时任务失败: %v", err)
+	if config.Schedule.TokenRefreshCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.TokenRefreshCron, func() {
+			refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
+		})
+		if err != nil {
+			log.Fatalf("添加 token 刷新定时任务失败: %v", err)
+		}
+		logx.Infof("Token 刷新定时任务已启动，Cron 表达式: %s", config.Schedule.TokenRefreshCron)
 	}
 
 	// 启动调度器
 	cronScheduler.Start()
-	defer cronScheduler.Stop()
-
-	logx.Infof("快手报表定时任务已启动，Cron 表达式: %s", c.Schedule.ReportCron)
-	logx.Infof("Token 刷新定时任务已启动，Cron 表达式: %s", c.Schedule.TokenRefreshCron)
-	fmt.Println("按 Ctrl+C 退出...")
 
 	// 立即刷新一次 token（可选）
-	fmt.Println("立即刷新一次 token...")
-	refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
-
-	// 立即执行一次报表任务（可选）
-	fmt.Println("立即执行一次报表任务...")
-	executeReportJob(db, config.Kuaishou)
-
-	// 保持程序运行
-	select {}
+	if config.Schedule.TokenRefreshCron != "" {
+		logx.Info("立即刷新一次 token...")
+		refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
+	}
 }
 
 // refreshAccessToken 刷新 access token
@@ -183,8 +158,8 @@ func executeReportJob(db *gorm.DB, ksConfig config.KuaishouConfig) {
 
 	logx.Infof("成功获取 %d 条数据", len(resp.Data.Details))
 	for i, detail := range resp.Data.Details {
-		charge := detail.Charge * 1.5
-		conversionCost := detail.ConversionCost * 1.5
+		charge := detail.Charge * 1.3
+		conversionCost := detail.ConversionCost * 1.3
 		conversionRatio := fmt.Sprintf("%.2f%%", detail.ConversionRatio*100)
 
 		logx.Infof("数据 %d: 时间=%s, 账户=美致dsp, 消耗=%.2f, 曝光=%d, 点击=%d, 注册转化数=%d, 转化成本=%.2f, 转化率=%s",

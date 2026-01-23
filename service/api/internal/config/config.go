@@ -9,7 +9,8 @@ type Config struct {
 	rest.RestConf
 	Kuaishou    KuaishouConfig
 	OAuthConfig OAuthConfig
-	MySQL       MySQLConfig // 数据库配置
+	MySQL       MySQLConfig    // 数据库配置
+	Schedule    ScheduleConfig // 定时任务配置
 }
 
 type KuaishouConfig struct {
@@ -30,4 +31,9 @@ type MySQLConfig struct {
 	Password string // 密码
 	Database string // 数据库名
 	Charset  string // 字符集
+}
+
+type ScheduleConfig struct {
+	ReportCron       string // 报表任务 cron 表达式
+	TokenRefreshCron string // token 刷新 cron 表达式
 }

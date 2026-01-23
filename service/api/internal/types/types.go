@@ -20,9 +20,9 @@ type KsAccountReportResp struct {
 type KsReportDataItem struct {
 	Time            string  `json:"时间"`    // 时间
 	Account         string  `json:"账户"`    // 账户名称
-	Charge          float64 `json:"消耗"`    // 消耗 * 1.5
+	Charge          float64 `json:"消耗"`    // 消耗 * 1.3
 	Activation      int64   `json:"注册转化数"` // 注册转化数（激活数）
-	ConversionCost  float64 `json:"转化成本"`  // 转化成本 * 1.5
+	ConversionCost  float64 `json:"转化成本"`  // 转化成本 * 1.3
 	AdShow          int64   `json:"曝光"`    // 曝光数
 	Bclick          int64   `json:"点击"`    // 点击数
 	ConversionRatio string  `json:"转化率"`   // 转化率（格式化为百分比字符串）

@@ -13,17 +13,21 @@ Kuaishou:
   Timeout: 30  # 请求超时时间（秒）
   AdvertiserId: 95790770  # 广告主 ID
 
-OAuth:
+OAuthConfig:
   AppId: 165914637
   Secret: J73@=A$~zY7l+7-V
-  # RefreshToken: ded6cc9286b86a9ed92bd43b00bedb5b
 
 # MySQL 数据库配置
 MySQL:
   Host: 127.0.0.1
   Port: 3306
   User: root
-  Password: "123456"
+  Password: ""
   Database: release_atd
   Charset: utf8mb4
+
+# 定时任务配置
+Schedule:
+  ReportCron: "0 */1 * * *"        # 每小时执行一次报表任务
+  TokenRefreshCron: "0 0 * * *"    # 每天0点刷新 token
 
