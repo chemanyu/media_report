@@ -11,7 +11,11 @@ Log:
 Kuaishou:
   BaseUrl: https://ad.e.kuaishou.com
   Timeout: 30  # 请求超时时间（秒）
-  AdvertiserId: 95790770  # 广告主 ID
+  AdvertiserIds:  # 广告主 ID 列表
+    - 95790767
+    - 95790768
+    - 95790769
+    - 95790770
 
 OAuthConfig:
   AppId: 165914637
@@ -22,12 +26,17 @@ MySQL:
   Host: 127.0.0.1
   Port: 3306
   User: root
-  Password: ""
+  Password: "123456"
   Database: release_atd
   Charset: utf8mb4
 
 # 定时任务配置
 Schedule:
-  ReportCron: "0 */1 * * *"        # 每小时执行一次报表任务
-  TokenRefreshCron: "0 0 * * *"    # 每天0点刷新 token
+  ReportCron: "0 10,12,14,16,18,22 * * *"  # 每天10点、12点、14点、16点、18点、22点执行报表任务
+  TokenRefreshCron: "0 0 * * *"            # 每天0点刷新 token
+
+# 钉钉机器人配置
+DingTalk:
+  WebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=a23550fd08efa781099eb1ebbbd4b34a5ea035a7bd72653fd2c7d02938eb7fd3"
+  Enabled: true  # 是否启用钉钉通知
 

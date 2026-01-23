@@ -29,7 +29,7 @@ func Cron(config config.Config, db *gorm.DB) {
 	// 添加报表任务
 	if config.Schedule.ReportCron != "" {
 		_, err := cronScheduler.AddFunc(config.Schedule.ReportCron, func() {
-			executeReportJob(db, config.Kuaishou)
+			executeReportJob(db, config.Kuaishou, config.DingTalk)
 		})
 		if err != nil {
 			log.Fatalf("添加报表定时任务失败: %v", err)
@@ -109,7 +109,7 @@ func refreshAccessToken(db *gorm.DB, ksConfig config.KuaishouConfig, oauthConfig
 }
 
 // executeReportJob 执行报表任务
-func executeReportJob(db *gorm.DB, ksConfig config.KuaishouConfig) {
+func executeReportJob(db *gorm.DB, ksConfig config.KuaishouConfig, dingTalk config.DingTalkConfig) {
 	ctx := context.Background()
 	logx.Infof("开始执行快手报表任务 - %s", time.Now().Format("2006-01-02 15:04:05"))
 
@@ -128,47 +128,115 @@ func executeReportJob(db *gorm.DB, ksConfig config.KuaishouConfig) {
 	// 获取当前日期
 	today := time.Now().Format("2006-01-02")
 
-	// 构建请求参数
-	req := map[string]interface{}{
-		"start_date":           today,
-		"end_date":             today,
-		"advertiser_id":        ksConfig.AdvertiserId,
-		"temporal_granularity": "DAILY",
+	// 累加所有广告主的数据
+	var totalDetail types.KsApiReportDetail
+	var hasData bool
+
+	// 循环查询所有广告主
+	for _, advertiserId := range ksConfig.AdvertiserIds {
+		// 构建请求参数
+		req := map[string]interface{}{
+			"start_date":           today,
+			"end_date":             today,
+			"advertiser_id":        advertiserId,
+			"temporal_granularity": "DAILY",
+		}
+
+		// 调用快手 API
+		var resp types.KsApiResponse
+		err = client.Post(ctx, "/rest/openapi/v1/report/account_report", req, &resp)
+		if err != nil {
+			logx.Errorf("调用快手 API 失败 (advertiser_id=%d): %v", advertiserId, err)
+			continue
+		}
+
+		// 检查响应
+		if resp.Code != 0 {
+			logx.Errorf("快手 API 返回错误 (advertiser_id=%d): code=%d, message=%s", advertiserId, resp.Code, resp.Message)
+			continue
+		}
+
+		// 累加数据
+		if len(resp.Data.Details) > 0 {
+			hasData = true
+			detail := resp.Data.Details[0]
+			totalDetail.StatDate = detail.StatDate
+			totalDetail.Charge += detail.Charge
+			totalDetail.AdShow += detail.AdShow
+			totalDetail.Bclick += detail.Bclick
+			totalDetail.Activation += detail.Activation
+			totalDetail.ConversionCost += detail.ConversionCost
+			logx.Infof("成功获取广告主 %d 的数据: 消耗=%.2f, 曝光=%.0f, 点击=%d, 激活=%d",
+				advertiserId, detail.Charge, detail.AdShow, detail.Bclick, detail.Activation)
+		}
 	}
 
-	// 调用快手 API
-	var resp types.KsApiResponse
-	err = client.Post(ctx, "/rest/openapi/v1/report/account_report", req, &resp)
-	if err != nil {
-		logx.Errorf("调用快手 API 失败: %v", err)
-		return
-	}
-
-	// 检查响应
-	if resp.Code != 0 {
-		logx.Errorf("快手 API 返回错误: code=%d, message=%s", resp.Code, resp.Message)
-		return
-	}
-
-	// 打印数据
-	if len(resp.Data.Details) == 0 {
+	// 打印累加后的数据
+	if !hasData {
 		logx.Infof("今日暂无数据")
 		return
 	}
 
-	logx.Infof("成功获取 %d 条数据", len(resp.Data.Details))
-	currentHour := time.Now().Format("15") // 获取当前小时
-	for i, detail := range resp.Data.Details {
-		charge := detail.Charge * 1.3
-		conversionCost := detail.ConversionCost * 1.3
-		conversionRatio := fmt.Sprintf("%.2f%%", detail.ConversionRatio*100)
-		// 在日期后添加小时
-		timeWithHour := fmt.Sprintf("%s %s", detail.StatDate, currentHour)
+	// 计算平均转化率 和 转化成本
+	totalDetail.Charge = totalDetail.Charge * 1.3
+	totalDetail.ConversionRatio = float64(totalDetail.Activation) / float64(totalDetail.Bclick)
+	totalDetail.ConversionCost = totalDetail.Charge / float64(totalDetail.Activation)
 
-		logx.Infof("数据 %d: 时间=%s, 账户=美致dsp, 消耗=%.2f, 曝光=%d, 点击=%d, 注册转化数=%d, 转化成本=%.2f, 转化率=%s",
-			i+1, timeWithHour, charge, int64(detail.AdShow), detail.Bclick,
-			detail.Activation, conversionCost, conversionRatio)
-	}
+	currentHour := time.Now().Format("15") // 获取当前小时
+	conversionRatio := fmt.Sprintf("%.2f%%", totalDetail.ConversionRatio*100)
+
+	// 发送钉钉消息
+	sendDingTalkNotification(ctx, dingTalk, totalDetail, conversionRatio, currentHour)
 
 	logx.Infof("报表任务执行完成 - %s", time.Now().Format("2006-01-02 15:04:05"))
+}
+
+// sendDingTalkNotification 发送钉钉通知
+func sendDingTalkNotification(ctx context.Context, dingConfig config.DingTalkConfig, detail types.KsApiReportDetail, conversionRatio, currentHour string) {
+	if !dingConfig.Enabled || dingConfig.WebhookURL == "" {
+		logx.Info("钉钉通知未启用，跳过发送")
+		return
+	}
+
+	// 计算数据
+	timeWithHour := fmt.Sprintf("%s %s时", detail.StatDate, currentHour)
+
+	// 构建钉钉消息
+	markdownText := fmt.Sprintf(
+		"#### 美数时报  \n---\n"+
+			"**时间**：%s  \n"+
+			"**账户**：美数dsp  \n"+
+			"**消耗金额**：%.2f  \n"+
+			"**注册转化数**：%d  \n"+
+			"**转化成本**：%.2f  \n"+
+			"**曝光量**：%d  \n"+
+			"**点击量**：%d  \n"+
+			"**转化率**：%s",
+		timeWithHour,
+		detail.Charge,
+		detail.Activation,
+		detail.ConversionCost,
+		int64(detail.AdShow),
+		detail.Bclick,
+		conversionRatio,
+	)
+
+	msg := map[string]interface{}{
+		"msgtype": "markdown",
+		"markdown": map[string]interface{}{
+			"title": "美数时报",
+			"text":  markdownText,
+		},
+	}
+
+	// 创建 HTTP 客户端发送消息
+	client := httpclient.NewClient("", 30)
+	var result map[string]interface{}
+	err := client.Post(ctx, dingConfig.WebhookURL, msg, &result)
+	if err != nil {
+		logx.Errorf("发送钉钉消息失败: %v", err)
+		return
+	}
+
+	logx.Infof("钉钉消息发送成功: %v", result)
 }

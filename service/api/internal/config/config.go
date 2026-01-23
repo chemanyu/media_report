@@ -11,12 +11,13 @@ type Config struct {
 	OAuthConfig OAuthConfig
 	MySQL       MySQLConfig    // 数据库配置
 	Schedule    ScheduleConfig // 定时任务配置
+	DingTalk    DingTalkConfig // 钉钉配置
 }
 
 type KuaishouConfig struct {
-	BaseUrl      string
-	Timeout      int
-	AdvertiserId int64 // 广告主 ID
+	BaseUrl       string
+	Timeout       int
+	AdvertiserIds []int64 // 广告主 ID 列表
 }
 
 type OAuthConfig struct {
@@ -36,4 +37,9 @@ type MySQLConfig struct {
 type ScheduleConfig struct {
 	ReportCron       string // 报表任务 cron 表达式
 	TokenRefreshCron string // token 刷新 cron 表达式
+}
+
+type DingTalkConfig struct {
+	WebhookURL string // 钉钉机器人 webhook 地址
+	Enabled    bool   // 是否启用钉钉通知
 }
