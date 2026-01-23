@@ -157,13 +157,16 @@ func executeReportJob(db *gorm.DB, ksConfig config.KuaishouConfig) {
 	}
 
 	logx.Infof("成功获取 %d 条数据", len(resp.Data.Details))
+	currentHour := time.Now().Format("15") // 获取当前小时
 	for i, detail := range resp.Data.Details {
 		charge := detail.Charge * 1.3
 		conversionCost := detail.ConversionCost * 1.3
 		conversionRatio := fmt.Sprintf("%.2f%%", detail.ConversionRatio*100)
+		// 在日期后添加小时
+		timeWithHour := fmt.Sprintf("%s %s", detail.StatDate, currentHour)
 
 		logx.Infof("数据 %d: 时间=%s, 账户=美致dsp, 消耗=%.2f, 曝光=%d, 点击=%d, 注册转化数=%d, 转化成本=%.2f, 转化率=%s",
-			i+1, detail.StatDate, charge, int64(detail.AdShow), detail.Bclick,
+			i+1, timeWithHour, charge, int64(detail.AdShow), detail.Bclick,
 			detail.Activation, conversionCost, conversionRatio)
 	}
 

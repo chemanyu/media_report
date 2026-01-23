@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"time"
 
 	"media_report/service/api/internal/model"
 	"media_report/service/api/internal/svc"
@@ -95,6 +96,7 @@ func (l *GetKsAccountReportLogic) GetKsAccountReport(req *types.KsAccountReportR
 
 	// 转换数据并计算
 	dataItems := make([]*types.KsReportDataItem, 0, len(ksResp.Data.Details))
+	currentHour := time.Now().Format("15") // 获取当前小时
 	for _, detail := range ksResp.Data.Details {
 		// 计算转化率并格式化为百分比字符串
 		conversionRatio := fmt.Sprintf("%.2f%%", detail.ConversionRatio*100)
@@ -103,8 +105,11 @@ func (l *GetKsAccountReportLogic) GetKsAccountReport(req *types.KsAccountReportR
 		charge := math.Round(detail.Charge*1.3*100) / 100
 		conversionCost := math.Round(detail.ConversionCost*1.3*100) / 100
 
+		// 在日期后添加小时
+		timeWithHour := fmt.Sprintf("%s %s", detail.StatDate, currentHour)
+
 		dataItems = append(dataItems, &types.KsReportDataItem{
-			Time:            detail.StatDate,      // 统计日期
+			Time:            timeWithHour,         // 统计日期 + 小时
 			Account:         "美致dsp",              // 账户名称（可配置）
 			Charge:          charge,               // 消耗 * 1.3，保留两位小数
 			Activation:      detail.Activation,    // 注册转化数（激活数）
