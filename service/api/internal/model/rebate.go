@@ -60,3 +60,21 @@ func UpdateRebate(db *gorm.DB, rebate *Rebate) error {
 func DeleteRebate(db *gorm.DB, id uint) error {
 	return db.Delete(&Rebate{}, id).Error
 }
+
+// LoadRebateConfigMap 加载返点配置为Map
+// 返回 map[主体-端口] = 返点率
+func LoadRebateConfigMap(db *gorm.DB) (map[string]float64, error) {
+	var rebates []Rebate
+	result := make(map[string]float64)
+
+	if err := db.Find(&rebates).Error; err != nil {
+		return result, err
+	}
+
+	for _, rebate := range rebates {
+		key := rebate.Subject + "-" + rebate.Port
+		result[key] = rebate.RebateRate
+	}
+
+	return result, nil
+}

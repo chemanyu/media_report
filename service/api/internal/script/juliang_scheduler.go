@@ -50,12 +50,35 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 	client.SetHeader("x-csrftoken", csrfToken)
 	client.SetHeader("Content-Type", "application/json")
 
+	// 预加载配置数据
+	rebateMap, err := model.LoadRebateConfigMap(db)
+	if err != nil {
+		logx.Errorf("加载返点配置失败: %v", err)
+		return
+	}
+	serviceFeeMap, err := model.LoadServiceFeeConfigMap(db)
+	if err != nil {
+		logx.Errorf("加载服务费配置失败: %v", err)
+		return
+	}
+	taskTypeMap, err := model.LoadTaskTypeConfigMap(db)
+	if err != nil {
+		logx.Errorf("加载任务类型配置失败: %v", err)
+		return
+	}
+
 	// 累加统计数据
-	var totalCost float64     // 总消耗
-	var totalShowCnt int64    // 总曝光
-	var totalClickCnt int64   // 总点击
-	var totalConvertCnt int64 // 总转化
-	var totalAccounts int     // 总账户数
+	var totalCost float64           // 总消耗
+	var totalCashCost float64       // 总现金消耗
+	var totalRebateCost float64     // 总返后消耗
+	var totalShowCnt int64          // 总曝光
+	var totalClickCnt int64         // 总点击
+	var totalConvertCnt int64       // 总转化
+	var totalAccounts int           // 总账户数
+	var totalServiceFeeCost float64 // 总服务商成本
+	var totalRevenue float64        // 总预估收入
+	var totalProfit float64         // 总预估利润
+	var skippedAccounts int         // 跳过的账户数
 
 	// 分页查询
 	page := 1
@@ -118,26 +141,79 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 
 		// 累加数据
 		for _, account := range resp.Data.DataList {
+			// 解析备注字段：主体-端口-服务商-任务
+			remark := strings.TrimSpace(account.AdvertiserRemark)
+			parts := strings.Split(remark, "-")
+
+			// 如果分割后小于4个部分，跳过
+			if len(parts) < 4 {
+				skippedAccounts++
+				continue
+			}
+
+			subject := strings.TrimSpace(parts[0])         // 主体
+			port := strings.TrimSpace(parts[1])            // 端口
+			serviceProvider := strings.TrimSpace(parts[2]) // 服务商
+			taskCode := strings.TrimSpace(parts[3])        // 任务代码
+
 			totalAccounts++
 
 			// 解析消耗（去除逗号）
-			cost := parseNumber(account.StatCost)
+			cost := parseNumber(account.StatCost)         // 消耗
+			cashCost := parseNumber(account.StatCashCost) // 先进消耗
 			totalCost += cost
+			totalCashCost += cashCost
 
-			// 解析曝光数
-			showCnt := parseInt64(account.ShowCnt)
+			// 解析曝光数、点击数、转化数
+			showCnt := parseInt64(account.ShowCnt) // 曝光
 			totalShowCnt += showCnt
-
-			// 解析点击数
-			clickCnt := parseInt64(account.ClickCnt)
+			clickCnt := parseInt64(account.ClickCnt) // 点击
 			totalClickCnt += clickCnt
-
-			// 解析转化数
-			convertCnt := parseInt64(account.ConvertCnt)
+			convertCnt := parseInt64(account.ConvertCnt) // 转化
 			totalConvertCnt += convertCnt
 
-			logx.Infof("账户 %s (%d): 消耗=%.2f, 曝光=%d, 点击=%d, 转化=%d",
-				account.AdvertiserName, account.AdvertiserId, cost, showCnt, clickCnt, convertCnt)
+			// 查询返点率（主体-端口）
+			rebateKey := fmt.Sprintf("%s-%s", subject, port)
+			rebateRate := rebateMap[rebateKey]
+
+			// 计算返点消耗 = 现金消耗 / (各端口各主体对应的返点率)
+			var rebateCost float64
+			if rebateRate > 0 {
+				rebateCost = cashCost / rebateRate
+			} else {
+				rebateCost = cashCost
+			}
+			totalRebateCost += rebateCost
+
+			// 查询服务费率
+			serviceFeeRate := serviceFeeMap[serviceProvider]
+			// 计算服务商成本 = 现金消耗 * 服务费率（如果服务费是0，则现金消耗*0.04）
+			var serviceFeeCost float64
+			if serviceFeeRate > 0 {
+				serviceFeeCost = cashCost * serviceFeeRate
+			} else {
+				serviceFeeCost = cashCost
+			}
+			totalServiceFeeCost += serviceFeeCost
+
+			// 查询结算单价
+			settlementPrice := taskTypeMap[taskCode]
+
+			// 计算预估收入 = (转化数+扣量数) * 结算单价
+			// 注：结算单价不固定，主体或任务不一样对应的结算单价也不一样
+			revenue := float64(convertCnt) * settlementPrice
+			totalRevenue += revenue
+
+			// 计算预估利润 = (预估收入 * 0.95) - 服务商成本 - 返点消耗
+			profit := (revenue * 0.95) - serviceFeeCost - rebateCost
+			totalProfit += profit
+
+			// 计算预估利润率 = 预估利润/预估收入
+			profitRate := profit / revenue
+
+			logx.Infof("账户 %s (%d) [%s-%s-%s-%s]: 消耗=%.2f, 现金消耗=%.2f, 返点消耗=%.2f, 曝光=%d, 点击=%d, 转化=%d, 转化成本=%s, 转化率=%s, 服务费=%.2f, 预估收入=%.2f, 预估利润=%.2f, 预估利润率=%.2f",
+				account.AdvertiserName, account.AdvertiserId, subject, port, serviceProvider, taskCode,
+				cost, cashCost, rebateCost, showCnt, clickCnt, convertCnt, account.ConversionCost, account.ConversionRate, serviceFeeCost, revenue, profit, profitRate)
 		}
 
 		// 检查是否还有更多数据
@@ -146,20 +222,15 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 
 		logx.Infof("已处理第 %d 页，本页账户数: %d，累计账户数: %d",
 			page-1, len(resp.Data.DataList), totalAccounts)
-
-		// 避免请求过快
-		if hasMore {
-			time.Sleep(500 * time.Millisecond)
-		}
 	}
 
 	// 打印汇总数据
 	if totalAccounts == 0 {
-		logx.Info("今日暂无巨量账户数据")
+		logx.Infof("今日暂无巨量账户数据，跳过的账户数: %d", skippedAccounts)
 		return
 	}
 
-	// 计算转化成本和转化率
+	// 计算总转化成本和总转化率
 	var avgConversionCost float64
 	var avgConversionRate float64
 
@@ -170,20 +241,28 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 		avgConversionRate = float64(totalConvertCnt) / float64(totalClickCnt) * 100
 	}
 
-	logx.Infof("巨量报表汇总 - 账户数: %d, 总消耗: %.2f, 总曝光: %d, 总点击: %d, 总转化: %d, 转化成本: %.2f, 转化率: %.2f%%",
-		totalAccounts, totalCost, totalShowCnt, totalClickCnt, totalConvertCnt, avgConversionCost, avgConversionRate)
+	// 计算预估利润率
+	var profitRate float64
+	if totalRevenue > 0 {
+		profitRate = (totalProfit / totalRevenue) * 100
+	}
+
+	logx.Infof("巨量报表汇总 - 账户数: %d, 跳过: %d, 总消耗: %.2f, 现金消耗: %.2f, 返点消耗: %.2f, 总曝光: %d, 总点击: %d, 总转化: %d, 平均转化成本: %.2f, 转化率: %.2f%%, 服务费成本: %.2f, 预估收入: %.2f, 预估利润: %.2f, 利润率: %.2f%%",
+		totalAccounts, skippedAccounts, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, totalConvertCnt,
+		avgConversionCost, avgConversionRate, totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
 
 	// 发送钉钉通知
-	sendJuliangDingTalkNotification(ctx, dingTalk, totalCost, totalShowCnt, totalClickCnt, totalConvertCnt,
-		avgConversionCost, avgConversionRate, totalAccounts)
+	sendJuliangDingTalkNotification(ctx, dingTalk, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt,
+		totalConvertCnt, avgConversionCost, avgConversionRate, totalAccounts, totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
 
 	logx.Infof("巨量报表任务执行完成 - %s", time.Now().Format("2006-01-02 15:04:05"))
 }
 
 // sendJuliangDingTalkNotification 发送巨量钉钉通知
 func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.DingTalkConfig,
-	totalCost float64, totalShowCnt, totalClickCnt, totalConvertCnt int64,
-	avgConversionCost, avgConversionRate float64, totalAccounts int) {
+	totalCost, totalCashCost, totalRebateCost float64, totalShowCnt, totalClickCnt, totalConvertCnt int64,
+	avgConversionCost, avgConversionRate float64, totalAccounts int,
+	totalServiceFeeCost, totalRevenue, totalProfit, profitRate float64) {
 
 	if !dingConfig.Enabled || dingConfig.WebhookURL == "" {
 		logx.Info("钉钉通知未启用，跳过发送")
@@ -199,20 +278,32 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 		"#### 巨量时报  \n---\n"+
 			"**时间**：%s  \n"+
 			"**账户数**：%d  \n"+
-			"**消耗金额**：%.2f  \n"+
+			"**总消耗**：%.2f  \n"+
+			"**现金消耗**：%.2f  \n"+
+			"**返点消耗**：%.2f  \n"+
+			"**服务费成本**：%.2f  \n"+
 			"**注册转化数**：%d  \n"+
 			"**转化成本**：%.2f  \n"+
+			"**转化率**：%.2f%%  \n"+
 			"**曝光量**：%d  \n"+
 			"**点击量**：%d  \n"+
-			"**转化率**：%.2f%%",
+			"**预估收入**：%.2f  \n"+
+			"**预估利润**：%.2f  \n"+
+			"**利润率**：%.2f%%",
 		timeStr,
 		totalAccounts,
 		totalCost,
+		totalCashCost,
+		totalRebateCost,
+		totalServiceFeeCost,
 		totalConvertCnt,
 		avgConversionCost,
+		avgConversionRate,
 		totalShowCnt,
 		totalClickCnt,
-		avgConversionRate,
+		totalRevenue,
+		totalProfit,
+		profitRate,
 	)
 
 	msg := map[string]interface{}{

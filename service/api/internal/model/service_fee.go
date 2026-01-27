@@ -56,3 +56,20 @@ func UpdateServiceFee(db *gorm.DB, fee *ServiceFee) error {
 func DeleteServiceFee(db *gorm.DB, id uint) error {
 	return db.Delete(&ServiceFee{}, id).Error
 }
+
+// LoadServiceFeeConfigMap 加载服务费配置为Map
+// 返回 map[服务商] = 服务费率
+func LoadServiceFeeConfigMap(db *gorm.DB) (map[string]float64, error) {
+	var serviceFees []ServiceFee
+	result := make(map[string]float64)
+
+	if err := db.Find(&serviceFees).Error; err != nil {
+		return result, err
+	}
+
+	for _, fee := range serviceFees {
+		result[fee.ServiceProvider] = fee.FeeRate
+	}
+
+	return result, nil
+}

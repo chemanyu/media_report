@@ -61,6 +61,24 @@ func DeleteTaskType(db *gorm.DB, id uint) error {
 	return db.Delete(&TaskType{}, id).Error
 }
 
+// LoadTaskTypeConfigMap 加载任务类型配置为Map
+// 返回 map[任务代码] = 结算单价
+// 只加载启用状态的任务类型
+func LoadTaskTypeConfigMap(db *gorm.DB) (map[string]float64, error) {
+	var taskTypes []TaskType
+	result := make(map[string]float64)
+
+	if err := db.Where("status = ?", 1).Find(&taskTypes).Error; err != nil {
+		return result, err
+	}
+
+	for _, task := range taskTypes {
+		result[task.Name] = task.SettlementPrice
+	}
+
+	return result, nil
+}
+
 // GetByMediaAndCode 根据媒体和编码获取任务类型
 func GetTaskTypeByMediaAndCode(db *gorm.DB, media, code string) (*TaskType, error) {
 	var taskType TaskType
