@@ -13,21 +13,21 @@ import (
 
 // ==================== 获取返点配置列表 ====================
 
-type GetRebateListLogic struct {
+type RebateLogic struct {
 	logx.Logger
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 }
 
-func NewGetRebateListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetRebateListLogic {
-	return &GetRebateListLogic{
+func NewGetRebateListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RebateLogic {
+	return &RebateLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *GetRebateListLogic) GetRebateList() (resp *types.RebateListResp, err error) {
+func (l *RebateLogic) GetRebateList() (resp *types.RebateListResp, err error) {
 	rebates, err := model.GetAllRebates(l.svcCtx.DB)
 	if err != nil {
 		l.Logger.Errorf("获取返点配置列表失败: %v", err)
@@ -60,22 +60,15 @@ func (l *GetRebateListLogic) GetRebateList() (resp *types.RebateListResp, err er
 }
 
 // ==================== 创建返点配置 ====================
-
-type CreateRebateLogic struct {
-	logx.Logger
-	ctx    context.Context
-	svcCtx *svc.ServiceContext
-}
-
-func NewCreateRebateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *CreateRebateLogic {
-	return &CreateRebateLogic{
+func NewCreateRebateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RebateLogic {
+	return &RebateLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *CreateRebateLogic) CreateRebate(req *types.CreateRebateReq) (resp *types.RebateCommonResp, err error) {
+func (l *RebateLogic) CreateRebate(req *types.CreateRebateReq) (resp *types.RebateCommonResp, err error) {
 	rebate := &model.Rebate{
 		Subject:     req.Subject,
 		Port:        req.Port,
@@ -100,21 +93,15 @@ func (l *CreateRebateLogic) CreateRebate(req *types.CreateRebateReq) (resp *type
 
 // ==================== 更新返点配置 ====================
 
-type UpdateRebateLogic struct {
-	logx.Logger
-	ctx    context.Context
-	svcCtx *svc.ServiceContext
-}
-
-func NewUpdateRebateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UpdateRebateLogic {
-	return &UpdateRebateLogic{
+func NewUpdateRebateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RebateLogic {
+	return &RebateLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *UpdateRebateLogic) UpdateRebate(req *types.UpdateRebateReq) (resp *types.RebateCommonResp, err error) {
+func (l *RebateLogic) UpdateRebate(req *types.UpdateRebateReq) (resp *types.RebateCommonResp, err error) {
 	rebate := &model.Rebate{
 		ID:          req.ID,
 		Subject:     req.Subject,
@@ -139,22 +126,15 @@ func (l *UpdateRebateLogic) UpdateRebate(req *types.UpdateRebateReq) (resp *type
 }
 
 // ==================== 删除返点配置 ====================
-
-type DeleteRebateLogic struct {
-	logx.Logger
-	ctx    context.Context
-	svcCtx *svc.ServiceContext
-}
-
-func NewDeleteRebateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DeleteRebateLogic {
-	return &DeleteRebateLogic{
+func NewDeleteRebateLogic(ctx context.Context, svcCtx *svc.ServiceContext) *RebateLogic {
+	return &RebateLogic{
 		Logger: logx.WithContext(ctx),
 		ctx:    ctx,
 		svcCtx: svcCtx,
 	}
 }
 
-func (l *DeleteRebateLogic) DeleteRebate(req *types.DeleteRebateReq) (resp *types.RebateCommonResp, err error) {
+func (l *RebateLogic) DeleteRebate(req *types.DeleteRebateReq) (resp *types.RebateCommonResp, err error) {
 	if err := model.DeleteRebate(l.svcCtx.DB, req.ID); err != nil {
 		l.Logger.Errorf("删除返点配置失败: %v", err)
 		return &types.RebateCommonResp{

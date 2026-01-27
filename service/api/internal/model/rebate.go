@@ -47,7 +47,13 @@ func CreateRebate(db *gorm.DB, rebate *Rebate) error {
 
 // Update 更新返点配置
 func UpdateRebate(db *gorm.DB, rebate *Rebate) error {
-	return db.Save(rebate).Error
+	return db.Model(&Rebate{}).Where("id = ?", rebate.ID).Updates(map[string]interface{}{
+		"subject":      rebate.Subject,
+		"port":         rebate.Port,
+		"rebate_rate":  rebate.RebateRate,
+		"subject_type": rebate.SubjectType,
+		"remark":       rebate.Remark,
+	}).Error
 }
 
 // Delete 删除返点配置

@@ -47,7 +47,13 @@ func CreateTaskType(db *gorm.DB, taskType *TaskType) error {
 
 // Update 更新任务类型
 func UpdateTaskType(db *gorm.DB, taskType *TaskType) error {
-	return db.Save(taskType).Error
+	return db.Model(&TaskType{}).Where("id = ?", taskType.ID).Updates(map[string]interface{}{
+		"name":             taskType.Name,
+		"code":             taskType.Code,
+		"settlement_price": taskType.SettlementPrice,
+		"media":            taskType.Media,
+		"status":           taskType.Status,
+	}).Error
 }
 
 // Delete 删除任务类型

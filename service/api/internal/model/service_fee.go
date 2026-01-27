@@ -45,7 +45,11 @@ func CreateServiceFee(db *gorm.DB, fee *ServiceFee) error {
 
 // Update 更新服务费配置
 func UpdateServiceFee(db *gorm.DB, fee *ServiceFee) error {
-	return db.Save(fee).Error
+	return db.Model(&ServiceFee{}).Where("id = ?", fee.ID).Updates(map[string]interface{}{
+		"service_provider": fee.ServiceProvider,
+		"fee_rate":         fee.FeeRate,
+		"remark":           fee.Remark,
+	}).Error
 }
 
 // Delete 删除服务费配置

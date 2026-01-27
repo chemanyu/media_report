@@ -135,7 +135,7 @@
         .config-item-left {
             flex: 1;
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 16px;
             align-items: center;
         }
@@ -143,18 +143,23 @@
         .config-field {
             display: flex;
             flex-direction: column;
+            min-width: 0;
         }
 
         .config-field-label {
             font-size: 12px;
             color: #909399;
             margin-bottom: 4px;
+            white-space: nowrap;
         }
 
         .config-field-value {
             font-size: 14px;
             color: #303133;
             font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .config-item-actions {
@@ -266,7 +271,7 @@
                                     </div>
                                     <div class="config-field">
                                         <div class="config-field-label">更新时间</div>
-                                        <div class="config-field-value">{{ item.update_time }}</div>
+                                        <div class="config-field-value">{{ formatTime(item.update_time) }}</div>
                                     </div>
                                 </div>
                                 <div class="config-item-actions">
@@ -313,11 +318,11 @@
                                     </div>
                                     <div class="config-field">
                                         <div class="config-field-label">创建时间</div>
-                                        <div class="config-field-value">{{ item.create_time }}</div>
+                                        <div class="config-field-value">{{ formatTime(item.create_time) }}</div>
                                     </div>
                                     <div class="config-field">
                                         <div class="config-field-label">更新时间</div>
-                                        <div class="config-field-value">{{ item.update_time }}</div>
+                                        <div class="config-field-value">{{ formatTime(item.update_time) }}</div>
                                     </div>
                                 </div>
                                 <div class="config-item-actions">
@@ -376,7 +381,7 @@
                                     </div>
                                     <div class="config-field">
                                         <div class="config-field-label">更新时间</div>
-                                        <div class="config-field-value">{{ item.update_time }}</div>
+                                        <div class="config-field-value">{{ formatTime(item.update_time) }}</div>
                                     </div>
                                 </div>
                                 <div class="config-item-actions">
@@ -505,6 +510,20 @@
 
                 // 当前激活的标签页
                 const activeTab = ref('rebate');
+
+                // 时间格式化函数
+                const formatTime = (timeStr) => {
+                    if (!timeStr) return '-';
+                    // 处理 ISO 8601 格式: 2026-01-27T16:38:30+08:00
+                    const date = new Date(timeStr);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hours = String(date.getHours()).padStart(2, '0');
+                    const minutes = String(date.getMinutes()).padStart(2, '0');
+                    const seconds = String(date.getSeconds()).padStart(2, '0');
+                    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+                };
 
                 // ========== 返点配置 ==========
                 const rebateList = ref([]);
@@ -789,6 +808,7 @@
 
                 return {
                     activeTab,
+                    formatTime,
                     // 返点配置
                     rebateList,
                     rebateDialogVisible,
