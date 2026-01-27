@@ -16,26 +16,42 @@ import (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	// 添加CORS中间件
+	server.Use(func(next http.HandlerFunc) http.HandlerFunc {
+		return func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+
+			next(w, r)
+		}
+	})
+
 	// 添加静态文件服务
 	webDir := filepath.Join("..", "..", "web")
-	server.AddRoutes(
-		[]rest.Route{
-			{
-				Method: http.MethodGet,
-				Path:   "/",
-				Handler: func(w http.ResponseWriter, r *http.Request) {
-					http.ServeFile(w, r, filepath.Join(webDir, "admin.html"))
-				},
-			},
-			{
-				Method: http.MethodGet,
-				Path:   "/admin",
-				Handler: func(w http.ResponseWriter, r *http.Request) {
-					http.ServeFile(w, r, filepath.Join(webDir, "admin.html"))
-				},
-			},
+
+	// 静态文件服务器 - 直接暴露web目录下的所有文件
+	server.AddRoute(rest.Route{
+		Method: http.MethodGet,
+		Path:   "/web/:file",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			http.StripPrefix("/web", http.FileServer(http.Dir(webDir))).ServeHTTP(w, r)
 		},
-	)
+	})
+
+	// 根路径重定向到主页
+	server.AddRoute(rest.Route{
+		Method: http.MethodGet,
+		Path:   "/",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
+		},
+	})
 
 	server.AddRoutes(
 		[]rest.Route{

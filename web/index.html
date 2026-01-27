@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>媒体报表系统 - 配置管理中心</title>
+    <!-- Element Plus CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
+    <!-- Element Plus Icons -->
+    <link rel="stylesheet" href="https://unpkg.com/@element-plus/icons-vue@2.1.0/dist/index.css" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        #app {
+            min-height: 100vh;
+        }
+
+        .main-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px 0;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-title {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .main-container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+
+        .tab-content {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+        }
+
+        .action-bar {
+            margin-bottom: 20px;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .el-tabs {
+            --el-tabs-header-height: 48px;
+        }
+
+        .el-tabs__item {
+            font-size: 16px;
+            font-weight: 500;
+        }
+
+        .form-label-required::before {
+            content: '* ';
+            color: #f56c6c;
+        }
+
+        /* 卡片列表样式 */
+        .config-list {
+            display: grid;
+            gap: 16px;
+        }
+
+        .config-item {
+            background: white;
+            border: 1px solid #e4e7ed;
+            border-radius: 8px;
+            padding: 20px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .config-item:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .config-item-left {
+            flex: 1;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            align-items: center;
+        }
+
+        .config-field {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .config-field-label {
+            font-size: 12px;
+            color: #909399;
+            margin-bottom: 4px;
+        }
+
+        .config-field-value {
+            font-size: 14px;
+            color: #303133;
+            font-weight: 500;
+        }
+
+        .config-item-actions {
+            display: flex;
+            gap: 8px;
+            margin-left: 20px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #909399;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        .footer {
+            text-align: center;
+            color: white;
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <!-- 头部 -->
+        <div class="main-header">
+            <div class="header-content">
+                <div class="header-title">📊 媒体报表系统 - 配置管理中心</div>
+                <div class="header-subtitle">Configuration Management Center</div>
+            </div>
+        </div>
+
+        <!-- 主容器 -->
+        <div class="main-container">
+            <!-- 统计卡片 -->
+            <div class="stats-card">
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value">{{ rebateList.length }}</div>
+                        <div class="stat-label">返点配置</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ serviceFeeList.length }}</div>
+                        <div class="stat-label">服务费配置</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ taskTypeList.length }}</div>
+                        <div class="stat-label">任务类型</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">{{ activeTaskCount }}</div>
+                        <div class="stat-label">启用任务</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 标签页 -->
+            <el-tabs v-model="activeTab" type="card">
+                <!-- 返点配置 -->
+                <el-tab-pane label="💰 返点配置" name="rebate">
+                    <div class="tab-content">
+                        <div class="action-bar">
+                            <el-button type="primary" @click="showRebateDialog('create')" icon="Plus">
+                                新建返点配置
+                            </el-button>
+                            <el-button @click="loadRebateList" icon="Refresh">
+                                刷新
+                            </el-button>
+                        </div>
+
+                        <div class="config-list" v-if="rebateList.length > 0">
+                            <div class="config-item" v-for="(item, index) in rebateList" :key="item.id">
+                                <div class="config-item-left">
+                                    <div class="config-field">
+                                        <div class="config-field-label">主体</div>
+                                        <div class="config-field-value">{{ item.subject }}</div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">端口</div>
+                                        <div class="config-field-value">{{ item.port }}</div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">返点率</div>
+                                        <div class="config-field-value">
+                                            <el-tag>{{ (item.rebate_rate * 100).toFixed(2) }}%</el-tag>
+                                        </div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">主体类型</div>
+                                        <div class="config-field-value">
+                                            <el-tag :type="item.subject_type === 1 ? 'success' : 'warning'">
+                                                {{ item.subject_type === 1 ? '京东主体' : '三方主体' }}
+                                            </el-tag>
+                                        </div>
+                                    </div>
+                                    <div class="config-field" v-if="item.remark">
+                                        <div class="config-field-label">备注</div>
+                                        <div class="config-field-value">{{ item.remark }}</div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">更新时间</div>
+                                        <div class="config-field-value">{{ item.update_time }}</div>
+                                    </div>
+                                </div>
+                                <div class="config-item-actions">
+                                    <el-button size="small" type="primary" @click="showRebateDialog('edit', item)">编辑</el-button>
+                                    <el-button size="small" type="danger" @click="deleteRebate(item)">删除</el-button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="empty-state" v-else>
+                            <div class="empty-state-icon">📝</div>
+                            <div>暂无返点配置，点击上方按钮新建</div>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <!-- 服务费配置 -->
+                <el-tab-pane label="🏢 服务费配置" name="servicefee">
+                    <div class="tab-content">
+                        <div class="action-bar">
+                            <el-button type="primary" @click="showServiceFeeDialog('create')" icon="Plus">
+                                新建服务费配置
+                            </el-button>
+                            <el-button @click="loadServiceFeeList" icon="Refresh">
+                                刷新
+                            </el-button>
+                        </div>
+
+                        <div class="config-list" v-if="serviceFeeList.length > 0">
+                            <div class="config-item" v-for="(item, index) in serviceFeeList" :key="item.id">
+                                <div class="config-item-left">
+                                    <div class="config-field">
+                                        <div class="config-field-label">服务商</div>
+                                        <div class="config-field-value">{{ item.service_provider }}</div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">服务费率</div>
+                                        <div class="config-field-value">
+                                            <el-tag type="success">{{ (item.fee_rate * 100).toFixed(2) }}%</el-tag>
+                                        </div>
+                                    </div>
+                                    <div class="config-field" v-if="item.remark">
+                                        <div class="config-field-label">备注</div>
+                                        <div class="config-field-value">{{ item.remark }}</div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">创建时间</div>
+                                        <div class="config-field-value">{{ item.create_time }}</div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">更新时间</div>
+                                        <div class="config-field-value">{{ item.update_time }}</div>
+                                    </div>
+                                </div>
+                                <div class="config-item-actions">
+                                    <el-button size="small" type="primary" @click="showServiceFeeDialog('edit', item)">编辑</el-button>
+                                    <el-button size="small" type="danger" @click="deleteServiceFee(item)">删除</el-button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="empty-state" v-else>
+                            <div class="empty-state-icon">🏢</div>
+                            <div>暂无服务费配置，点击上方按钮新建</div>
+                        </div>
+                    </div>
+                </el-tab-pane>
+
+                <!-- 任务类型配置 -->
+                <el-tab-pane label="📋 任务类型配置" name="tasktype">
+                    <div class="tab-content">
+                        <div class="action-bar">
+                            <el-button type="primary" @click="showTaskTypeDialog('create')" icon="Plus">
+                                新建任务类型
+                            </el-button>
+                            <el-button @click="loadTaskTypeList" icon="Refresh">
+                                刷新
+                            </el-button>
+                        </div>
+
+                        <div class="config-list" v-if="taskTypeList.length > 0">
+                            <div class="config-item" v-for="(item, index) in taskTypeList" :key="item.id">
+                                <div class="config-item-left">
+                                    <div class="config-field">
+                                        <div class="config-field-label">任务名称</div>
+                                        <div class="config-field-value">{{ item.name }}</div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">任务代码</div>
+                                        <div class="config-field-value">{{ item.code }}</div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">媒体平台</div>
+                                        <div class="config-field-value">{{ item.media }}</div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">结算单价</div>
+                                        <div class="config-field-value">
+                                            <el-tag type="danger">¥{{ item.settlement_price.toFixed(2) }}</el-tag>
+                                        </div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">状态</div>
+                                        <div class="config-field-value">
+                                            <el-tag :type="item.status === 1 ? 'success' : 'info'">
+                                                {{ item.status === 1 ? '启用' : '停用' }}
+                                            </el-tag>
+                                        </div>
+                                    </div>
+                                    <div class="config-field">
+                                        <div class="config-field-label">更新时间</div>
+                                        <div class="config-field-value">{{ item.update_time }}</div>
+                                    </div>
+                                </div>
+                                <div class="config-item-actions">
+                                    <el-button size="small" type="primary" @click="showTaskTypeDialog('edit', item)">编辑</el-button>
+                                    <el-button size="small" type="danger" @click="deleteTaskType(item)">删除</el-button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="empty-state" v-else>
+                            <div class="empty-state-icon">📋</div>
+                            <div>暂无任务类型配置，点击上方按钮新建</div>
+                        </div>
+                    </div>
+                </el-tab-pane>
+            </el-tabs>
+        </div>
+
+        <!-- 返点配置对话框 -->
+        <el-dialog 
+            v-model="rebateDialogVisible" 
+            :title="rebateDialogMode === 'create' ? '新建返点配置' : '编辑返点配置'"
+            width="600px"
+        >
+            <el-form :model="rebateForm" label-width="100px">
+                <el-form-item label="主体" required>
+                    <el-input v-model="rebateForm.subject" placeholder="如：新杰、晴川、美数" />
+                </el-form-item>
+                <el-form-item label="端口" required>
+                    <el-input v-model="rebateForm.port" placeholder="如：优居、至也、各界" />
+                </el-form-item>
+                <el-form-item label="返点率" required>
+                    <el-input-number v-model="rebateForm.rebate_rate" :min="0" :max="1" :step="0.001" :precision="4" />
+                    <span style="margin-left: 10px; color: #909399;">{{ (rebateForm.rebate_rate * 100).toFixed(2) }}%</span>
+                </el-form-item>
+                <el-form-item label="主体类型" required>
+                    <el-radio-group v-model="rebateForm.subject_type">
+                        <el-radio :label="1">京东主体</el-radio>
+                        <el-radio :label="2">三方主体</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+                <el-form-item label="备注">
+                    <el-input v-model="rebateForm.remark" type="textarea" :rows="3" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="rebateDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitRebate">确定</el-button>
+            </template>
+        </el-dialog>
+
+        <!-- 服务费配置对话框 -->
+        <el-dialog 
+            v-model="serviceFeeDialogVisible" 
+            :title="serviceFeeDialogMode === 'create' ? '新建服务费配置' : '编辑服务费配置'"
+            width="600px"
+        >
+            <el-form :model="serviceFeeForm" label-width="100px">
+                <el-form-item label="服务商" required>
+                    <el-input v-model="serviceFeeForm.service_provider" placeholder="如：通途、蚁行、创效" />
+                </el-form-item>
+                <el-form-item label="服务费率" required>
+                    <el-input-number v-model="serviceFeeForm.fee_rate" :min="0" :max="1" :step="0.001" :precision="4" />
+                    <span style="margin-left: 10px; color: #909399;">{{ (serviceFeeForm.fee_rate * 100).toFixed(2) }}%</span>
+                </el-form-item>
+                <el-form-item label="备注">
+                    <el-input v-model="serviceFeeForm.remark" type="textarea" :rows="3" />
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="serviceFeeDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitServiceFee">确定</el-button>
+            </template>
+        </el-dialog>
+
+        <!-- 任务类型配置对话框 -->
+        <el-dialog 
+            v-model="taskTypeDialogVisible" 
+            :title="taskTypeDialogMode === 'create' ? '新建任务类型' : '编辑任务类型'"
+            width="600px"
+        >
+            <el-form :model="taskTypeForm" label-width="100px">
+                <el-form-item label="任务名称" required>
+                    <el-input v-model="taskTypeForm.name" placeholder="如：激活任务" />
+                </el-form-item>
+                <el-form-item label="任务代码" required>
+                    <el-input v-model="taskTypeForm.code" placeholder="如：ACTIVATION" />
+                </el-form-item>
+                <el-form-item label="媒体平台" required>
+                    <el-input v-model="taskTypeForm.media" placeholder="如：快手、抖音" />
+                </el-form-item>
+                <el-form-item label="结算单价" required>
+                    <el-input-number v-model="taskTypeForm.settlement_price" :min="0" :step="0.01" :precision="2" />
+                    <span style="margin-left: 10px; color: #909399;">元</span>
+                </el-form-item>
+                <el-form-item label="状态" required>
+                    <el-radio-group v-model="taskTypeForm.status">
+                        <el-radio :label="1">启用</el-radio>
+                        <el-radio :label="0">停用</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="taskTypeDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitTaskType">确定</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <!-- Vue 3 -->
+    <script src="https://unpkg.com/vue@3.3.11/dist/vue.global.js"></script>
+    <!-- Element Plus -->
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+    <!-- Element Plus Icons -->
+    <script src="https://unpkg.com/@element-plus/icons-vue@2.1.0/dist/index.iife.min.js"></script>
+    <!-- Axios -->
+    <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+
+        createApp({
+            setup() {
+                // API Base URL - 根据实际情况修改
+                const API_BASE_URL = 'http://localhost:8888';
+
+                // 当前激活的标签页
+                const activeTab = ref('rebate');
+
+                // ========== 返点配置 ==========
+                const rebateList = ref([]);
+                const rebateDialogVisible = ref(false);
+                const rebateDialogMode = ref('create');
+                const rebateForm = ref({
+                    id: null,
+                    subject: '',
+                    port: '',
+                    rebate_rate: 0.025,
+                    subject_type: 1,
+                    remark: ''
+                });
+
+                // 加载返点配置列表
+                const loadRebateList = async () => {
+                    try {
+                        const response = await axios.get(`${API_BASE_URL}/config/rebate/list`);
+                        if (response.data.code === 200) {
+                            rebateList.value = response.data.data || [];
+                        } else {
+                            ElMessage.error(response.data.message || '加载返点配置失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                // 显示返点配置对话框
+                const showRebateDialog = (mode, row = null) => {
+                    rebateDialogMode.value = mode;
+                    if (mode === 'create') {
+                        rebateForm.value = {
+                            id: null,
+                            subject: '',
+                            port: '',
+                            rebate_rate: 0.025,
+                            subject_type: 1,
+                            remark: ''
+                        };
+                    } else {
+                        rebateForm.value = { ...row };
+                    }
+                    rebateDialogVisible.value = true;
+                };
+
+                // 提交返点配置
+                const submitRebate = async () => {
+                    const url = rebateDialogMode.value === 'create' 
+                        ? `${API_BASE_URL}/config/rebate/create`
+                        : `${API_BASE_URL}/config/rebate/update`;
+                    
+                    try {
+                        const response = await axios.post(url, rebateForm.value);
+                        if (response.data.code === 200) {
+                            ElMessage.success(rebateDialogMode.value === 'create' ? '创建成功' : '更新成功');
+                            rebateDialogVisible.value = false;
+                            loadRebateList();
+                        } else {
+                            ElMessage.error(response.data.message || '操作失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                // 删除返点配置
+                const deleteRebate = async (row) => {
+                    try {
+                        await ElMessageBox.confirm('确定要删除该返点配置吗？', '提示', {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        });
+                        
+                        const response = await axios.post(`${API_BASE_URL}/config/rebate/delete`, {
+                            id: row.id
+                        });
+                        
+                        if (response.data.code === 200) {
+                            ElMessage.success('删除成功');
+                            loadRebateList();
+                        } else {
+                            ElMessage.error(response.data.message || '删除失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') {
+                            ElMessage.error('网络错误：' + error.message);
+                        }
+                    }
+                };
+
+                // ========== 服务费配置 ==========
+                const serviceFeeList = ref([]);
+                const serviceFeeDialogVisible = ref(false);
+                const serviceFeeDialogMode = ref('create');
+                const serviceFeeForm = ref({
+                    id: null,
+                    service_provider: '',
+                    fee_rate: 0.01,
+                    remark: ''
+                });
+
+                // 加载服务费配置列表
+                const loadServiceFeeList = async () => {
+                    try {
+                        const response = await axios.get(`${API_BASE_URL}/config/servicefee/list`);
+                        if (response.data.code === 200) {
+                            serviceFeeList.value = response.data.data || [];
+                        } else {
+                            ElMessage.error(response.data.message || '加载服务费配置失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                // 显示服务费配置对话框
+                const showServiceFeeDialog = (mode, row = null) => {
+                    serviceFeeDialogMode.value = mode;
+                    if (mode === 'create') {
+                        serviceFeeForm.value = {
+                            id: null,
+                            service_provider: '',
+                            fee_rate: 0.01,
+                            remark: ''
+                        };
+                    } else {
+                        serviceFeeForm.value = { ...row };
+                    }
+                    serviceFeeDialogVisible.value = true;
+                };
+
+                // 提交服务费配置
+                const submitServiceFee = async () => {
+                    const url = serviceFeeDialogMode.value === 'create' 
+                        ? `${API_BASE_URL}/config/servicefee/create`
+                        : `${API_BASE_URL}/config/servicefee/update`;
+                    
+                    try {
+                        const response = await axios.post(url, serviceFeeForm.value);
+                        if (response.data.code === 200) {
+                            ElMessage.success(serviceFeeDialogMode.value === 'create' ? '创建成功' : '更新成功');
+                            serviceFeeDialogVisible.value = false;
+                            loadServiceFeeList();
+                        } else {
+                            ElMessage.error(response.data.message || '操作失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                // 删除服务费配置
+                const deleteServiceFee = async (row) => {
+                    try {
+                        await ElMessageBox.confirm('确定要删除该服务费配置吗？', '提示', {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        });
+                        
+                        const response = await axios.post(`${API_BASE_URL}/config/servicefee/delete`, {
+                            id: row.id
+                        });
+                        
+                        if (response.data.code === 200) {
+                            ElMessage.success('删除成功');
+                            loadServiceFeeList();
+                        } else {
+                            ElMessage.error(response.data.message || '删除失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') {
+                            ElMessage.error('网络错误：' + error.message);
+                        }
+                    }
+                };
+
+                // ========== 任务类型配置 ==========
+                const taskTypeList = ref([]);
+                const taskTypeDialogVisible = ref(false);
+                const taskTypeDialogMode = ref('create');
+                const taskTypeForm = ref({
+                    id: null,
+                    name: '',
+                    code: '',
+                    media: '',
+                    settlement_price: 0,
+                    status: 1
+                });
+
+                // 加载任务类型配置列表
+                const loadTaskTypeList = async () => {
+                    try {
+                        const response = await axios.get(`${API_BASE_URL}/config/tasktype/list`);
+                        if (response.data.code === 200) {
+                            taskTypeList.value = response.data.data || [];
+                        } else {
+                            ElMessage.error(response.data.message || '加载任务类型失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                // 显示任务类型配置对话框
+                const showTaskTypeDialog = (mode, row = null) => {
+                    taskTypeDialogMode.value = mode;
+                    if (mode === 'create') {
+                        taskTypeForm.value = {
+                            id: null,
+                            name: '',
+                            code: '',
+                            media: '',
+                            settlement_price: 0,
+                            status: 1
+                        };
+                    } else {
+                        taskTypeForm.value = { ...row };
+                    }
+                    taskTypeDialogVisible.value = true;
+                };
+
+                // 提交任务类型配置
+                const submitTaskType = async () => {
+                    const url = taskTypeDialogMode.value === 'create' 
+                        ? `${API_BASE_URL}/config/tasktype/create`
+                        : `${API_BASE_URL}/config/tasktype/update`;
+                    
+                    try {
+                        const response = await axios.post(url, taskTypeForm.value);
+                        if (response.data.code === 200) {
+                            ElMessage.success(taskTypeDialogMode.value === 'create' ? '创建成功' : '更新成功');
+                            taskTypeDialogVisible.value = false;
+                            loadTaskTypeList();
+                        } else {
+                            ElMessage.error(response.data.message || '操作失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                // 删除任务类型配置
+                const deleteTaskType = async (row) => {
+                    try {
+                        await ElMessageBox.confirm('确定要删除该任务类型吗？', '提示', {
+                            confirmButtonText: '确定',
+                            cancelButtonText: '取消',
+                            type: 'warning'
+                        });
+                        
+                        const response = await axios.post(`${API_BASE_URL}/config/tasktype/delete`, {
+                            id: row.id
+                        });
+                        
+                        if (response.data.code === 200) {
+                            ElMessage.success('删除成功');
+                            loadTaskTypeList();
+                        } else {
+                            ElMessage.error(response.data.message || '删除失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') {
+                            ElMessage.error('网络错误：' + error.message);
+                        }
+                    }
+                };
+
+                // 计算启用的任务数量
+                const activeTaskCount = computed(() => {
+                    return taskTypeList.value.filter(task => task.status === 1).length;
+                });
+
+                // 组件挂载时加载数据
+                onMounted(() => {
+                    loadRebateList();
+                    loadServiceFeeList();
+                    loadTaskTypeList();
+                });
+
+                return {
+                    activeTab,
+                    // 返点配置
+                    rebateList,
+                    rebateDialogVisible,
+                    rebateDialogMode,
+                    rebateForm,
+                    loadRebateList,
+                    showRebateDialog,
+                    submitRebate,
+                    deleteRebate,
+                    // 服务费配置
+                    serviceFeeList,
+                    serviceFeeDialogVisible,
+                    serviceFeeDialogMode,
+                    serviceFeeForm,
+                    loadServiceFeeList,
+                    showServiceFeeDialog,
+                    submitServiceFee,
+                    deleteServiceFee,
+                    // 任务类型配置
+                    taskTypeList,
+                    taskTypeDialogVisible,
+                    taskTypeDialogMode,
+                    taskTypeForm,
+                    loadTaskTypeList,
+                    showTaskTypeDialog,
+                    submitTaskType,
+                    deleteTaskType,
+                    activeTaskCount
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>
+                </div>
+            </a>
+        </div>
+
+        <div class="footer">
+            <p>© 2026 媒体报表系统 | Powered by Go-Zero</p>
+        </div>
+    </div>
+</body>
+</html>
