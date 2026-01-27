@@ -16,6 +16,29 @@ import (
 	"media_report/service/api/internal/types"
 )
 
+// AccountReportData 账户报表数据
+type AccountReportData struct {
+	AdvertiserId    int64   // 账户ID
+	AdvertiserName  string  // 账户名称
+	Subject         string  // 主体
+	Port            string  // 端口
+	ServiceProvider string  // 服务商
+	TaskCode        string  // 任务代码
+	Cost            float64 // 消耗
+	CashCost        float64 // 现金消耗
+	RebateCost      float64 // 返点消耗
+	ShowCnt         int64   // 曝光
+	ClickCnt        int64   // 点击
+	Ctr             string  // 点击率
+	ConvertCnt      int64   // 转化
+	ConversionCost  string  // 转化成本
+	ConversionRate  string  // 转化率
+	ServiceFeeCost  float64 // 服务费成本
+	Revenue         float64 // 预估收入
+	Profit          float64 // 预估利润
+	ProfitRate      float64 // 预估利润率
+}
+
 // executeJuliangReportJob 执行巨量报表任务
 func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 	ctx := context.Background()
@@ -74,11 +97,15 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 	var totalShowCnt int64          // 总曝光
 	var totalClickCnt int64         // 总点击
 	var totalConvertCnt int64       // 总转化
+	var totalConversionCost float64 // 总转化成本
 	var totalAccounts int           // 总账户数
 	var totalServiceFeeCost float64 // 总服务商成本
 	var totalRevenue float64        // 总预估收入
 	var totalProfit float64         // 总预估利润
 	var skippedAccounts int         // 跳过的账户数
+
+	// 保存每条账户数据
+	var accountReports []AccountReportData
 
 	// 分页查询
 	page := 1
@@ -172,6 +199,10 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 			convertCnt := parseInt64(account.ConvertCnt) // 转化
 			totalConvertCnt += convertCnt
 
+			// 累加转化成本
+			conversionCost := parseNumber(account.ConversionCost)
+			totalConversionCost += conversionCost
+
 			// 查询返点率（主体-端口）
 			rebateKey := fmt.Sprintf("%s-%s", subject, port)
 			rebateRate := rebateMap[rebateKey]
@@ -211,9 +242,32 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 			// 计算预估利润率 = 预估利润/预估收入
 			profitRate := profit / revenue
 
-			logx.Infof("账户 %s (%d) [%s-%s-%s-%s]: 消耗=%.2f, 现金消耗=%.2f, 返点消耗=%.2f, 曝光=%d, 点击=%d, 转化=%d, 转化成本=%s, 转化率=%s, 服务费=%.2f, 预估收入=%.2f, 预估利润=%.2f, 预估利润率=%.2f",
+			logx.Infof("账户 %s (%d) [%s-%s-%s-%s]: 消耗=%.2f, 现金消耗=%.2f, 返点消耗=%.2f, 曝光=%d, 点击=%d, 转化=%d, 转化成本=%.2f, 转化率=%s, 服务费=%.2f, 预估收入=%.2f, 预估利润=%.2f, 预估利润率=%.2f",
 				account.AdvertiserName, account.AdvertiserId, subject, port, serviceProvider, taskCode,
-				cost, cashCost, rebateCost, showCnt, clickCnt, convertCnt, account.ConversionCost, account.ConversionRate, serviceFeeCost, revenue, profit, profitRate)
+				cost, cashCost, rebateCost, showCnt, clickCnt, convertCnt, conversionCost, account.ConversionRate, serviceFeeCost, revenue, profit, profitRate)
+
+			// 保存账户数据
+			accountReports = append(accountReports, AccountReportData{
+				AdvertiserId:    account.AdvertiserId,
+				AdvertiserName:  account.AdvertiserName,
+				Subject:         subject,
+				Port:            port,
+				ServiceProvider: serviceProvider,
+				TaskCode:        taskCode,
+				Cost:            cost,
+				CashCost:        cashCost,
+				RebateCost:      rebateCost,
+				ShowCnt:         showCnt,
+				ClickCnt:        clickCnt,
+				Ctr:             account.Ctr,
+				ConvertCnt:      convertCnt,
+				ConversionCost:  account.ConversionCost,
+				ConversionRate:  account.ConversionRate,
+				ServiceFeeCost:  serviceFeeCost,
+				Revenue:         revenue,
+				Profit:          profit,
+				ProfitRate:      profitRate,
+			})
 		}
 
 		// 检查是否还有更多数据
@@ -230,13 +284,20 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 		return
 	}
 
-	// 计算总转化成本和总转化率
-	var avgConversionCost float64
-	var avgConversionRate float64
-
-	if totalConvertCnt > 0 {
-		avgConversionCost = totalCost / float64(totalConvertCnt)
+	// 计算总点击率
+	var avgCtr float64
+	if totalShowCnt > 0 {
+		avgCtr = float64(totalClickCnt) / float64(totalShowCnt) * 100
 	}
+
+	// 计算平均转化成本
+	var avgConversionCost float64
+	if totalConvertCnt > 0 {
+		avgConversionCost = totalConversionCost / float64(totalConvertCnt)
+	}
+
+	// 计算总转化率
+	var avgConversionRate float64
 	if totalClickCnt > 0 {
 		avgConversionRate = float64(totalConvertCnt) / float64(totalClickCnt) * 100
 	}
@@ -247,13 +308,19 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 		profitRate = (totalProfit / totalRevenue) * 100
 	}
 
-	logx.Infof("巨量报表汇总 - 账户数: %d, 跳过: %d, 总消耗: %.2f, 现金消耗: %.2f, 返点消耗: %.2f, 总曝光: %d, 总点击: %d, 总转化: %d, 平均转化成本: %.2f, 转化率: %.2f%%, 服务费成本: %.2f, 预估收入: %.2f, 预估利润: %.2f, 利润率: %.2f%%",
-		totalAccounts, skippedAccounts, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, totalConvertCnt,
+	logx.Infof("巨量报表汇总 - 账户数: %d, 跳过: %d, 总消耗: %.2f, 现金消耗: %.2f, 返点消耗: %.2f, 总曝光: %d, 总点击: %d, 点击率: %.2f%%, 总转化: %d, 平均转化成本: %.2f, 转化率: %.2f%%, 服务费成本: %.2f, 预估收入: %.2f, 预估利润: %.2f, 利润率: %.2f%%",
+		totalAccounts, skippedAccounts, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, avgCtr, totalConvertCnt,
 		avgConversionCost, avgConversionRate, totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
+
+	logx.Infof("已保存 %d 条账户数据，待后续生成Excel报表", len(accountReports))
+
+	// TODO: 后续在这里调用生成Excel并上传到服务器的函数，获取下载URL
+	// excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports)
+	excelDownloadURL := "" // 临时占位符，等实现Excel生成和上传后填入真实URL
 
 	// 发送钉钉通知
 	sendJuliangDingTalkNotification(ctx, dingTalk, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt,
-		totalConvertCnt, avgConversionCost, avgConversionRate, totalAccounts, totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
+		totalConvertCnt, avgConversionCost, avgConversionRate, avgCtr, totalAccounts, totalServiceFeeCost, totalRevenue, totalProfit, profitRate, excelDownloadURL)
 
 	logx.Infof("巨量报表任务执行完成 - %s", time.Now().Format("2006-01-02 15:04:05"))
 }
@@ -261,8 +328,8 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 // sendJuliangDingTalkNotification 发送巨量钉钉通知
 func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.DingTalkConfig,
 	totalCost, totalCashCost, totalRebateCost float64, totalShowCnt, totalClickCnt, totalConvertCnt int64,
-	avgConversionCost, avgConversionRate float64, totalAccounts int,
-	totalServiceFeeCost, totalRevenue, totalProfit, profitRate float64) {
+	avgConversionCost, avgConversionRate, avgCtr float64, totalAccounts int,
+	totalServiceFeeCost, totalRevenue, totalProfit, profitRate float64, excelDownloadURL string) {
 
 	if !dingConfig.Enabled || dingConfig.WebhookURL == "" {
 		logx.Info("钉钉通知未启用，跳过发送")
@@ -280,30 +347,34 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 			"**账户数**：%d  \n"+
 			"**总消耗**：%.2f  \n"+
 			"**现金消耗**：%.2f  \n"+
-			"**返点消耗**：%.2f  \n"+
-			"**服务费成本**：%.2f  \n"+
+			"**返后消耗**：%.2f  \n"+
+			"**曝光量**：%d  \n"+
+			"**点击量**：%d  \n"+
+			"**点击率**：%.2f%%  \n"+
 			"**注册转化数**：%d  \n"+
 			"**转化成本**：%.2f  \n"+
 			"**转化率**：%.2f%%  \n"+
-			"**曝光量**：%d  \n"+
-			"**点击量**：%d  \n"+
+			"**服务费成本**：%.2f  \n"+
 			"**预估收入**：%.2f  \n"+
 			"**预估利润**：%.2f  \n"+
-			"**利润率**：%.2f%%",
+			"**利润率**：%.2f%%  \n\n"+
+			"详细账户信息请下载文件：[下载](%s)",
 		timeStr,
 		totalAccounts,
 		totalCost,
 		totalCashCost,
 		totalRebateCost,
-		totalServiceFeeCost,
+		totalShowCnt,
+		totalClickCnt,
+		avgCtr,
 		totalConvertCnt,
 		avgConversionCost,
 		avgConversionRate,
-		totalShowCnt,
-		totalClickCnt,
+		totalServiceFeeCost,
 		totalRevenue,
 		totalProfit,
 		profitRate,
+		excelDownloadURL,
 	)
 
 	msg := map[string]interface{}{
