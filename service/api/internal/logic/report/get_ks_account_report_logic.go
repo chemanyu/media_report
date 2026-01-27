@@ -102,8 +102,8 @@ func (l *GetKsAccountReportLogic) GetKsAccountReport(req *types.KsAccountReportR
 		conversionRatio := fmt.Sprintf("%.2f%%", detail.ConversionRatio*100)
 
 		// 计算消耗和转化成本，保留两位小数
-		charge := math.Round(detail.Charge*1.3*100) / 100
-		conversionCost := math.Round(detail.ConversionCost*1.3*100) / 100
+		charge := math.Round(detail.Charge*1.2*100) / 100
+		conversionCost := math.Round(detail.ConversionCost*1.2*100) / 100
 
 		// 在日期后添加小时
 		timeWithHour := fmt.Sprintf("%s %s", detail.StatDate, currentHour)
@@ -111,9 +111,9 @@ func (l *GetKsAccountReportLogic) GetKsAccountReport(req *types.KsAccountReportR
 		dataItems = append(dataItems, &types.KsReportDataItem{
 			Time:            timeWithHour,         // 统计日期 + 小时
 			Account:         "美致dsp",              // 账户名称（可配置）
-			Charge:          charge,               // 消耗 * 1.3，保留两位小数
+			Charge:          charge,               // 消耗 * 1.2，保留两位小数
 			Activation:      detail.Activation,    // 注册转化数（激活数）
-			ConversionCost:  conversionCost,       // 转化成本 * 1.3，保留两位小数
+			ConversionCost:  conversionCost,       // 转化成本 * 1.2，保留两位小数
 			AdShow:          int64(detail.AdShow), // 曝光数
 			Bclick:          detail.Bclick,        // 点击数
 			ConversionRatio: conversionRatio,      // 转化率（格式化）
