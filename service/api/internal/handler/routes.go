@@ -6,6 +6,7 @@ package handler
 import (
 	"net/http"
 
+	config "media_report/service/api/internal/handler/config"
 	report "media_report/service/api/internal/handler/report"
 	update "media_report/service/api/internal/handler/update"
 	"media_report/service/api/internal/svc"
@@ -14,6 +15,93 @@ import (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 创建返点配置
+				Method:  http.MethodPost,
+				Path:    "/config/rebate/create",
+				Handler: config.CreateRebateHandler(serverCtx),
+			},
+			{
+				// 删除返点配置
+				Method:  http.MethodPost,
+				Path:    "/config/rebate/delete",
+				Handler: config.DeleteRebateHandler(serverCtx),
+			},
+			{
+				// 获取返点配置列表
+				Method:  http.MethodGet,
+				Path:    "/config/rebate/list",
+				Handler: config.GetRebateListHandler(serverCtx),
+			},
+			{
+				// 更新返点配置
+				Method:  http.MethodPost,
+				Path:    "/config/rebate/update",
+				Handler: config.UpdateRebateHandler(serverCtx),
+			},
+		},
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 创建服务费配置
+				Method:  http.MethodPost,
+				Path:    "/config/servicefee/create",
+				Handler: config.CreateServiceFeeHandler(serverCtx),
+			},
+			{
+				// 删除服务费配置
+				Method:  http.MethodPost,
+				Path:    "/config/servicefee/delete",
+				Handler: config.DeleteServiceFeeHandler(serverCtx),
+			},
+			{
+				// 获取服务费配置列表
+				Method:  http.MethodGet,
+				Path:    "/config/servicefee/list",
+				Handler: config.GetServiceFeeListHandler(serverCtx),
+			},
+			{
+				// 更新服务费配置
+				Method:  http.MethodPost,
+				Path:    "/config/servicefee/update",
+				Handler: config.UpdateServiceFeeHandler(serverCtx),
+			},
+		},
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 创建任务类型
+				Method:  http.MethodPost,
+				Path:    "/config/tasktype/create",
+				Handler: config.CreateTaskTypeHandler(serverCtx),
+			},
+			{
+				// 删除任务类型
+				Method:  http.MethodPost,
+				Path:    "/config/tasktype/delete",
+				Handler: config.DeleteTaskTypeHandler(serverCtx),
+			},
+			{
+				// 获取任务类型列表
+				Method:  http.MethodGet,
+				Path:    "/config/tasktype/list",
+				Handler: config.GetTaskTypeListHandler(serverCtx),
+			},
+			{
+				// 更新任务类型
+				Method:  http.MethodPost,
+				Path:    "/config/tasktype/update",
+				Handler: config.UpdateTaskTypeHandler(serverCtx),
+			},
+		},
+	)
+
 	server.AddRoutes(
 		[]rest.Route{
 			{

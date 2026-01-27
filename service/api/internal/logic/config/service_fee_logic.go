@@ -1,0 +1,164 @@
+package config
+
+import (
+	"context"
+	"time"
+
+	"media_report/service/api/internal/model"
+	"media_report/service/api/internal/svc"
+	"media_report/service/api/internal/types"
+
+	"github.com/zeromicro/go-zero/core/logx"
+)
+
+// ==================== 获取服务费配置列表 ====================
+
+type GetServiceFeeListLogic struct {
+	logx.Logger
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+}
+
+func NewGetServiceFeeListLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetServiceFeeListLogic {
+	return &GetServiceFeeListLogic{
+		Logger: logx.WithContext(ctx),
+		ctx:    ctx,
+		svcCtx: svcCtx,
+	}
+}
+
+func (l *GetServiceFeeListLogic) GetServiceFeeList() (resp *types.ServiceFeeListResp, err error) {
+	fees, err := model.GetAllServiceFees(l.svcCtx.DB)
+	if err != nil {
+		l.Logger.Errorf("获取服务费配置列表失败: %v", err)
+		return &types.ServiceFeeListResp{
+			Code:    500,
+			Message: "获取失败: " + err.Error(),
+			Data:    []*types.ServiceFeeResp{},
+		}, nil
+	}
+
+	var list []*types.ServiceFeeResp
+	for _, f := range fees {
+		list = append(list, &types.ServiceFeeResp{
+			ID:              f.ID,
+			ServiceProvider: f.ServiceProvider,
+			FeeRate:         f.FeeRate,
+			Remark:          f.Remark,
+			UpdateTime:      f.UpdateTime.Format(time.RFC3339),
+			CreateTime:      f.CreateTime.Format(time.RFC3339),
+		})
+	}
+
+	return &types.ServiceFeeListResp{
+		Code:    200,
+		Message: "成功",
+		Data:    list,
+	}, nil
+}
+
+// ==================== 创建服务费配置 ====================
+
+type CreateServiceFeeLogic struct {
+	logx.Logger
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+}
+
+func NewCreateServiceFeeLogic(ctx context.Context, svcCtx *svc.ServiceContext) *CreateServiceFeeLogic {
+	return &CreateServiceFeeLogic{
+		Logger: logx.WithContext(ctx),
+		ctx:    ctx,
+		svcCtx: svcCtx,
+	}
+}
+
+func (l *CreateServiceFeeLogic) CreateServiceFee(req *types.CreateServiceFeeReq) (resp *types.ServiceFeeCommonResp, err error) {
+	fee := &model.ServiceFee{
+		ServiceProvider: req.ServiceProvider,
+		FeeRate:         req.FeeRate,
+		Remark:          req.Remark,
+	}
+
+	if err := model.CreateServiceFee(l.svcCtx.DB, fee); err != nil {
+		l.Logger.Errorf("创建服务费配置失败: %v", err)
+		return &types.ServiceFeeCommonResp{
+			Code:    500,
+			Message: "创建失败: " + err.Error(),
+		}, nil
+	}
+
+	return &types.ServiceFeeCommonResp{
+		Code:    200,
+		Message: "创建成功",
+	}, nil
+}
+
+// ==================== 更新服务费配置 ====================
+
+type UpdateServiceFeeLogic struct {
+	logx.Logger
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+}
+
+func NewUpdateServiceFeeLogic(ctx context.Context, svcCtx *svc.ServiceContext) *UpdateServiceFeeLogic {
+	return &UpdateServiceFeeLogic{
+		Logger: logx.WithContext(ctx),
+		ctx:    ctx,
+		svcCtx: svcCtx,
+	}
+}
+
+func (l *UpdateServiceFeeLogic) UpdateServiceFee(req *types.UpdateServiceFeeReq) (resp *types.ServiceFeeCommonResp, err error) {
+	fee := &model.ServiceFee{
+		ID:              req.ID,
+		ServiceProvider: req.ServiceProvider,
+		FeeRate:         req.FeeRate,
+		Remark:          req.Remark,
+	}
+
+	if err := model.UpdateServiceFee(l.svcCtx.DB, fee); err != nil {
+		l.Logger.Errorf("更新服务费配置失败: %v", err)
+		return &types.ServiceFeeCommonResp{
+			Code:    500,
+			Message: "更新失败: " + err.Error(),
+		}, nil
+	}
+
+	return &types.ServiceFeeCommonResp{
+		Code:    200,
+		Message: "更新成功",
+	}, nil
+}
+
+// ==================== 删除服务费配置 ====================
+
+type DeleteServiceFeeLogic struct {
+	logx.Logger
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+}
+
+func NewDeleteServiceFeeLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DeleteServiceFeeLogic {
+	return &DeleteServiceFeeLogic{
+		Logger: logx.WithContext(ctx),
+		ctx:    ctx,
+		svcCtx: svcCtx,
+	}
+}
+
+func (l *DeleteServiceFeeLogic) DeleteServiceFee(req *types.DeleteServiceFeeReq) (resp *types.ServiceFeeCommonResp, err error) {
+	if err := model.DeleteServiceFee(l.svcCtx.DB, req.ID); err != nil {
+		l.Logger.Errorf("删除服务费配置失败: %v", err)
+		return &types.ServiceFeeCommonResp{
+			Code:    500,
+			Message: "删除失败: " + err.Error(),
+		}, nil
+	}
+
+	return &types.ServiceFeeCommonResp{
+		Code:    200,
+		Message: "删除成功",
+	}, nil
+}
