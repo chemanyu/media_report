@@ -5,6 +5,7 @@ package handler
 
 import (
 	"net/http"
+	"path/filepath"
 
 	config "media_report/service/api/internal/handler/config"
 	report "media_report/service/api/internal/handler/report"
@@ -15,6 +16,27 @@ import (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	// 添加静态文件服务
+	webDir := filepath.Join("..", "..", "web")
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method: http.MethodGet,
+				Path:   "/",
+				Handler: func(w http.ResponseWriter, r *http.Request) {
+					http.ServeFile(w, r, filepath.Join(webDir, "admin.html"))
+				},
+			},
+			{
+				Method: http.MethodGet,
+				Path:   "/admin",
+				Handler: func(w http.ResponseWriter, r *http.Request) {
+					http.ServeFile(w, r, filepath.Join(webDir, "admin.html"))
+				},
+			},
+		},
+	)
+
 	server.AddRoutes(
 		[]rest.Route{
 			{
