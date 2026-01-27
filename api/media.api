@@ -30,14 +30,33 @@ type (
 		Message string              `json:"message"`
 		Data    []*KsReportDataItem `json:"data"`
 	}
+	// 更新聚量Cookie请求
+	UpdateJuliangCookieReq {
+		Cookie    string `json:"cookie"`
+		CsrfToken string `json:"csrfToken"`
+	}
+	// 更新聚量Cookie响应
+	UpdateJuliangCookieResp {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
 )
 
 @server (
-	group:  report
+	group: report
 )
 service media-api {
 	@doc "获取快手账户报表"
 	@handler getKsAccountReport
 	post /report/ks/account (KsAccountReportReq) returns (KsAccountReportResp)
+}
+
+@server (
+	group: update
+)
+service media-api {
+	@doc "更新聚量Cookie"
+	@handler updateJuliangCookie
+	post /update/juliang/cookie (UpdateJuliangCookieReq) returns (UpdateJuliangCookieResp)
 }
 

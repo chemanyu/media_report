@@ -3,7 +3,6 @@
 
 package types
 
-// 对外返回的请求和响应结构
 type KsAccountReportReq struct {
 	StartDate           string `json:"start_date"`
 	EndDate             string `json:"end_date"`
@@ -28,6 +27,16 @@ type KsReportDataItem struct {
 	ConversionRatio string  `json:"转化率"`   // 转化率（格式化为百分比字符串）
 }
 
+type UpdateJuliangCookieReq struct {
+	Cookie    string `json:"cookie"`
+	CsrfToken string `json:"csrfToken"`
+}
+
+type UpdateJuliangCookieResp struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 // 快手 API 原始响应结构
 type KsApiResponse struct {
 	Code      int               `json:"code"`
@@ -49,19 +58,22 @@ type KsApiReportDetail struct {
 	Activation      int64   `json:"activation"`       // 激活数
 	ConversionCost  float64 `json:"conversion_cost"`  // 转化成本
 	ConversionRatio float64 `json:"conversion_ratio"` // 转化率
+	StatDatetime    string  `json:"stat_datetime"`    // 统计时间
 	StatDate        string  `json:"stat_date"`        // 统计日期
 }
 
-// 更新token相应结构体
-// TokenRefreshResponse token 刷新响应
+// Token 刷新响应
 type TokenRefreshResponse struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
-	Data    struct {
-		AccessToken           string `json:"access_token"`
-		RefreshToken          string `json:"refresh_token"`
-		AccessTokenExpiresIn  int    `json:"access_token_expires_in"`
-		RefreshTokenExpiresIn int    `json:"refresh_token_expires_in"`
-	} `json:"data"`
-	RequestId string `json:"request_id"`
+	Code      int                      `json:"code"`
+	Message   string                   `json:"message"`
+	RequestId string                   `json:"request_id"`
+	Data      TokenRefreshResponseData `json:"data"`
+}
+
+type TokenRefreshResponseData struct {
+	AccessToken           string `json:"access_token"`
+	RefreshToken          string `json:"refresh_token"`
+	ExpiresIn             int64  `json:"expires_in"`
+	AccessTokenExpiresIn  int64  `json:"access_token_expires_in"`
+	RefreshTokenExpiresIn int64  `json:"refresh_token_expires_in"`
 }
