@@ -3,6 +3,7 @@
 
 package types
 
+// 快手账户报表请求
 type KsAccountReportReq struct {
 	StartDate           string `json:"start_date"`
 	EndDate             string `json:"end_date"`
@@ -10,12 +11,14 @@ type KsAccountReportReq struct {
 	TemporalGranularity string `json:"temporal_granularity,omitempty"`
 }
 
+// 快手账户报表响应
 type KsAccountReportResp struct {
 	Code    int                 `json:"code"`
 	Message string              `json:"message"`
 	Data    []*KsReportDataItem `json:"data"`
 }
 
+// 快手报表数据项
 type KsReportDataItem struct {
 	Time            string  `json:"时间"`    // 时间
 	Account         string  `json:"账户"`    // 账户名称
@@ -25,16 +28,6 @@ type KsReportDataItem struct {
 	AdShow          int64   `json:"曝光"`    // 曝光数
 	Bclick          int64   `json:"点击"`    // 点击数
 	ConversionRatio string  `json:"转化率"`   // 转化率（格式化为百分比字符串）
-}
-
-type UpdateJuliangCookieReq struct {
-	Cookie    string `json:"cookie"`
-	CsrfToken string `json:"csrfToken"`
-}
-
-type UpdateJuliangCookieResp struct {
-	Code    int    `json:"code"`
-	Message string `json:"message"`
 }
 
 // 快手 API 原始响应结构
@@ -60,20 +53,4 @@ type KsApiReportDetail struct {
 	ConversionRatio float64 `json:"conversion_ratio"` // 转化率
 	StatDatetime    string  `json:"stat_datetime"`    // 统计时间
 	StatDate        string  `json:"stat_date"`        // 统计日期
-}
-
-// Token 刷新响应
-type TokenRefreshResponse struct {
-	Code      int                      `json:"code"`
-	Message   string                   `json:"message"`
-	RequestId string                   `json:"request_id"`
-	Data      TokenRefreshResponseData `json:"data"`
-}
-
-type TokenRefreshResponseData struct {
-	AccessToken           string `json:"access_token"`
-	RefreshToken          string `json:"refresh_token"`
-	ExpiresIn             int64  `json:"expires_in"`
-	AccessTokenExpiresIn  int64  `json:"access_token_expires_in"`
-	RefreshTokenExpiresIn int64  `json:"refresh_token_expires_in"`
 }

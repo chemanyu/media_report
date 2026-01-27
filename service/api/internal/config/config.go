@@ -35,8 +35,9 @@ type MySQLConfig struct {
 }
 
 type ScheduleConfig struct {
-	ReportCron       string // 报表任务 cron 表达式
-	TokenRefreshCron string // token 刷新 cron 表达式
+	ReportCron        string // 报表任务 cron 表达式
+	TokenRefreshCron  string // token 刷新 cron 表达式
+	JuliangReportCron string // 巨量报表任务 cron 表达式
 }
 
 type DingTalkConfig struct {
