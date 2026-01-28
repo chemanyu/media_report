@@ -52,6 +52,9 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 	ctx := context.Background()
 	logx.Infof("开始执行巨量报表任务 - %s", time.Now().Format("2006-01-02 15:04:05"))
 
+	// 调用归因接口获取扣量数据
+	attributionMap := fetchAttributionData(ctx)
+
 	// 从数据库获取 cookie 和 csrf token
 	mediaToken, err := model.GetByMedia(db, "juliang_pachong")
 	if err != nil {
@@ -238,9 +241,13 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 			// 查询结算单价
 			settlementPrice := taskTypeMap[taskName]
 
+			// 获取归因扣量数据 (advertiser_rate_false_4)
+			advertiserIdStr := strconv.FormatInt(account.AdvertiserId, 10)
+			deductionCount := attributionMap[advertiserIdStr]
+
 			// 计算预估收入 = (转化数+扣量数) * 结算单价
 			// 注：结算单价不固定，主体或任务不一样对应的结算单价也不一样
-			revenue := float64(convertCnt) * settlementPrice
+			revenue := float64(convertCnt+deductionCount) * settlementPrice
 			totalRevenue += revenue
 
 			// 计算预估利润 = (预估收入 * 0.95) - 服务商成本 - 返点消耗
@@ -523,4 +530,35 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 	downloadURL := fmt.Sprintf("%s/api/download/%s", baseURL, filename)
 
 	return downloadURL
+}
+
+// fetchAttributionData 获取归因扣量数据
+func fetchAttributionData(ctx context.Context) map[string]int64 {
+	// 创建 HTTP 客户端
+	client := httpclient.NewClient("http://ad-ocpx.zhltech.net", 30)
+
+	// 调用归因接口
+	var resp types.AttributionResponse
+	err := client.Get(ctx, "/attribution/data", nil, &resp)
+	if err != nil {
+		logx.Errorf("调用归因接口失败: %v", err)
+		return make(map[string]int64)
+	}
+
+	// 检查响应
+	if resp.Code != 0 {
+		logx.Errorf("归因接口返回错误: code=%d, message=%s", resp.Code, resp.Message)
+		return make(map[string]int64)
+	}
+
+	// 构建账户ID -> advertiser_rate_false_4 的映射
+	attributionMap := make(map[string]int64)
+	for advertiserId, errorCounts := range resp.Data.ErrorCounts {
+		if count, exists := errorCounts["advertiser_rate_false_4"]; exists {
+			attributionMap[advertiserId] = count
+		}
+	}
+
+	logx.Infof("成功获取归因数据，共 %d 个账户有扣量记录", len(attributionMap))
+	return attributionMap
 }

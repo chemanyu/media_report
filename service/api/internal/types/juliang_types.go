@@ -62,3 +62,23 @@ type JuliangPagination struct {
 	Total   int  `json:"total"`
 	HasMore bool `json:"hasMore"`
 }
+
+// 归因数据响应结构
+type AttributionResponse struct {
+	Code    int             `json:"code"`
+	Message string          `json:"message"`
+	Data    AttributionData `json:"data"`
+}
+
+type AttributionData struct {
+	Date          string                      `json:"date"`
+	TotalRequests map[string]int64            `json:"total_requests"`
+	ErrorCounts   map[string]map[string]int64 `json:"error_counts"` // advertiser_id -> error_type -> count
+	Summary       AttributionSummary          `json:"summary"`
+}
+
+type AttributionSummary struct {
+	TotalRequestCount int64            `json:"total_request_count"`
+	TotalErrorCount   int64            `json:"total_error_count"`
+	ErrorTypes        map[string]int64 `json:"error_types"`
+}
