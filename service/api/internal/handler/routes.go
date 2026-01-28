@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 
 	config "media_report/service/api/internal/handler/config"
+	download "media_report/service/api/internal/handler/download"
 	report "media_report/service/api/internal/handler/report"
 	update "media_report/service/api/internal/handler/update"
 	"media_report/service/api/internal/svc"
@@ -122,6 +123,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/report/ks/account",
 				Handler: report.GetKsAccountReportHandler(serverCtx),
 			},
+			{
+				// 触发巨量报表任务
+				Method:  http.MethodGet,
+				Path:    "/report/juliang/trigger",
+				Handler: report.TriggerJuliangReportHandler(serverCtx),
+			},
 		},
 	)
 
@@ -132,6 +139,17 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/update/juliang/cookie",
 				Handler: update.UpdateJuliangCookieHandler(serverCtx),
+			},
+		},
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 下载报表文件
+				Method:  http.MethodGet,
+				Path:    "/download/:filename",
+				Handler: download.DownloadReportHandler(serverCtx),
 			},
 		},
 	)

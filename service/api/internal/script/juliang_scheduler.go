@@ -3,10 +3,13 @@ package script
 import (
 	"context"
 	"fmt"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/xuri/excelize/v2"
 	"github.com/zeromicro/go-zero/core/logx"
 	"gorm.io/gorm"
 
@@ -39,8 +42,13 @@ type AccountReportData struct {
 	ProfitRate      float64 // 预估利润率
 }
 
+// ExecuteJuliangReportJob 执行巨量报表任务 (导出供外部调用)
+func ExecuteJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileServer config.FileServerConfig) {
+	executeJuliangReportJob(db, dingTalk, fileServer)
+}
+
 // executeJuliangReportJob 执行巨量报表任务
-func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
+func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileServer config.FileServerConfig) {
 	ctx := context.Background()
 	logx.Infof("开始执行巨量报表任务 - %s", time.Now().Format("2006-01-02 15:04:05"))
 
@@ -181,7 +189,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 			subject := strings.TrimSpace(parts[0])         // 主体
 			port := strings.TrimSpace(parts[1])            // 端口
 			serviceProvider := strings.TrimSpace(parts[2]) // 服务商
-			taskCode := strings.TrimSpace(parts[3])        // 任务代码
+			taskName := strings.TrimSpace(parts[3])        // 任务代码
 
 			totalAccounts++
 
@@ -228,7 +236,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 			totalServiceFeeCost += serviceFeeCost
 
 			// 查询结算单价
-			settlementPrice := taskTypeMap[taskCode]
+			settlementPrice := taskTypeMap[taskName]
 
 			// 计算预估收入 = (转化数+扣量数) * 结算单价
 			// 注：结算单价不固定，主体或任务不一样对应的结算单价也不一样
@@ -253,7 +261,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 				Subject:         subject,
 				Port:            port,
 				ServiceProvider: serviceProvider,
-				TaskCode:        taskCode,
+				TaskCode:        taskName,
 				Cost:            cost,
 				CashCost:        cashCost,
 				RebateCost:      rebateCost,
@@ -314,9 +322,8 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig) {
 
 	logx.Infof("已保存 %d 条账户数据，待后续生成Excel报表", len(accountReports))
 
-	// TODO: 后续在这里调用生成Excel并上传到服务器的函数，获取下载URL
-	// excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports)
-	excelDownloadURL := "" // 临时占位符，等实现Excel生成和上传后填入真实URL
+	// 生成Excel报表并获取下载URL
+	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, fileServer)
 
 	// 发送钉钉通知
 	sendJuliangDingTalkNotification(ctx, dingTalk, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt,
@@ -331,7 +338,7 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 	avgConversionCost, avgConversionRate, avgCtr float64, totalAccounts int,
 	totalServiceFeeCost, totalRevenue, totalProfit, profitRate float64, skippedAccounts int, excelDownloadURL string) {
 
-	if !dingConfig.Enabled || dingConfig.WebhookURL == "" {
+	if !dingConfig.Enabled || dingConfig.JDReportWebhookURL == "" {
 		logx.Info("钉钉通知未启用，跳过发送")
 		return
 	}
@@ -351,7 +358,7 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 			"**曝光量**：%d  \n"+
 			"**点击量**：%d  \n"+
 			"**点击率**：%.2f%%  \n"+
-			"**注册转化数**：%d  \n"+
+			"**转化数**：%d  \n"+
 			"**转化成本**：%.2f  \n"+
 			"**转化率**：%.2f%%  \n"+
 			"**服务费成本**：%.2f  \n"+
@@ -390,7 +397,7 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 	// 创建 HTTP 客户端发送消息
 	client := httpclient.NewClient("", 30)
 	var result map[string]interface{}
-	err := client.Post(ctx, dingConfig.WebhookURL, msg, &result)
+	err := client.Post(ctx, dingConfig.JDReportWebhookURL, msg, &result)
 	if err != nil {
 		logx.Errorf("发送巨量钉钉消息失败: %v", err)
 		return
@@ -423,4 +430,97 @@ func parseInt64(s string) int64 {
 		return 0
 	}
 	return num
+}
+
+// generateAndUploadExcelReport 生成Excel报表并返回下载URL
+func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountReportData, fileServer config.FileServerConfig) string {
+	if len(accountReports) == 0 {
+		logx.Error("账户数据为空，无法生成Excel报表")
+		return ""
+	}
+
+	// 创建新的Excel文件
+	f := excelize.NewFile()
+	defer func() {
+		if err := f.Close(); err != nil {
+			logx.Errorf("关闭Excel文件失败: %v", err)
+		}
+	}()
+
+	sheetName := "巨量账户报表"
+	// 创建工作表
+	index, err := f.NewSheet(sheetName)
+	if err != nil {
+		logx.Errorf("创建工作表失败: %v", err)
+		return ""
+	}
+
+	// 设置表头
+	headers := []string{
+		"账户ID", "账户名称", "主体", "任务", "服务商",
+		"消耗汇总", "现金消耗汇总", "返后消耗汇总",
+		"曝光汇总", "点击汇总", "点击率汇总",
+		"转化数汇总", "转化成本汇总", "转化率",
+		"服务商成本", "预估收入", "预估利润", "预估利润率",
+	}
+
+	// 写入表头
+	for i, header := range headers {
+		cell := fmt.Sprintf("%s1", string(rune('A'+i)))
+		f.SetCellValue(sheetName, cell, header)
+	}
+
+	// 写入数据
+	for i, report := range accountReports {
+		row := i + 2 // 从第2行开始（第1行是表头）
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), report.AdvertiserId)
+		f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), report.AdvertiserName)
+		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), report.Subject)
+		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), report.TaskCode)
+		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), report.ServiceProvider)
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), report.Cost)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), report.CashCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), report.RebateCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), report.ShowCnt)
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), report.ClickCnt)
+		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), report.Ctr)
+		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), report.ConvertCnt)
+		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), report.ConversionCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), report.ConversionRate)
+		f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), report.ServiceFeeCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("P%d", row), report.Revenue)
+		f.SetCellValue(sheetName, fmt.Sprintf("Q%d", row), report.Profit)
+		f.SetCellValue(sheetName, fmt.Sprintf("R%d", row), fmt.Sprintf("%.2f%%", report.ProfitRate*100))
+	}
+
+	// 设置默认活动工作表
+	f.SetActiveSheet(index)
+	// 删除默认的Sheet1
+	f.DeleteSheet("Sheet1")
+
+	// 确保保存目录存在
+	savePath := fileServer.Path
+	if err := os.MkdirAll(savePath, 0755); err != nil {
+		logx.Errorf("创建报表目录失败: %v", err)
+		return ""
+	}
+
+	// 生成文件名（包含时间戳）
+	now := time.Now()
+	filename := fmt.Sprintf("juliang_report_%s.xlsx", now.Format("20060102_150405"))
+	filepath := filepath.Join(savePath, filename)
+
+	// 保存文件
+	if err := f.SaveAs(filepath); err != nil {
+		logx.Errorf("保存Excel文件失败: %v", err)
+		return ""
+	}
+
+	logx.Infof("Excel报表已生成: %s", filepath)
+
+	// 生成下载URL
+	baseURL := fileServer.BaseURL
+	downloadURL := fmt.Sprintf("%s/api/download/%s", baseURL, filename)
+
+	return downloadURL
 }

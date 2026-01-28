@@ -17,11 +17,11 @@ type (
 	}
 	// 快手账户报表响应数据项
 	KsReportDataItem {
-		Charge          float64 `json:"charge"` // 消耗 * 1.3
+		Charge          float64 `json:"charge"` // 消耗 * 1.2
 		AdShow          float64 `json:"ad_show"` // 曝光数
 		Bclick          int64   `json:"bclick"` // 点击数
 		Activation      int64   `json:"activation"` // 激活数
-		ConversionCost  float64 `json:"conversion_cost"` // 转化成本 * 1.3
+		ConversionCost  float64 `json:"conversion_cost"` // 转化成本 * 1.2
 		ConversionRatio float64 `json:"conversion_ratio"` // 转化率 * 100
 	}
 	// 快手账户报表响应
@@ -37,6 +37,119 @@ type (
 	}
 	// 更新聚量Cookie响应
 	UpdateJuliangCookieResp {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
+	// =============== 返点配置 ===============
+	CreateRebateReq {
+		Subject     string  `json:"subject"`
+		Port        string  `json:"port"`
+		RebateRate  float64 `json:"rebate_rate"`
+		SubjectType int     `json:"subject_type"`
+		Remark      string  `json:"remark,optional"`
+	}
+	UpdateRebateReq {
+		ID          int     `json:"id"`
+		Subject     string  `json:"subject"`
+		Port        string  `json:"port"`
+		RebateRate  float64 `json:"rebate_rate"`
+		SubjectType int     `json:"subject_type"`
+		Remark      string  `json:"remark,optional"`
+	}
+	DeleteRebateReq {
+		ID int `json:"id"`
+	}
+	RebateResp {
+		ID          int     `json:"id"`
+		Subject     string  `json:"subject"`
+		Port        string  `json:"port"`
+		RebateRate  float64 `json:"rebate_rate"`
+		SubjectType int     `json:"subject_type"`
+		Remark      string  `json:"remark"`
+		UpdateTime  string  `json:"update_time"`
+		CreateTime  string  `json:"create_time"`
+	}
+	RebateListResp {
+		Code    int           `json:"code"`
+		Message string        `json:"message"`
+		Data    []*RebateResp `json:"data"`
+	}
+	RebateCommonResp {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
+	// =============== 服务费配置 ===============
+	CreateServiceFeeReq {
+		ServiceProvider string  `json:"service_provider"`
+		FeeRate         float64 `json:"fee_rate"`
+		Remark          string  `json:"remark,optional"`
+	}
+	UpdateServiceFeeReq {
+		ID              int     `json:"id"`
+		ServiceProvider string  `json:"service_provider"`
+		FeeRate         float64 `json:"fee_rate"`
+		Remark          string  `json:"remark,optional"`
+	}
+	DeleteServiceFeeReq {
+		ID int `json:"id"`
+	}
+	ServiceFeeResp {
+		ID              int     `json:"id"`
+		ServiceProvider string  `json:"service_provider"`
+		FeeRate         float64 `json:"fee_rate"`
+		Remark          string  `json:"remark"`
+		UpdateTime      string  `json:"update_time"`
+		CreateTime      string  `json:"create_time"`
+	}
+	ServiceFeeListResp {
+		Code    int               `json:"code"`
+		Message string            `json:"message"`
+		Data    []*ServiceFeeResp `json:"data"`
+	}
+	ServiceFeeCommonResp {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
+	// =============== 任务类型配置 ===============
+	CreateTaskTypeReq {
+		Name            string  `json:"name"`
+		Code            string  `json:"code"`
+		SettlementPrice float64 `json:"settlement_price"`
+		Media           string  `json:"media"`
+		Status          int     `json:"status,optional,default=1"`
+	}
+	UpdateTaskTypeReq {
+		ID              int     `json:"id"`
+		Name            string  `json:"name"`
+		Code            string  `json:"code"`
+		SettlementPrice float64 `json:"settlement_price"`
+		Media           string  `json:"media"`
+		Status          int     `json:"status,optional"`
+	}
+	DeleteTaskTypeReq {
+		ID int `json:"id"`
+	}
+	TaskTypeResp {
+		ID              int     `json:"id"`
+		Name            string  `json:"name"`
+		Code            string  `json:"code"`
+		SettlementPrice float64 `json:"settlement_price"`
+		Media           string  `json:"media"`
+		Status          int     `json:"status"`
+		CreateTime      string  `json:"create_time"`
+		UpdateTime      string  `json:"update_time"`
+	}
+	TaskTypeListResp {
+		Code    int             `json:"code"`
+		Message string          `json:"message"`
+		Data    []*TaskTypeResp `json:"data"`
+	}
+	TaskTypeCommonResp {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
+	// =============== 巨量报表任务 ===============
+	TriggerJuliangReportResp {
 		Code    int    `json:"code"`
 		Message string `json:"message"`
 	}
@@ -60,3 +173,88 @@ service media-api {
 	post /update/juliang/cookie (UpdateJuliangCookieReq) returns (UpdateJuliangCookieResp)
 }
 
+// =============== 返点配置接口 ===============
+@server (
+	group: config
+)
+service media-api {
+	@doc "获取返点配置列表"
+	@handler getRebateList
+	get /config/rebate/list returns (RebateListResp)
+
+	@doc "创建返点配置"
+	@handler createRebate
+	post /config/rebate/create (CreateRebateReq) returns (RebateCommonResp)
+
+	@doc "更新返点配置"
+	@handler updateRebate
+	post /config/rebate/update (UpdateRebateReq) returns (RebateCommonResp)
+
+	@doc "删除返点配置"
+	@handler deleteRebate
+	post /config/rebate/delete (DeleteRebateReq) returns (RebateCommonResp)
+}
+
+// =============== 服务费配置接口 ===============
+@server (
+	group: config
+)
+service media-api {
+	@doc "获取服务费配置列表"
+	@handler getServiceFeeList
+	get /config/servicefee/list returns (ServiceFeeListResp)
+
+	@doc "创建服务费配置"
+	@handler createServiceFee
+	post /config/servicefee/create (CreateServiceFeeReq) returns (ServiceFeeCommonResp)
+
+	@doc "更新服务费配置"
+	@handler updateServiceFee
+	post /config/servicefee/update (UpdateServiceFeeReq) returns (ServiceFeeCommonResp)
+
+	@doc "删除服务费配置"
+	@handler deleteServiceFee
+	post /config/servicefee/delete (DeleteServiceFeeReq) returns (ServiceFeeCommonResp)
+}
+
+// =============== 任务类型配置接口 ===============
+@server (
+	group: config
+)
+service media-api {
+	@doc "获取任务类型列表"
+	@handler getTaskTypeList
+	get /config/tasktype/list returns (TaskTypeListResp)
+
+	@doc "创建任务类型"
+	@handler createTaskType
+	post /config/tasktype/create (CreateTaskTypeReq) returns (TaskTypeCommonResp)
+
+	@doc "更新任务类型"
+	@handler updateTaskType
+	post /config/tasktype/update (UpdateTaskTypeReq) returns (TaskTypeCommonResp)
+
+	@doc "删除任务类型"
+	@handler deleteTaskType
+	post /config/tasktype/delete (DeleteTaskTypeReq) returns (TaskTypeCommonResp)
+}
+
+// =============== 文件下载接口 ===============
+@server (
+	group: download
+)
+service media-api {
+	@doc "下载报表文件"
+	@handler downloadReport
+	get /download/:filename
+}
+
+// =============== 巨量报表任务接口 ===============
+@server (
+	group: report
+)
+service media-api {
+	@doc "触发巨量报表任务"
+	@handler triggerJuliangReport
+	post /report/juliang/trigger returns (TriggerJuliangReportResp)
+}

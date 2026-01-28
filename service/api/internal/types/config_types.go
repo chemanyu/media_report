@@ -149,3 +149,9 @@ type TaskTypeCommonResp struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
+
+// 巨量测试接口
+type TriggerJuliangReportResp struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}

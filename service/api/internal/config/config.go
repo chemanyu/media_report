@@ -9,9 +9,10 @@ type Config struct {
 	rest.RestConf
 	Kuaishou    KuaishouConfig
 	OAuthConfig OAuthConfig
-	MySQL       MySQLConfig    // 数据库配置
-	Schedule    ScheduleConfig // 定时任务配置
-	DingTalk    DingTalkConfig // 钉钉配置
+	MySQL       MySQLConfig      // 数据库配置
+	Schedule    ScheduleConfig   // 定时任务配置
+	DingTalk    DingTalkConfig   // 钉钉配置
+	FileServer  FileServerConfig // 文件服务器配置
 }
 
 type KuaishouConfig struct {
@@ -41,6 +42,12 @@ type ScheduleConfig struct {
 }
 
 type DingTalkConfig struct {
-	WebhookURL string // 钉钉机器人 webhook 地址
-	Enabled    bool   // 是否启用钉钉通知
+	WebhookURL         string // 钉钉机器人 webhook 地址
+	JDReportWebhookURL string // 京东广义巨量数据 webhook 地址
+	Enabled            bool   // 是否启用钉钉通知
+}
+
+type FileServerConfig struct {
+	BaseURL string // 文件服务器基础URL，例如：http://localhost:8888
+	Path    string // 文件存储路径，例如：./reports
 }

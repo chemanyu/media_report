@@ -26,7 +26,7 @@ MySQL:
   Host: 127.0.0.1
   Port: 3306
   User: root
-  Password: "123456"
+  Password: ""
   Database: release_atd
   Charset: utf8mb4
 
@@ -34,10 +34,16 @@ MySQL:
 Schedule:
   ReportCron: "0 10,12,14,16,18,22 * * *"  # 每天10点、12点、14点、16点、18点、22点执行报表任务
   TokenRefreshCron: "0 0 * * *"            # 每天0点刷新 token
-  JuliangReportCron: "0 10,12,14,16,18,22 * * *"  # 每天10点、12点、14点、16点、18点、22点执行巨量报表任务
+  #JuliangReportCron: "0 10,12,14,16,18,22 * * *" 
+  JuliangReportCron: "0 * * * *" 
 
 # 钉钉机器人配置
 DingTalk:
   WebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=a23550fd08efa781099eb1ebbbd4b34a5ea035a7bd72653fd2c7d02938eb7fd3"
+  JDReportWebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=612c6a39ae5ad67232ed0ea00eb38e4ca4b705755d32792007f3712a0d16ed8f"
   Enabled: true  # 是否启用钉钉通知
 
+# 文件服务器配置
+FileServer:
+  BaseURL: "http://localhost:8888"  # 文件服务器基础URL
+  Path: "./download_files"                 # 文件存储路径
