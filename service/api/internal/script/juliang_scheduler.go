@@ -353,11 +353,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 
 			// 计算服务费 = 返点消耗 * 服务费率
 			var serviceFeeCost float64
-			if serviceFeeRate > 0 {
-				serviceFeeCost = cost * serviceFeeRate
-			} else {
-				serviceFeeCost = cost
-			}
+			serviceFeeCost = cost * serviceFeeRate
 			totalServiceFeeCost += serviceFeeCost
 
 			// 获取归因扣量数据 (advertiser_rate_false_4)
