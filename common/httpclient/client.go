@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -137,5 +138,72 @@ func (c *Client) DoRequest(ctx context.Context, method, path string, params map[
 		}
 	}
 
+	return nil
+}
+
+// DownloadFile 下载文件
+// ctx: 上下文
+// path: 请求路径（相对于 BaseURL）
+// body: 请求体（可选，会被序列化为 JSON）
+// savePath: 文件保存路径
+func (c *Client) DownloadFile(ctx context.Context, path string, body interface{}, savePath string) error {
+	// 构建完整 URL
+	url := c.BaseURL + path
+
+	// 处理请求体
+	var reqBody io.Reader
+	if body != nil {
+		jsonData, err := json.Marshal(body)
+		if err != nil {
+			return fmt.Errorf("marshal request body failed: %w", err)
+		}
+		reqBody = bytes.NewBuffer(jsonData)
+	}
+
+	// 创建请求
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, reqBody)
+	if err != nil {
+		return fmt.Errorf("create request failed: %w", err)
+	}
+
+	// 设置默认请求头
+	for k, v := range c.Headers {
+		req.Header.Set(k, v)
+	}
+
+	// 如果有请求体，设置 Content-Type
+	if body != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+
+	// 记录请求日志
+	logx.WithContext(ctx).Infof("HTTP Download Request: %s", req.URL.String())
+
+	// 发送请求
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return fmt.Errorf("http request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// 检查 HTTP 状态码
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("http request failed with status code %d", resp.StatusCode)
+	}
+
+	// 创建文件
+	file, err := os.Create(savePath)
+	if err != nil {
+		return fmt.Errorf("create file failed: %w", err)
+	}
+	defer file.Close()
+
+	// 写入文件
+	_, err = io.Copy(file, resp.Body)
+	if err != nil {
+		return fmt.Errorf("write file failed: %w", err)
+	}
+
+	logx.WithContext(ctx).Infof("File downloaded successfully: %s", savePath)
 	return nil
 }

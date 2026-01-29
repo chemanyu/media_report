@@ -25,10 +25,11 @@ type JuliangApiResponse struct {
 }
 
 type JuliangApiResponseData struct {
-	DataList     []JuliangAccountData `json:"data_list"`
-	TotalMetrics JuliangMetrics       `json:"total_metrics"`
-	Pagination   JuliangPagination    `json:"pagination"`
-	DownloadId   string               `json:"download_id"`
+	DataList        []JuliangAccountData `json:"data_list"`
+	TotalMetrics    JuliangMetrics       `json:"total_metrics"`
+	Pagination      JuliangPagination    `json:"pagination"`
+	DownloadId      string               `json:"download_id"`
+	DownloadChannel int                  `json:"download_channel"`
 }
 
 type JuliangAccountData struct {
@@ -81,4 +82,39 @@ type AttributionSummary struct {
 	TotalRequestCount int64            `json:"total_request_count"`
 	TotalErrorCount   int64            `json:"total_error_count"`
 	ErrorTypes        map[string]int64 `json:"error_types"`
+}
+
+// 下载任务列表响应
+type DownloadTaskListResponse struct {
+	Code      int                    `json:"code"`
+	Msg       string                 `json:"msg"`
+	RequestId string                 `json:"request_id"`
+	Data      DownloadTaskListData   `json:"data"`
+	Extra     map[string]interface{} `json:"extra"`
+}
+
+type DownloadTaskListData struct {
+	Total    int            `json:"total"`
+	List     []DownloadTask `json:"list"`
+	BaseResp BaseResp       `json:"BaseResp"`
+}
+
+type BaseResp struct {
+	StatusMessage string `json:"StatusMessage"`
+	StatusCode    int    `json:"StatusCode"`
+}
+
+type DownloadTask struct {
+	SchedulerId         int64             `json:"schedulerId"`
+	TaskId              string            `json:"taskId"`
+	UserId              int64             `json:"userId"`
+	AppKey              int               `json:"appKey"`
+	SchedulerType       int               `json:"schedulerType"`
+	SchedulerTypeName   string            `json:"schedulerTypeName"`
+	SchedulerStatus     int               `json:"schedulerStatus"`
+	SchedulerStatusName string            `json:"schedulerStatusName"`
+	TaskCreateTime      string            `json:"taskCreateTime"`
+	TaskExpireTime      string            `json:"taskExpireTime"`
+	ExtraKV             map[string]string `json:"extraKV"`
+	CanRetry            bool              `json:"canRetry"`
 }

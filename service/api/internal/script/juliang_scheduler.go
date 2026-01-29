@@ -21,7 +21,7 @@ import (
 
 // AccountReportData 账户报表数据
 type AccountReportData struct {
-	AdvertiserId    int64   // 账户ID
+	AdvertiserId    string  // 账户ID
 	AdvertiserName  string  // 账户名称
 	Subject         string  // 主体
 	Port            string  // 端口
@@ -44,7 +44,7 @@ type AccountReportData struct {
 
 // ExecuteJuliangReportJob 执行巨量报表任务 (导出供外部调用)
 func ExecuteJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileServer config.FileServerConfig) {
-	executeJuliangReportJob(db, dingTalk, fileServer)
+	executeJuliangReportJobV2(db, dingTalk, fileServer)
 }
 
 // executeJuliangReportJob 执行巨量报表任务
@@ -263,7 +263,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 
 			// 保存账户数据
 			accountReports = append(accountReports, AccountReportData{
-				AdvertiserId:    account.AdvertiserId,
+				AdvertiserId:    strconv.Itoa(int(account.AdvertiserId)),
 				AdvertiserName:  account.AdvertiserName,
 				Subject:         subject,
 				Port:            port,
@@ -330,7 +330,9 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 	logx.Infof("已保存 %d 条账户数据，待后续生成Excel报表", len(accountReports))
 
 	// 生成Excel报表并获取下载URL
-	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, fileServer)
+	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, fileServer,
+		totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, avgCtr, totalConvertCnt, avgConversionCost, avgConversionRate,
+		totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
 
 	// 发送钉钉通知
 	sendJuliangDingTalkNotification(ctx, dingTalk, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt,
@@ -440,7 +442,9 @@ func parseInt64(s string) int64 {
 }
 
 // generateAndUploadExcelReport 生成Excel报表并返回下载URL
-func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountReportData, fileServer config.FileServerConfig) string {
+func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountReportData, fileServer config.FileServerConfig,
+	totalCost, totalCashCost, totalRebateCost float64, totalShowCnt, totalClickCnt int64, avgCtr float64, totalConvertCnt int64,
+	avgConversionCost, avgConversionRate, totalServiceFeeCost, totalRevenue, totalProfit, profitRate float64) string {
 	if len(accountReports) == 0 {
 		logx.Error("账户数据为空，无法生成Excel报表")
 		return ""
@@ -500,6 +504,27 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 		f.SetCellValue(sheetName, fmt.Sprintf("R%d", row), fmt.Sprintf("%.2f%%", report.ProfitRate*100))
 	}
 
+	// 在最后一行添加汇总数据
+	totalRow := len(accountReports) + 2
+	f.SetCellValue(sheetName, fmt.Sprintf("A%d", totalRow), "")
+	f.SetCellValue(sheetName, fmt.Sprintf("B%d", totalRow), "汇总")
+	f.SetCellValue(sheetName, fmt.Sprintf("C%d", totalRow), "")
+	f.SetCellValue(sheetName, fmt.Sprintf("D%d", totalRow), "")
+	f.SetCellValue(sheetName, fmt.Sprintf("E%d", totalRow), "")
+	f.SetCellValue(sheetName, fmt.Sprintf("F%d", totalRow), totalCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("G%d", totalRow), totalCashCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("H%d", totalRow), totalRebateCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("I%d", totalRow), totalShowCnt)
+	f.SetCellValue(sheetName, fmt.Sprintf("J%d", totalRow), totalClickCnt)
+	f.SetCellValue(sheetName, fmt.Sprintf("K%d", totalRow), fmt.Sprintf("%.2f%%", avgCtr))
+	f.SetCellValue(sheetName, fmt.Sprintf("L%d", totalRow), totalConvertCnt)
+	f.SetCellValue(sheetName, fmt.Sprintf("M%d", totalRow), avgConversionCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("N%d", totalRow), avgConversionRate)
+	f.SetCellValue(sheetName, fmt.Sprintf("O%d", totalRow), totalServiceFeeCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("P%d", totalRow), totalRevenue)
+	f.SetCellValue(sheetName, fmt.Sprintf("Q%d", totalRow), totalProfit)
+	f.SetCellValue(sheetName, fmt.Sprintf("R%d", totalRow), fmt.Sprintf("%.2f%%", profitRate))
+
 	// 设置默认活动工作表
 	f.SetActiveSheet(index)
 	// 删除默认的Sheet1
@@ -527,7 +552,7 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 
 	// 生成下载URL
 	baseURL := fileServer.BaseURL
-	downloadURL := fmt.Sprintf("%s/api/download/%s", baseURL, filename)
+	downloadURL := fmt.Sprintf("%s/download/%s", baseURL, filename)
 
 	return downloadURL
 }
