@@ -35,6 +35,7 @@ type AccountReportData struct {
 	ClickCnt        int64   // 点击
 	Ctr             string  // 点击率
 	ConvertCnt      int64   // 转化
+	DeductionCount  int64   // 扣量数
 	ConversionCost  string  // 转化成本
 	ConversionRate  string  // 转化率
 	ServiceFeeCost  float64 // 服务费成本
@@ -109,6 +110,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 	var totalShowCnt int64          // 总曝光
 	var totalClickCnt int64         // 总点击
 	var totalConvertCnt int64       // 总转化
+	var totalDeductionCount int64   // 总扣量数
 	var totalConversionCost float64 // 总转化成本
 	var totalAccounts int           // 总账户数
 	var totalServiceFeeCost float64 // 总服务商成本
@@ -361,6 +363,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 			// 获取归因扣量数据 (advertiser_rate_false_4)
 			advertiserIdStr := strconv.FormatInt(account.AdvertiserId, 10)
 			deductionCount := attributionMap[advertiserIdStr]
+			totalDeductionCount += deductionCount
 
 			// 计算预估收入 = (转化数+扣量数) * 结算单价
 			// 注：结算单价不固定，主体或任务不一样对应的结算单价也不一样
@@ -394,6 +397,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 				ClickCnt:        clickCnt,
 				Ctr:             account.Ctr,
 				ConvertCnt:      convertCnt,
+				DeductionCount:  deductionCount,
 				ConversionCost:  account.ConversionCost,
 				ConversionRate:  account.ConversionRate,
 				ServiceFeeCost:  serviceFeeCost,
@@ -440,7 +444,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 
 	// 生成Excel报表并获取下载URL
 	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, fileServer,
-		totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, avgCtr, totalConvertCnt, avgConversionCost, avgConversionRate,
+		totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, avgCtr, totalConvertCnt, totalDeductionCount, avgConversionCost, avgConversionRate,
 		totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
 
 	// 发送钉钉通知
@@ -552,7 +556,7 @@ func parseInt64(s string) int64 {
 
 // generateAndUploadExcelReport 生成Excel报表并返回下载URL
 func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountReportData, fileServer config.FileServerConfig,
-	totalCost, totalCashCost, totalRebateCost float64, totalShowCnt, totalClickCnt int64, avgCtr float64, totalConvertCnt int64,
+	totalCost, totalCashCost, totalRebateCost float64, totalShowCnt, totalClickCnt int64, avgCtr float64, totalConvertCnt, totalDeductionCount int64,
 	avgConversionCost, avgConversionRate, totalServiceFeeCost, totalRevenue, totalProfit, profitRate float64) string {
 	if len(accountReports) == 0 {
 		logx.Error("账户数据为空，无法生成Excel报表")
@@ -580,7 +584,7 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 		"账户ID", "账户名称", "主体", "任务", "服务商", "备注",
 		"消耗汇总", "现金消耗汇总", "返后消耗汇总",
 		"曝光汇总", "点击汇总", "点击率汇总",
-		"转化数汇总", "转化成本汇总", "转化率",
+		"转化数汇总", "扣量数", "转化成本汇总", "转化率",
 		"服务商成本", "预估收入", "预估利润", "预估利润率",
 	}
 
@@ -606,12 +610,13 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), report.ClickCnt)
 		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), report.Ctr)
 		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), report.ConvertCnt)
-		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), report.ConversionCost)
-		f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), report.ConversionRate)
-		f.SetCellValue(sheetName, fmt.Sprintf("P%d", row), report.ServiceFeeCost)
-		f.SetCellValue(sheetName, fmt.Sprintf("Q%d", row), report.Revenue)
-		f.SetCellValue(sheetName, fmt.Sprintf("R%d", row), report.Profit)
-		f.SetCellValue(sheetName, fmt.Sprintf("S%d", row), fmt.Sprintf("%.2f%%", report.ProfitRate*100))
+		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), report.DeductionCount)
+		f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), report.ConversionCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("P%d", row), report.ConversionRate)
+		f.SetCellValue(sheetName, fmt.Sprintf("Q%d", row), report.ServiceFeeCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("R%d", row), report.Revenue)
+		f.SetCellValue(sheetName, fmt.Sprintf("S%d", row), report.Profit)
+		f.SetCellValue(sheetName, fmt.Sprintf("T%d", row), fmt.Sprintf("%.2f%%", report.ProfitRate*100))
 	}
 
 	// 在最后一行添加汇总数据
@@ -629,12 +634,13 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 	f.SetCellValue(sheetName, fmt.Sprintf("K%d", totalRow), totalClickCnt)
 	f.SetCellValue(sheetName, fmt.Sprintf("L%d", totalRow), fmt.Sprintf("%.2f%%", avgCtr))
 	f.SetCellValue(sheetName, fmt.Sprintf("M%d", totalRow), totalConvertCnt)
-	f.SetCellValue(sheetName, fmt.Sprintf("N%d", totalRow), avgConversionCost)
-	f.SetCellValue(sheetName, fmt.Sprintf("O%d", totalRow), avgConversionRate)
-	f.SetCellValue(sheetName, fmt.Sprintf("P%d", totalRow), totalServiceFeeCost)
-	f.SetCellValue(sheetName, fmt.Sprintf("Q%d", totalRow), totalRevenue)
-	f.SetCellValue(sheetName, fmt.Sprintf("R%d", totalRow), totalProfit)
-	f.SetCellValue(sheetName, fmt.Sprintf("S%d", totalRow), fmt.Sprintf("%.2f%%", profitRate))
+	f.SetCellValue(sheetName, fmt.Sprintf("N%d", totalRow), totalDeductionCount)
+	f.SetCellValue(sheetName, fmt.Sprintf("O%d", totalRow), avgConversionCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("P%d", totalRow), avgConversionRate)
+	f.SetCellValue(sheetName, fmt.Sprintf("Q%d", totalRow), totalServiceFeeCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("R%d", totalRow), totalRevenue)
+	f.SetCellValue(sheetName, fmt.Sprintf("S%d", totalRow), totalProfit)
+	f.SetCellValue(sheetName, fmt.Sprintf("T%d", totalRow), fmt.Sprintf("%.2f%%", profitRate))
 
 	// 设置默认活动工作表
 	f.SetActiveSheet(index)
