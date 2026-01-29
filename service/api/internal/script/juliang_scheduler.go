@@ -44,7 +44,7 @@ type AccountReportData struct {
 
 // ExecuteJuliangReportJob 执行巨量报表任务 (导出供外部调用)
 func ExecuteJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileServer config.FileServerConfig) {
-	executeJuliangReportJobV2(db, dingTalk, fileServer)
+	executeJuliangReportJob(db, dingTalk, fileServer)
 }
 
 // executeJuliangReportJob 执行巨量报表任务
@@ -118,67 +118,166 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 	// 保存每条账户数据
 	var accountReports []AccountReportData
 
-	// 分页查询
-	page := 1
+	// 第一步：先请求第一页获取总数
 	limit := 100
-	hasMore := true
+	req := map[string]interface{}{
+		"start_time":   startTime,
+		"end_time":     endTime,
+		"offset":       1,
+		"limit":        limit,
+		"order_type":   1,
+		"account_type": 0,
+		"cascade_metrics": []string{
+			"advertiser_name",
+			"advertiser_id",
+			"advertiser_status",
+			"advertiser_remark",
+			"advertiser_agent_name",
+			"advertiser_agent_id",
+			"advertiser_followed",
+		},
+		"fields": []string{
+			"stat_cost",
+			"stat_cash_cost",
+			"show_cnt",
+			"click_cnt",
+			"ctr",
+			"convert_cnt",
+			"conversion_cost",
+			"conversion_rate",
+		},
+		"filter": map[string]interface{}{
+			"advertiser":      map[string]interface{}{},
+			"group":           map[string]interface{}{},
+			"pricingCategory": []int{2},
+			"campaign":        map[string]interface{}{},
+			"is_active":       true,
+		},
+		"ocean_white":      true,
+		"order_field":      "stat_cost",
+		"platform_version": "2.0",
+	}
 
-	for hasMore {
-		// 构建请求参数
-		req := map[string]interface{}{
-			"start_time":   startTime,
-			"end_time":     endTime,
-			"offset":       page,
-			"limit":        limit,
-			"order_type":   1,
-			"account_type": 0,
-			"cascade_metrics": []string{
-				"advertiser_name",
-				"advertiser_id",
-				"advertiser_status",
-				"advertiser_remark",
-				"advertiser_agent_name",
-				"advertiser_agent_id",
-				"advertiser_followed",
-			},
-			"fields": []string{
-				"stat_cost",
-				"stat_cash_cost",
-				"show_cnt",
-				"click_cnt",
-				"ctr",
-				"convert_cnt",
-				"conversion_cost",
-				"conversion_rate",
-			},
-			"filter": map[string]interface{}{
-				"advertiser":      map[string]interface{}{},
-				"group":           map[string]interface{}{},
-				"pricingCategory": []int{2},
-				"campaign":        map[string]interface{}{},
-				"is_active":       true,
-			},
-			"ocean_white":      true,
-			"order_field":      "stat_cost",
-			"platform_version": "2.0",
+	var firstResp types.JuliangApiResponse
+	err = client.Post(ctx, "/nbs/api/bm/promotion/ad/get_account_list", req, &firstResp)
+	if err != nil {
+		logx.Errorf("调用巨量 API 获取第一页失败: %v", err)
+		return
+	}
+
+	if firstResp.Code != 0 {
+		logx.Errorf("巨量 API 返回错误: code=%d, message=%s", firstResp.Code, firstResp.Msg)
+		return
+	}
+
+	// 获取总数和计算总页数
+	total := firstResp.Data.Pagination.Total
+	if total == 0 {
+		logx.Info("今日暂无巨量账户数据")
+		return
+	}
+
+	totalPages := (total + limit - 1) / limit
+	logx.Infof("共有 %d 条账户数据，分 %d 页，开始并发请求...", total, totalPages)
+
+	// 第二步：并发请求所有页面
+	type pageResult struct {
+		page int
+		data []types.JuliangAccountData
+		err  error
+	}
+
+	resultChan := make(chan pageResult, totalPages)
+	semaphore := make(chan struct{}, 10) // 限制并发数为10
+
+	// 处理第一页数据（已经获取到了）
+	go func() {
+		resultChan <- pageResult{page: 1, data: firstResp.Data.DataList, err: nil}
+	}()
+
+	// 并发请求剩余页面
+	for page := 2; page <= totalPages; page++ {
+		semaphore <- struct{}{} // 获取信号量
+		go func(p int) {
+			defer func() { <-semaphore }() // 释放信号量
+
+			pageReq := map[string]interface{}{
+				"start_time":   startTime,
+				"end_time":     endTime,
+				"offset":       p,
+				"limit":        limit,
+				"order_type":   1,
+				"account_type": 0,
+				"cascade_metrics": []string{
+					"advertiser_name",
+					"advertiser_id",
+					"advertiser_status",
+					"advertiser_remark",
+					"advertiser_agent_name",
+					"advertiser_agent_id",
+					"advertiser_followed",
+				},
+				"fields": []string{
+					"stat_cost",
+					"stat_cash_cost",
+					"show_cnt",
+					"click_cnt",
+					"ctr",
+					"convert_cnt",
+					"conversion_cost",
+					"conversion_rate",
+				},
+				"filter": map[string]interface{}{
+					"advertiser":      map[string]interface{}{},
+					"group":           map[string]interface{}{},
+					"pricingCategory": []int{2},
+					"campaign":        map[string]interface{}{},
+					"is_active":       true,
+				},
+				"ocean_white":      true,
+				"order_field":      "stat_cost",
+				"platform_version": "2.0",
+			}
+
+			var pageResp types.JuliangApiResponse
+			err := client.Post(ctx, "/nbs/api/bm/promotion/ad/get_account_list", pageReq, &pageResp)
+			if err != nil {
+				resultChan <- pageResult{page: p, data: nil, err: err}
+				return
+			}
+
+			if pageResp.Code != 0 {
+				resultChan <- pageResult{page: p, data: nil, err: fmt.Errorf("API返回错误: code=%d, message=%s", pageResp.Code, pageResp.Msg)}
+				return
+			}
+
+			resultChan <- pageResult{page: p, data: pageResp.Data.DataList, err: nil}
+		}(page)
+	}
+
+	// 第三步：收集所有结果
+	allAccounts := make(map[int][]types.JuliangAccountData)
+	for i := 0; i < totalPages; i++ {
+		result := <-resultChan
+		if result.err != nil {
+			logx.Errorf("第 %d 页请求失败: %v", result.page, result.err)
+			continue
+		}
+		allAccounts[result.page] = result.data
+		logx.Infof("第 %d/%d 页数据获取成功，账户数: %d", result.page, totalPages, len(result.data))
+	}
+	close(resultChan)
+
+	logx.Infof("所有页面请求完成，开始处理账户数据...")
+
+	// 第四步：按页码顺序处理所有账户数据
+	for page := 1; page <= totalPages; page++ {
+		accounts, exists := allAccounts[page]
+		if !exists {
+			continue
 		}
 
-		// 调用巨量 API
-		var resp types.JuliangApiResponse
-		err = client.Post(ctx, "/nbs/api/bm/promotion/ad/get_account_list", req, &resp)
-		if err != nil {
-			logx.Errorf("调用巨量 API 失败 (page=%d): %v", page, err)
-			break
-		}
-
-		// 检查响应
-		if resp.Code != 0 {
-			logx.Errorf("巨量 API 返回错误 (page=%d): code=%d, message=%s", page, resp.Code, resp.Msg)
-			break
-		}
-
-		// 累加数据
-		for _, account := range resp.Data.DataList {
+		for _, account := range accounts {
 			// 解析备注字段：主体-端口-服务商-任务
 			remark := strings.TrimSpace(account.AdvertiserRemark)
 			parts := strings.Split(remark, "-")
@@ -194,52 +293,69 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 			serviceProvider := strings.TrimSpace(parts[2]) // 服务商
 			taskName := strings.TrimSpace(parts[3])        // 任务代码
 
+			// 查询返点率（主体-端口）
+			rebateKey := fmt.Sprintf("%s-%s", subject, port)
+			rebateRate, rebateExists := rebateMap[rebateKey]
+
+			// 查询服务费率
+			serviceFeeRate, serviceFeeExists := serviceFeeMap[serviceProvider]
+
+			// 查询结算单价
+			settlementPrice, taskTypeExists := taskTypeMap[taskName]
+
+			// 校验：如果主体-端口、服务商、任务不在数据库配置中，跳过此条数据
+			if !rebateExists {
+				skippedAccounts++
+				continue
+			}
+			if !serviceFeeExists {
+				skippedAccounts++
+				continue
+			}
+			if !taskTypeExists {
+				skippedAccounts++
+				continue
+			}
+
+			// 只有通过所有校验后才计入总账户数
 			totalAccounts++
 
 			// 解析消耗（去除逗号）
 			cost := parseNumber(account.StatCost)         // 消耗
-			cashCost := parseNumber(account.StatCashCost) // 先进消耗
+			cashCost := parseNumber(account.StatCashCost) // 现金消耗
 			totalCost += cost
 			totalCashCost += cashCost
 
 			// 解析曝光数、点击数、转化数
-			showCnt := parseInt64(account.ShowCnt) // 曝光
-			totalShowCnt += showCnt
-			clickCnt := parseInt64(account.ClickCnt) // 点击
-			totalClickCnt += clickCnt
+			showCnt := parseInt64(account.ShowCnt)       // 曝光
+			clickCnt := parseInt64(account.ClickCnt)     // 点击
 			convertCnt := parseInt64(account.ConvertCnt) // 转化
+			totalShowCnt += showCnt
+			totalClickCnt += clickCnt
 			totalConvertCnt += convertCnt
 
 			// 累加转化成本
 			conversionCost := parseNumber(account.ConversionCost)
 			totalConversionCost += conversionCost
 
-			// 查询返点率（主体-端口）
-			rebateKey := fmt.Sprintf("%s-%s", subject, port)
-			rebateRate := rebateMap[rebateKey]
-
-			// 计算返点消耗 = 现金消耗 / (各端口各主体对应的返点率)
+			// 计算返点消耗 = 消耗 / (1 + 返点率)
+			// 例如：返点率0.04（4个点），则 消耗/1.04
 			var rebateCost float64
 			if rebateRate > 0 {
-				rebateCost = cashCost / rebateRate
+				rebateCost = cost / (1 + rebateRate)
 			} else {
-				rebateCost = cashCost
+				rebateCost = cost
 			}
 			totalRebateCost += rebateCost
 
-			// 查询服务费率
-			serviceFeeRate := serviceFeeMap[serviceProvider]
-			// 计算服务商成本 = 现金消耗 * 服务费率（如果服务费是0，则现金消耗*0.04）
+			// 计算服务费 = 返点消耗 * 服务费率
 			var serviceFeeCost float64
 			if serviceFeeRate > 0 {
-				serviceFeeCost = cashCost * serviceFeeRate
+				serviceFeeCost = cost * serviceFeeRate
 			} else {
-				serviceFeeCost = cashCost
+				serviceFeeCost = cost
 			}
 			totalServiceFeeCost += serviceFeeCost
-
-			// 查询结算单价
-			settlementPrice := taskTypeMap[taskName]
 
 			// 获取归因扣量数据 (advertiser_rate_false_4)
 			advertiserIdStr := strconv.FormatInt(account.AdvertiserId, 10)
@@ -284,14 +400,9 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 				ProfitRate:      profitRate,
 			})
 		}
-
-		// 检查是否还有更多数据
-		hasMore = resp.Data.Pagination.HasMore
-		page++
-
-		logx.Infof("已处理第 %d 页，本页账户数: %d，累计账户数: %d",
-			page-1, len(resp.Data.DataList), totalAccounts)
 	}
+
+	logx.Infof("数据处理完成 - 有效账户数: %d, 跳过账户数: %d", totalAccounts, skippedAccounts)
 
 	// 打印汇总数据
 	if totalAccounts == 0 {
@@ -322,10 +433,6 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 	if totalRevenue > 0 {
 		profitRate = (totalProfit / totalRevenue) * 100
 	}
-
-	// logx.Infof("巨量报表汇总 - 账户数: %d, 跳过: %d, 总消耗: %.2f, 现金消耗: %.2f, 返点消耗: %.2f, 总曝光: %d, 总点击: %d, 点击率: %.2f%%, 总转化: %d, 平均转化成本: %.2f, 转化率: %.2f%%, 服务费成本: %.2f, 预估收入: %.2f, 预估利润: %.2f, 利润率: %.2f%%",
-	// 	totalAccounts, skippedAccounts, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, avgCtr, totalConvertCnt,
-	// 	avgConversionCost, avgConversionRate, totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
 
 	logx.Infof("已保存 %d 条账户数据，待后续生成Excel报表", len(accountReports))
 

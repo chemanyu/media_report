@@ -26,7 +26,7 @@ MySQL:
   Host: 127.0.0.1
   Port: 3306
   User: root
-  Password: ""
+  Password: "123456"
   Database: release_atd
   Charset: utf8mb4
 
@@ -40,7 +40,7 @@ Schedule:
 # 钉钉机器人配置
 DingTalk:
   WebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=a23550fd08efa781099eb1ebbbd4b34a5ea035a7bd72653fd2c7d02938eb7fd3"
-  JDReportWebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=612c6a39ae5ad67232ed0ea00eb38e4ca4b705755d32792007f3712a0d16ed8f"
+  JDReportWebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=1591f64c542a7c4142a6656e3fcd9a68373a4a64fdd4dbb6f256ddb428a0d34f"
   Enabled: true  # 是否启用钉钉通知
 
 # 文件服务器配置
