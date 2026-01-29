@@ -1,0 +1,65 @@
+CREATE TABLE `service_fee` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `service_provider` VARCHAR(50) NOT NULL COMMENT '服务商名称：通途、蚁行、创效、凯旋、星河、云谷、美数',
+  `fee_rate` DECIMAL(5,4) NOT NULL COMMENT '服务费率：如0.04表示4%',
+  `remark` VARCHAR(255) DEFAULT '' COMMENT '备注',
+  `update_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `create_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_provider` (`service_provider`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='服务费配置表';
+
+INSERT INTO `release_atd`.`service_fee` (`id`, `service_provider`, `fee_rate`, `remark`, `update_time`, `create_time`) VALUES (1, '通途', 0.040, '', '2026-01-27 16:42:57', '2026-01-27 16:42:57');
+INSERT INTO `release_atd`.`service_fee` (`id`, `service_provider`, `fee_rate`, `remark`, `update_time`, `create_time`) VALUES (2, '蚁行', 0.040, '', '2026-01-28 16:46:23', '2026-01-28 16:46:23');
+INSERT INTO `release_atd`.`service_fee` (`id`, `service_provider`, `fee_rate`, `remark`, `update_time`, `create_time`) VALUES (3, '创效', 0.040, '', '2026-01-28 16:46:41', '2026-01-28 16:46:41');
+INSERT INTO `release_atd`.`service_fee` (`id`, `service_provider`, `fee_rate`, `remark`, `update_time`, `create_time`) VALUES (4, '凯旋', 0.030, '', '2026-01-28 16:46:53', '2026-01-28 16:46:53');
+INSERT INTO `release_atd`.`service_fee` (`id`, `service_provider`, `fee_rate`, `remark`, `update_time`, `create_time`) VALUES (5, '星河', 0.030, '', '2026-01-28 16:47:03', '2026-01-28 16:47:03');
+INSERT INTO `release_atd`.`service_fee` (`id`, `service_provider`, `fee_rate`, `remark`, `update_time`, `create_time`) VALUES (6, '云谷', 0.030, '', '2026-01-28 16:47:14', '2026-01-28 16:47:14');
+INSERT INTO `release_atd`.`service_fee` (`id`, `service_provider`, `fee_rate`, `remark`, `update_time`, `create_time`) VALUES (7, '美数', 0.000, '', '2026-01-28 16:47:25', '2026-01-28 16:47:25');
+
+CREATE TABLE `rebate` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `subject` VARCHAR(50) NOT NULL COMMENT '主体：新杰、晴川、美数、魔米、归流',
+  `port` VARCHAR(50) NOT NULL COMMENT '端口：优居、至也、各界',
+  `rebate_rate` DECIMAL(5,4) NOT NULL COMMENT '返点率：如0.025表示2.5%',
+  `subject_type` TINYINT NOT NULL DEFAULT '1' COMMENT '主体类型：1-京东主体, 2-三方主体（用于区分规则）',
+  `remark` VARCHAR(255) DEFAULT '' COMMENT '备注',
+  `update_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `create_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_subject_port` (`subject`, `port`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='返点配置表';
+
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (2, '新杰', '优居', 0.000, 1, '', '2026-01-28 16:40:44', '2026-01-27 15:46:37');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (4, '晴川', '优居', 0.000, 1, '', '2026-01-27 16:42:42', '2026-01-27 16:42:42');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (5, '美数', '优居', 0.025, 2, '', '2026-01-28 16:41:47', '2026-01-28 16:41:47');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (6, '震来', '优居', 0.025, 2, '', '2026-01-28 16:42:11', '2026-01-28 16:42:11');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (7, '归流', '优居', 0.025, 2, '', '2026-01-28 16:42:44', '2026-01-28 16:42:44');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (8, '新杰', '至也', 0.000, 1, '', '2026-01-28 16:43:13', '2026-01-28 16:43:13');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (9, '晴川', '至也', 0.000, 1, '', '2026-01-28 16:43:29', '2026-01-28 16:43:29');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (10, '美数', '至也', 0.040, 2, '', '2026-01-28 16:43:47', '2026-01-28 16:43:47');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (11, '震来', '至也', 0.040, 2, '', '2026-01-28 16:44:01', '2026-01-28 16:44:01');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (12, '归流', '至也', 0.040, 2, '', '2026-01-28 16:44:12', '2026-01-28 16:44:12');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (13, '新杰', '谷界', 0.000, 1, '', '2026-01-28 16:44:37', '2026-01-28 16:44:37');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (14, '晴川', '谷界', 0.000, 1, '', '2026-01-28 16:44:50', '2026-01-28 16:44:50');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (15, '美数', '谷界', 0.035, 2, '', '2026-01-28 16:45:10', '2026-01-28 16:45:10');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (16, '震来', '谷界', 0.035, 2, '', '2026-01-28 16:45:26', '2026-01-28 16:45:26');
+INSERT INTO `release_atd`.`rebate` (`id`, `subject`, `port`, `rebate_rate`, `subject_type`, `remark`, `update_time`, `create_time`) VALUES (17, '归流', '谷界', 0.035, 2, '', '2026-01-28 16:45:44', '2026-01-28 16:45:44');
+
+CREATE TABLE `task_type` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(50) NOT NULL COMMENT '任务名称，如：app、首购',
+  `code` VARCHAR(20) NOT NULL COMMENT '任务编码',
+  `settlement_price` DECIMAL(10,2) NOT NULL COMMENT '结算单价',
+  `media` VARCHAR(50) NOT NULL COMMENT '媒体平台，如：巨量',
+  `status` TINYINT NOT NULL DEFAULT '1' COMMENT '状态：1-启用, 0-停用',
+  `create_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `update_time` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_media_code` (`media`, `code`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='任务类型表';
+
+INSERT INTO `release_atd`.`task_type` (`id`, `name`, `code`, `settlement_price`, `media`, `status`, `create_time`, `update_time`) VALUES (1, 'APP', 'app', 42.00, '巨量', 1, '2026-01-27 16:43:22', '2026-01-27 16:43:22');
+INSERT INTO `release_atd`.`task_type` (`id`, `name`, `code`, `settlement_price`, `media`, `status`, `create_time`, `update_time`) VALUES (2, '首购', 'shougou', 58.00, '巨量', 1, '2026-01-29 12:06:58', '2026-01-29 12:06:58');
+
+INSERT INTO `release_atd`.`media_token` (`id`, `media`, `token`, `refresh_token`, `agent_id`, `advertiser_id`, `del_flag`, `create_time`, `update_time`) VALUES (2, 'juliang_pachong', 'gd_random=eyJtYXRjaCI6dHJ1ZSwicGVyY2VudCI6MC44NDEzNzk5Njk4MDYwMzc0fQ==.dR1HPyplcp8jKwfk2g/bzo+0H8yD+TlovWInRb1szZI=; MONITOR_DEVICE_ID=1f22fa78-2763-4a75-8b91-80a87d5cd3e3; gd_random=eyJtYXRjaCI6dHJ1ZSwicGVyY2VudCI6MC4zNzg0OTYzMzU3NzczMzh9.n/uKZNw8HWTnsNYgMt+lgN6ijrFpPvsNxcjOKaFsf4s=; csrftoken=gOrAcySNoo2qzRcKXSS2wUDq; gd_random=eyJtYXRjaCI6dHJ1ZSwicGVyY2VudCI6MC4zMjcyNTA0NTIwODU4NDgxM30=.H+pD73R+0lQjdiM41/Xv76y92x+BqDkmZzQINGknCT0=; ttcid=aa10718d123b4303ae4b88f2a392ea0327; tt_scid=Wpw73tQJCxiKBQyB4NDM4Nr0B-uM7LHXJqS-xYyIeRpsVUTF0qdXSmMY4agLNdMQ14b9; AGL_USER_ID=6ae12e29-7123-4fa5-9e95-0b983c2d7734; is_staff_user=false; Hm_lvt_df640d0b13edcfb2bad5f8d5e951c90e=1744093874,1746584436; _ga=GA1.2.439863708.1744093876; _ga_9VSTZJB1H2=GS2.2.s1746584438$o2$g1$t1746584556$j0$l0$h0; _ga_313DD262YW=GS2.1.s1746584437$o2$g1$t1746584558$j0$l0$h0; gr_user_id=a60c126f-8ff9-45a6-acea-3d900915952f; grwng_uid=ba1e8dac-e2b3-4c5d-88e8-0ed42e157281; ttcid=8a62cb935f4649849bd1e7083b41943e31; Hm_lvt_5d736123c162c9032a9a4d173ab053d4=1749019829; Hm_lvt_8e69b0709183cf5cf0e5d0e7d7017351=1749019829; ttcid=0ce8a4c43a4e4b5c8b383ca17cdfabfc24; csrftoken=gOrAcySNoo2qzRcKXSS2wUDq; csrf_session_id=05b96e1761532607a04fec1001536427; csrftoken=xx-RI4UDhG4coDCr6TGFduH3; business-account-center-csrf-secret=f4ea66bc7a15458037f27d0d56425729; business-account-center-csrf-token=qlqJtghW-1vv4iZcAzxmG3HT5q5d58usvg4o; csrf_session_id=05b96e1761532607a04fec1001536427; bd_ticket_guard_client_web_domain=2; brand_ad_emo_agreement=1; __security_mc_61_s_sdk_cert_key=4eaf536e-4254-9a38; bd_ticket_guard_web_domain=3; session_tlb_tag_bk=sttt%7C17%7C9OpmvHoVRYA38n0NVkJXKf________-xw8LGoKyV8fqomFUwYiexN4J5o9CiSlyN1xJBEqWi6ws%3D; is_hit_partitioned_cookie_canary_ss=true; is_hit_partitioned_cookie_canary=true; _bd_ticket_crypt_doamin=3; __security_server_data_status=1; MONITOR_WEB_ID=c6cca2e7-a308-4ead-ada6-8f1c5687471a; MONITOR_DEVICE_ID=0b427a03-3be0-4904-9f6c-63483e99a4d3; MONITOR_WEB_ID=2ce96d08-a0d9-48ce-8164-88cd8fe0b988; s_v_web_id=verify_mjtmg3io_TzwC9sUn_Ldgg_4Hzg_AGqn_pzH8YLKGE285; tt_scid=OFIyOC0nkwR0.4BWQV3YKtpMCRmcJG7AsOIh7wePOlVOb.eZtiWnEMkrCu8H08cx7f5c; csrf_session_id=be0391480b17d7d356eeab8ef826c2e1; aefa4e5d2593305f_gr_last_sent_cs1=1847751788992915; tt_scid=3Na3V09QMPUBEKAEgHP-00WT7mvTbOh7TQAWMsBPNrMqarV2.yMAFva1ZDqKhLT1861a; aefa4e5d2593305f_gr_cs1=1847751788992915; __security_mc_61_s_sdk_crypt_sdk=69dfb8e2-4aee-b26c; s_v_web_id=verify_mknuj488_9dYpSNrc_O0Of_4HSJ_AHLe_86I8I70eHHiV; csrf_token=HSUabMWA4Q3P7Eb7nuUbTMAqkkWEsQe2; academy_session_id=2078cd241a704476996345e77ab37156; passport_csrf_token=79a1690bbb4b17df97ed15c618f87234; passport_csrf_token_default=79a1690bbb4b17df97ed15c618f87234; passport_mfa_token=CjFLQr1plQnJCNKnris9%2FxLQQ6ie4GLfSuOR2r5lddjO0NAQuKCZRY5p8gPE0Bon2qkJGkoKPAAAAAAAAAAAAABP%2Fw82zW79IxSvmX6OfdIVr466gsm%2F%2B4CpKmgyk7NLFHQMbl2eGLh1wa5CZ3bF7J1xiRD29ocOGPax0WwgAiIBA3rq80E%3D; d_ticket=6a488253f03b2bbae06f3b0050975088c86b6; n_mh=mWS6gWvSDo5_ysXsGVJj7z-0H1XaJ-BPiJaY3608ES4; sso_uid_tt=df2993777fd101477516e04dfad8bd83; sso_uid_tt_ss=df2993777fd101477516e04dfad8bd83; toutiao_sso_user=8c801474e95b62bdf7ab994f7341c369; toutiao_sso_user_ss=8c801474e95b62bdf7ab994f7341c369; sid_ucp_sso_v1=1.0.0-KDEzODczMGU1OWYwNTlmMDIwNzQ2ZTljMjFkZGMwYmZjYTI1N2EyYTIKIQi-j6Dfvo3CBxCJk9zLBhj6CiAMMNz8-o0GOAFA6wdIBhoCbHEiIDhjODAxNDc0ZTk1YjYyYmRmN2FiOTk0ZjczNDFjMzY5; ssid_ucp_sso_v1=1.0.0-KDEzODczMGU1OWYwNTlmMDIwNzQ2ZTljMjFkZGMwYmZjYTI1N2EyYTIKIQi-j6Dfvo3CBxCJk9zLBhj6CiAMMNz8-o0GOAFA6wdIBhoCbHEiIDhjODAxNDc0ZTk1YjYyYmRmN2FiOTk0ZjczNDFjMzY5; __security_mc_61_s_sdk_sign_data_key_sso=a5550b38-403d-9cf4; uid_tt=0cd89095e21189fb1843d4940e8b20ae; uid_tt_ss=0cd89095e21189fb1843d4940e8b20ae; sid_tt=9446f575cadcfcddbb4168f24707541e; sessionid=9446f575cadcfcddbb4168f24707541e; sessionid_ss=9446f575cadcfcddbb4168f24707541e; _tea_utm_cache_2906=undefined; _bd_ticket_crypt_cookie=4511926766f69c11061e044bb1a43813; __security_mc_61_s_sdk_sign_data_key_web_protect=321bfb2a-44e2-b956; _tea_utm_cache_2067=undefined; bd_ticket_guard_client_data=eyJiZC10aWNrZXQtZ3VhcmQtdmVyc2lvbiI6MiwiYmQtdGlja2V0LWd1YXJkLWl0ZXJhdGlvbi12ZXJzaW9uIjoxLCJiZC10aWNrZXQtZ3VhcmQtcmVlLXB1YmxpYy1rZXkiOiJCRmxlWjFIMmpHVytnWWNCZ3c1U3lncmxrVXhGTzBiNnFXeDZtV3F1dkpXWnNtQ0lIYjFBam5BNGxIbGlWeEg1UkJvS0MxMUJhR0tERGVBbmorVkhRbms9IiwiYmQtdGlja2V0LWd1YXJkLXdlYi12ZXJzaW9uIjoyfQ%3D%3D; ttwid=1%7C8oPTIGmvfTcTfLeksLgtQa1mAGsTDDh9fFjSGek9QiU%7C1769508841%7Ca6039c6d7e09c077bbb40939d72ccc2d14866989ed3b73f54d2b92a31274d5e1; odin_tt=0b4658c7b77043aa93193d08bbe039906cd5e797ec0d56dcd2c325544a57a8eeb50642e26865e74eab48aa92f9cf67310a68921cab300bb7d315a6c9c9439b74; bd_ticket_guard_server_data=eyJ0aWNrZXQiOiJoYXNoLmpqaWc3dHYzVkk5WFBrWGk0OEVhSitiZjRMeTAzbWg5UlU3Uk1VWmtBcGc9IiwidHNfc2lnbiI6InRzLjIuNDAyNWVhZGQyODNkMzQ0ZDY3ZWRjZmIwYmI2MDFmYWI0ODBjZDNmZmFlMzU4ODViNmE0YjllZjAxZGU3OTQ0OGM0ZmJlODdkMjMxOWNmMDUzMTg2MjRjZWRhMTQ5MTFjYTQwNmRlZGJlYmVkZGIyZTMwZmNlOGQ0ZmEwMjU3NWQiLCJjbGllbnRfY2VydCI6InB1Yi5CRmxlWjFIMmpHVytnWWNCZ3c1U3lncmxrVXhGTzBiNnFXeDZtV3F1dkpXWnNtQ0lIYjFBam5BNGxIbGlWeEg1UkJvS0MxMUJhR0tERGVBbmorVkhRbms9IiwibG9nX2lkIjoiMjAyNjAxMjcxODE0MDIyNTUwNUJBMkZDQUVCM0E4MURCQiIsImNyZWF0ZV90aW1lIjoxNzY5NTA4ODQyfQ%3D%3D; sid_guard=9446f575cadcfcddbb4168f24707541e%7C1769508842%7C5184000%7CSat%2C+28-Mar-2026+10%3A14%3A02+GMT; session_tlb_tag=sttt%7C5%7ClEb1dcrc_N27QWjyRwdUHv________-_jOoAgToIFUTFFjIZgGoOTe1UjL4ECaX-JHRVGa0Umnw%3D; sid_ucp_v1=1.0.0-KDhlYzU3YjYxMjdlZGUwMzAxYjBmOGRhMTFiMjVhNDcyZDdiYTgwYWIKGwi-j6Dfvo3CBxDqn-LLBhj6CiAMOAFA6wdIBBoCaGwiIDk0NDZmNTc1Y2FkY2ZjZGRiYjQxNjhmMjQ3MDc1NDFl; ssid_ucp_v1=1.0.0-KDhlYzU3YjYxMjdlZGUwMzAxYjBmOGRhMTFiMjVhNDcyZDdiYTgwYWIKGwi-j6Dfvo3CBxDqn-LLBhj6CiAMOAFA6wdIBBoCaGwiIDk0NDZmNTc1Y2FkY2ZjZGRiYjQxNjhmMjQ3MDc1NDFl; is_force_toggle_superior_1852192788837451=1; trace_log_adv_id=; trace_log_user_id=4231384263034814', 'gOrAcySNoo2qzRcKXSS2wUDq', '', '', 0, 0, 1769659380);
