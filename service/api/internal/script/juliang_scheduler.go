@@ -295,6 +295,9 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 			port := strings.TrimSpace(parts[1])            // 端口
 			serviceProvider := strings.TrimSpace(parts[2]) // 服务商
 			taskName := strings.TrimSpace(parts[3])        // 任务代码
+			if taskName == "app" {
+				taskName = "APP"
+			}
 
 			// 查询返点率（主体-端口）
 			rebateKey := fmt.Sprintf("%s-%s", subject, port)
