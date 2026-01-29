@@ -541,7 +541,7 @@
                 // 加载返点配置列表
                 const loadRebateList = async () => {
                     try {
-                        const response = await axios.get(`${API_BASE_URL}/config/rebate/list`);
+                        const response = await axios.get(`${API_BASE_URL}/media/config/rebate/list`);
                         if (response.data.code === 200) {
                             rebateList.value = response.data.data || [];
                         } else {
@@ -573,8 +573,8 @@
                 // 提交返点配置
                 const submitRebate = async () => {
                     const url = rebateDialogMode.value === 'create' 
-                        ? `${API_BASE_URL}/config/rebate/create`
-                        : `${API_BASE_URL}/config/rebate/update`;
+                        ? `${API_BASE_URL}/media/config/rebate/create`
+                        : `${API_BASE_URL}/media/config/rebate/update`;
                     
                     try {
                         const response = await axios.post(url, rebateForm.value);
@@ -599,7 +599,7 @@
                             type: 'warning'
                         });
                         
-                        const response = await axios.post(`${API_BASE_URL}/config/rebate/delete`, {
+                        const response = await axios.post(`${API_BASE_URL}/media/config/rebate/delete`, {
                             id: row.id
                         });
                         
@@ -630,7 +630,7 @@
                 // 加载服务费配置列表
                 const loadServiceFeeList = async () => {
                     try {
-                        const response = await axios.get(`${API_BASE_URL}/config/servicefee/list`);
+                        const response = await axios.get(`${API_BASE_URL}/media/config/servicefee/list`);
                         if (response.data.code === 200) {
                             serviceFeeList.value = response.data.data || [];
                         } else {
@@ -660,8 +660,8 @@
                 // 提交服务费配置
                 const submitServiceFee = async () => {
                     const url = serviceFeeDialogMode.value === 'create' 
-                        ? `${API_BASE_URL}/config/servicefee/create`
-                        : `${API_BASE_URL}/config/servicefee/update`;
+                        ? `${API_BASE_URL}/media/config/servicefee/create`
+                        : `${API_BASE_URL}/media/config/servicefee/update`;
                     
                     try {
                         const response = await axios.post(url, serviceFeeForm.value);
@@ -686,7 +686,7 @@
                             type: 'warning'
                         });
                         
-                        const response = await axios.post(`${API_BASE_URL}/config/servicefee/delete`, {
+                        const response = await axios.post(`${API_BASE_URL}/media/config/servicefee/delete`, {
                             id: row.id
                         });
                         
@@ -719,7 +719,7 @@
                 // 加载任务类型配置列表
                 const loadTaskTypeList = async () => {
                     try {
-                        const response = await axios.get(`${API_BASE_URL}/config/tasktype/list`);
+                        const response = await axios.get(`${API_BASE_URL}/media/config/tasktype/list`);
                         if (response.data.code === 200) {
                             taskTypeList.value = response.data.data || [];
                         } else {
@@ -751,8 +751,8 @@
                 // 提交任务类型配置
                 const submitTaskType = async () => {
                     const url = taskTypeDialogMode.value === 'create' 
-                        ? `${API_BASE_URL}/config/tasktype/create`
-                        : `${API_BASE_URL}/config/tasktype/update`;
+                        ? `${API_BASE_URL}/media/config/tasktype/create`
+                        : `${API_BASE_URL}/media/config/tasktype/update`;
                     
                     try {
                         const response = await axios.post(url, taskTypeForm.value);
@@ -777,7 +777,7 @@
                             type: 'warning'
                         });
                         
-                        const response = await axios.post(`${API_BASE_URL}/config/tasktype/delete`, {
+                        const response = await axios.post(`${API_BASE_URL}/media/config/tasktype/delete`, {
                             id: row.id
                         });
                         
