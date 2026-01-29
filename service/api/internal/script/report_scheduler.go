@@ -49,15 +49,15 @@ func Cron(config config.Config, db *gorm.DB) {
 	}
 
 	// 添加巨量报表任务
-	// if config.Schedule.JuliangReportCron != "" {
-	// 	_, err := cronScheduler.AddFunc(config.Schedule.JuliangReportCron, func() {
-	// 		executeJuliangReportJob(db, config.DingTalk, config.FileServer)
-	// 	})
-	// 	if err != nil {
-	// 		log.Fatalf("添加巨量报表定时任务失败: %v", err)
-	// 	}
-	// 	logx.Infof("巨量报表定时任务已启动，Cron 表达式: %s", config.Schedule.JuliangReportCron)
-	// }
+	if config.Schedule.JuliangReportCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.JuliangReportCron, func() {
+			executeJuliangReportJob(db, config.DingTalk, config.FileServer)
+		})
+		if err != nil {
+			log.Fatalf("添加巨量报表定时任务失败: %v", err)
+		}
+		logx.Infof("巨量报表定时任务已启动，Cron 表达式: %s", config.Schedule.JuliangReportCron)
+	}
 
 	// 启动调度器
 	cronScheduler.Start()
