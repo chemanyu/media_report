@@ -202,19 +202,19 @@ service media-api {
 service media-api {
 	@doc "获取服务费配置列表"
 	@handler getServiceFeeList
-	get /config/servicefee/list returns (ServiceFeeListResp)
+	get /config/serviceFeelist returns (ServiceFeeListResp)
 
 	@doc "创建服务费配置"
 	@handler createServiceFee
-	post /config/servicefee/create (CreateServiceFeeReq) returns (ServiceFeeCommonResp)
+	post /config/serviceFeecreate (CreateServiceFeeReq) returns (ServiceFeeCommonResp)
 
 	@doc "更新服务费配置"
 	@handler updateServiceFee
-	post /config/servicefee/update (UpdateServiceFeeReq) returns (ServiceFeeCommonResp)
+	post /config/serviceFeeupdate (UpdateServiceFeeReq) returns (ServiceFeeCommonResp)
 
 	@doc "删除服务费配置"
 	@handler deleteServiceFee
-	post /config/servicefee/delete (DeleteServiceFeeReq) returns (ServiceFeeCommonResp)
+	post /config/serviceFeedelete (DeleteServiceFeeReq) returns (ServiceFeeCommonResp)
 }
 
 // =============== 任务类型配置接口 ===============
