@@ -327,6 +327,10 @@ func processExcelData(ctx context.Context, excelPath string, db *gorm.DB, attrib
 		port := strings.TrimSpace(parts[1])            // 端口
 		serviceProvider := strings.TrimSpace(parts[2]) // 服务商
 		taskName := strings.TrimSpace(parts[3])        // 任务代码
+		// 如果 taskName 是小写 "app"，转换为大写 "APP"
+		if taskName == "app" {
+			taskName = "APP"
+		}
 
 		// 读取账户信息
 		advertiserIdStr := getCellValue("账户ID")
