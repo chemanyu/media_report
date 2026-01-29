@@ -35,7 +35,7 @@ Schedule:
   ReportCron: "0 10,12,14,16,18,22 * * *"  # 每天10点、12点、14点、16点、18点、22点执行报表任务
   TokenRefreshCron: "0 0 * * *"            # 每天0点刷新 token
   #JuliangReportCron: "0 10,12,14,16,18,22 * * *" 
-  JuliangReportCron: "*/5 * * * *" 
+  JuliangReportCron: "0 * * * *" 
 
 # 钉钉机器人配置
 DingTalk:
