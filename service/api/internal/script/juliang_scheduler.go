@@ -27,6 +27,7 @@ type AccountReportData struct {
 	Port            string  // 端口
 	ServiceProvider string  // 服务商
 	TaskCode        string  // 任务代码
+	Remark          string  // 备注
 	Cost            float64 // 消耗
 	CashCost        float64 // 现金消耗
 	RebateCost      float64 // 返点消耗
@@ -385,6 +386,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 				Port:            port,
 				ServiceProvider: serviceProvider,
 				TaskCode:        taskName,
+				Remark:          remark,
 				Cost:            cost,
 				CashCost:        cashCost,
 				RebateCost:      rebateCost,
@@ -575,7 +577,7 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 
 	// 设置表头
 	headers := []string{
-		"账户ID", "账户名称", "主体", "任务", "服务商",
+		"账户ID", "账户名称", "主体", "任务", "服务商", "备注",
 		"消耗汇总", "现金消耗汇总", "返后消耗汇总",
 		"曝光汇总", "点击汇总", "点击率汇总",
 		"转化数汇总", "转化成本汇总", "转化率",
@@ -596,19 +598,20 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 		f.SetCellValue(sheetName, fmt.Sprintf("C%d", row), report.Subject)
 		f.SetCellValue(sheetName, fmt.Sprintf("D%d", row), report.TaskCode)
 		f.SetCellValue(sheetName, fmt.Sprintf("E%d", row), report.ServiceProvider)
-		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), report.Cost)
-		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), report.CashCost)
-		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), report.RebateCost)
-		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), report.ShowCnt)
-		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), report.ClickCnt)
-		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), report.Ctr)
-		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), report.ConvertCnt)
-		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), report.ConversionCost)
-		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), report.ConversionRate)
-		f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), report.ServiceFeeCost)
-		f.SetCellValue(sheetName, fmt.Sprintf("P%d", row), report.Revenue)
-		f.SetCellValue(sheetName, fmt.Sprintf("Q%d", row), report.Profit)
-		f.SetCellValue(sheetName, fmt.Sprintf("R%d", row), fmt.Sprintf("%.2f%%", report.ProfitRate*100))
+		f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), report.Remark)
+		f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), report.Cost)
+		f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), report.CashCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("I%d", row), report.RebateCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("J%d", row), report.ShowCnt)
+		f.SetCellValue(sheetName, fmt.Sprintf("K%d", row), report.ClickCnt)
+		f.SetCellValue(sheetName, fmt.Sprintf("L%d", row), report.Ctr)
+		f.SetCellValue(sheetName, fmt.Sprintf("M%d", row), report.ConvertCnt)
+		f.SetCellValue(sheetName, fmt.Sprintf("N%d", row), report.ConversionCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("O%d", row), report.ConversionRate)
+		f.SetCellValue(sheetName, fmt.Sprintf("P%d", row), report.ServiceFeeCost)
+		f.SetCellValue(sheetName, fmt.Sprintf("Q%d", row), report.Revenue)
+		f.SetCellValue(sheetName, fmt.Sprintf("R%d", row), report.Profit)
+		f.SetCellValue(sheetName, fmt.Sprintf("S%d", row), fmt.Sprintf("%.2f%%", report.ProfitRate*100))
 	}
 
 	// 在最后一行添加汇总数据
@@ -618,19 +621,20 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 	f.SetCellValue(sheetName, fmt.Sprintf("C%d", totalRow), "")
 	f.SetCellValue(sheetName, fmt.Sprintf("D%d", totalRow), "")
 	f.SetCellValue(sheetName, fmt.Sprintf("E%d", totalRow), "")
-	f.SetCellValue(sheetName, fmt.Sprintf("F%d", totalRow), totalCost)
-	f.SetCellValue(sheetName, fmt.Sprintf("G%d", totalRow), totalCashCost)
-	f.SetCellValue(sheetName, fmt.Sprintf("H%d", totalRow), totalRebateCost)
-	f.SetCellValue(sheetName, fmt.Sprintf("I%d", totalRow), totalShowCnt)
-	f.SetCellValue(sheetName, fmt.Sprintf("J%d", totalRow), totalClickCnt)
-	f.SetCellValue(sheetName, fmt.Sprintf("K%d", totalRow), fmt.Sprintf("%.2f%%", avgCtr))
-	f.SetCellValue(sheetName, fmt.Sprintf("L%d", totalRow), totalConvertCnt)
-	f.SetCellValue(sheetName, fmt.Sprintf("M%d", totalRow), avgConversionCost)
-	f.SetCellValue(sheetName, fmt.Sprintf("N%d", totalRow), avgConversionRate)
-	f.SetCellValue(sheetName, fmt.Sprintf("O%d", totalRow), totalServiceFeeCost)
-	f.SetCellValue(sheetName, fmt.Sprintf("P%d", totalRow), totalRevenue)
-	f.SetCellValue(sheetName, fmt.Sprintf("Q%d", totalRow), totalProfit)
-	f.SetCellValue(sheetName, fmt.Sprintf("R%d", totalRow), fmt.Sprintf("%.2f%%", profitRate))
+	f.SetCellValue(sheetName, fmt.Sprintf("F%d", totalRow), "")
+	f.SetCellValue(sheetName, fmt.Sprintf("G%d", totalRow), totalCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("H%d", totalRow), totalCashCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("I%d", totalRow), totalRebateCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("J%d", totalRow), totalShowCnt)
+	f.SetCellValue(sheetName, fmt.Sprintf("K%d", totalRow), totalClickCnt)
+	f.SetCellValue(sheetName, fmt.Sprintf("L%d", totalRow), fmt.Sprintf("%.2f%%", avgCtr))
+	f.SetCellValue(sheetName, fmt.Sprintf("M%d", totalRow), totalConvertCnt)
+	f.SetCellValue(sheetName, fmt.Sprintf("N%d", totalRow), avgConversionCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("O%d", totalRow), avgConversionRate)
+	f.SetCellValue(sheetName, fmt.Sprintf("P%d", totalRow), totalServiceFeeCost)
+	f.SetCellValue(sheetName, fmt.Sprintf("Q%d", totalRow), totalRevenue)
+	f.SetCellValue(sheetName, fmt.Sprintf("R%d", totalRow), totalProfit)
+	f.SetCellValue(sheetName, fmt.Sprintf("S%d", totalRow), fmt.Sprintf("%.2f%%", profitRate))
 
 	// 设置默认活动工作表
 	f.SetActiveSheet(index)
