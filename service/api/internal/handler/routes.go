@@ -62,25 +62,25 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			{
 				// 创建服务费配置
 				Method:  http.MethodPost,
-				Path:    "/config/serviceFeecreate",
+				Path:    "/config/serviceFee/create",
 				Handler: config.CreateServiceFeeHandler(serverCtx),
 			},
 			{
 				// 删除服务费配置
 				Method:  http.MethodPost,
-				Path:    "/config/serviceFeedelete",
+				Path:    "/config/serviceFee/delete",
 				Handler: config.DeleteServiceFeeHandler(serverCtx),
 			},
 			{
 				// 获取服务费配置列表
 				Method:  http.MethodGet,
-				Path:    "/config/serviceFeelist",
+				Path:    "/config/serviceFee/list",
 				Handler: config.GetServiceFeeListHandler(serverCtx),
 			},
 			{
 				// 更新服务费配置
 				Method:  http.MethodPost,
-				Path:    "/config/serviceFeeupdate",
+				Path:    "/config/serviceFee/update",
 				Handler: config.UpdateServiceFeeHandler(serverCtx),
 			},
 		},

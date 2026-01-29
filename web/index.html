@@ -631,7 +631,7 @@
                 // 加载服务费配置列表
                 const loadServiceFeeList = async () => {
                     try {
-                        const response = await axios.get(`${API_BASE_URL}/config/serviceFeelist`);
+                        const response = await axios.get(`${API_BASE_URL}/config/serviceFee/list`);
                         if (response.data.code === 200) {
                             serviceFeeList.value = response.data.data || [];
                         } else {
@@ -661,8 +661,8 @@
                 // 提交服务费配置
                 const submitServiceFee = async () => {
                     const url = serviceFeeDialogMode.value === 'create' 
-                        ? `${API_BASE_URL}/config/serviceFeecreate`
-                        : `${API_BASE_URL}/config/serviceFeeupdate`;
+                        ? `${API_BASE_URL}/config/serviceFee/create`
+                        : `${API_BASE_URL}/config/serviceFee/update`;
                     
                     try {
                         const response = await axios.post(url, serviceFeeForm.value);
@@ -687,7 +687,7 @@
                             type: 'warning'
                         });
                         
-                        const response = await axios.post(`${API_BASE_URL}/config/serviceFeedelete`, {
+                        const response = await axios.post(`${API_BASE_URL}/config/serviceFee/delete`, {
                             id: row.id
                         });
                         
