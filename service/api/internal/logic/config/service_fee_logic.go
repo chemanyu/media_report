@@ -28,9 +28,33 @@ func NewGetServiceFeeListLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *GetServiceFeeListLogic) GetServiceFeeList() (resp *types.ServiceFeeListResp, err error) {
+	// 增加 panic 恢复
+	defer func() {
+		if r := recover(); r != nil {
+			l.Logger.Errorf("[GetServiceFeeList] Panic recovered: %v", r)
+			resp = &types.ServiceFeeListResp{
+				Code:    500,
+				Message: "服务器内部错误",
+				Data:    []*types.ServiceFeeResp{},
+			}
+		}
+	}()
+
+	l.Logger.Info("[GetServiceFeeList] 开始查询服务费配置列表")
+
+	// 检查数据库连接
+	if l.svcCtx.DB == nil {
+		l.Logger.Error("[GetServiceFeeList] 数据库连接为空")
+		return &types.ServiceFeeListResp{
+			Code:    500,
+			Message: "数据库连接异常",
+			Data:    []*types.ServiceFeeResp{},
+		}, nil
+	}
+
 	fees, err := model.GetAllServiceFees(l.svcCtx.DB)
 	if err != nil {
-		l.Logger.Errorf("获取服务费配置列表失败: %v", err)
+		l.Logger.Errorf("[GetServiceFeeList] 获取服务费配置列表失败: %v", err)
 		return &types.ServiceFeeListResp{
 			Code:    500,
 			Message: "获取失败: " + err.Error(),
@@ -38,19 +62,37 @@ func (l *GetServiceFeeListLogic) GetServiceFeeList() (resp *types.ServiceFeeList
 		}, nil
 	}
 
-	l.Logger.Infof("成功获取到 %d 条服务费配置记录", len(fees))
+	l.Logger.Infof("[GetServiceFeeList] 成功获取到 %d 条服务费配置记录", len(fees))
 
 	var list []*types.ServiceFeeResp
-	for _, f := range fees {
+	for idx, f := range fees {
+		// 安全的时间格式化
+		updateTimeStr := ""
+		createTimeStr := ""
+
+		if !f.UpdateTime.IsZero() {
+			updateTimeStr = f.UpdateTime.Format(time.RFC3339)
+		} else {
+			l.Logger.Warnf("[GetServiceFeeList] 记录[%d] ID=%d UpdateTime为零值", idx, f.ID)
+		}
+
+		if !f.CreateTime.IsZero() {
+			createTimeStr = f.CreateTime.Format(time.RFC3339)
+		} else {
+			l.Logger.Warnf("[GetServiceFeeList] 记录[%d] ID=%d CreateTime为零值", idx, f.ID)
+		}
+
 		list = append(list, &types.ServiceFeeResp{
 			ID:              f.ID,
 			ServiceProvider: f.ServiceProvider,
 			FeeRate:         f.FeeRate,
 			Remark:          f.Remark,
-			UpdateTime:      f.UpdateTime.Format(time.RFC3339),
-			CreateTime:      f.CreateTime.Format(time.RFC3339),
+			UpdateTime:      updateTimeStr,
+			CreateTime:      createTimeStr,
 		})
 	}
+
+	l.Logger.Infof("[GetServiceFeeList] 成功构建响应，共 %d 条记录", len(list))
 
 	return &types.ServiceFeeListResp{
 		Code:    200,

@@ -75,6 +75,11 @@ func NewMySQLConnection(config MySQLConfig) (*gorm.DB, error) {
 	sqlDB.SetConnMaxLifetime(connMaxLifetime) // 连接最大生命周期
 	sqlDB.SetConnMaxIdleTime(connMaxIdleTime) // 连接最大空闲时间
 
+	// 测试数据库连接
+	if err := sqlDB.Ping(); err != nil {
+		return nil, fmt.Errorf("failed to ping database: %w", err)
+	}
+
 	return db, nil
 }
 

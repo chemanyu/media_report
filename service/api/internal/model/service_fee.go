@@ -1,6 +1,7 @@
 package model
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -23,9 +24,17 @@ func (ServiceFee) TableName() string {
 
 // GetAll 获取所有服务费配置
 func GetAllServiceFees(db *gorm.DB) ([]ServiceFee, error) {
+	if db == nil {
+		return nil, fmt.Errorf("数据库连接为空")
+	}
+
 	var fees []ServiceFee
 	err := db.Order("id DESC").Find(&fees).Error
-	return fees, err
+	if err != nil {
+		return nil, fmt.Errorf("查询服务费配置失败: %w", err)
+	}
+
+	return fees, nil
 }
 
 // GetByID 根据ID获取服务费配置
