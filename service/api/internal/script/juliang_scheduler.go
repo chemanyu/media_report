@@ -480,7 +480,7 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 			"**点击量**：%d  \n"+
 			"**点击率**：%.2f%%  \n"+
 			"**转化数**：%d  \n"+
-			"**转化成本**：%.2f  \n"+
+			"**平均转化成本**：%.2f  \n"+
 			"**转化率**：%.2f%%  \n"+
 			"**服务费成本**：%.2f  \n"+
 			"**预估收入**：%.2f  \n"+
