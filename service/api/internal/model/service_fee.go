@@ -11,7 +11,7 @@ import (
 type ServiceFee struct {
 	ID              uint      `gorm:"primaryKey;autoIncrement" json:"id"`
 	ServiceProvider string    `gorm:"column:service_provider;type:varchar(50);not null;uniqueIndex:uniq_provider" json:"service_provider"` // 服务商名称：通途、蚁行、创效、凯旋、星河、云谷、美数
-	FeeRate         float64   `gorm:"column:fee_rate;type:decimal(5,4);not null" json:"fee_rate"`                                          // 服务费率：如0.04表示4%
+	FeeRate         float64   `gorm:"column:fee_rate;type:decimal(5,3);not null" json:"fee_rate"`                                          // 服务费率：如0.04表示4%
 	Remark          string    `gorm:"column:remark;type:varchar(255);default:''" json:"remark"`                                            // 备注
 	UpdateTime      time.Time `gorm:"column:update_time;autoUpdateTime" json:"update_time"`
 	CreateTime      time.Time `gorm:"column:create_time;autoCreateTime" json:"create_time"`
