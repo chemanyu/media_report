@@ -73,13 +73,13 @@ func (l *GetServiceFeeListLogic) GetServiceFeeList() (resp *types.ServiceFeeList
 		if !f.UpdateTime.IsZero() {
 			updateTimeStr = f.UpdateTime.Format(time.RFC3339)
 		} else {
-			l.Logger.Warnf("[GetServiceFeeList] 记录[%d] ID=%d UpdateTime为零值", idx, f.ID)
+			l.Logger.Infof("[GetServiceFeeList] 记录[%d] ID=%d UpdateTime为零值", idx, f.ID)
 		}
 
 		if !f.CreateTime.IsZero() {
 			createTimeStr = f.CreateTime.Format(time.RFC3339)
 		} else {
-			l.Logger.Warnf("[GetServiceFeeList] 记录[%d] ID=%d CreateTime为零值", idx, f.ID)
+			l.Logger.Infof("[GetServiceFeeList] 记录[%d] ID=%d CreateTime为零值", idx, f.ID)
 		}
 
 		list = append(list, &types.ServiceFeeResp{
