@@ -28,29 +28,6 @@ func NewGetServiceFeeListLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 }
 
 func (l *GetServiceFeeListLogic) GetServiceFeeList() (resp *types.ServiceFeeListResp, err error) {
-	// 增加 panic 恢复
-	defer func() {
-		if r := recover(); r != nil {
-			l.Logger.Errorf("[GetServiceFeeList] Panic recovered: %v", r)
-			resp = &types.ServiceFeeListResp{
-				Code:    500,
-				Message: "服务器内部错误",
-				Data:    []*types.ServiceFeeResp{},
-			}
-		}
-	}()
-
-	l.Logger.Info("[GetServiceFeeList] 开始查询服务费配置列表")
-
-	// 检查数据库连接
-	if l.svcCtx.DB == nil {
-		l.Logger.Error("[GetServiceFeeList] 数据库连接为空")
-		return &types.ServiceFeeListResp{
-			Code:    500,
-			Message: "数据库连接异常",
-			Data:    []*types.ServiceFeeResp{},
-		}, nil
-	}
 
 	fees, err := model.GetAllServiceFees(l.svcCtx.DB)
 	if err != nil {
