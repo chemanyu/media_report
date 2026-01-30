@@ -423,9 +423,10 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 
 	// 计算平均转化成本
 	var avgConversionCost float64
-	if totalConvertCnt > 0 {
-		avgConversionCost = totalConversionCost / float64(totalAccounts)
-	}
+	avgConversionCost = totalConversionCost
+	// if totalConvertCnt > 0 {
+	// 	avgConversionCost = totalConversionCost / float64(totalAccounts)
+	// }
 
 	// 计算总转化率
 	var avgConversionRate float64
@@ -480,7 +481,7 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 			"**点击量**：%d  \n"+
 			"**点击率**：%.2f%%  \n"+
 			"**转化数**：%d  \n"+
-			"**平均转化成本**：%.2f  \n"+
+			"**转化成本**：%.2f  \n"+
 			"**转化率**：%.2f%%  \n"+
 			"**服务费成本**：%.2f  \n"+
 			"**预估收入**：%.2f  \n"+
