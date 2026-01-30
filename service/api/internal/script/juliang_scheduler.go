@@ -424,7 +424,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 	// 计算平均转化成本
 	var avgConversionCost float64
 	if totalConvertCnt > 0 {
-		avgConversionCost = totalConversionCost / float64(totalConvertCnt)
+		avgConversionCost = totalConversionCost / float64(totalAccounts)
 	}
 
 	// 计算总转化率
