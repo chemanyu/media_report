@@ -29,12 +29,16 @@ func main() {
 
 	// 初始化数据库连接
 	dbConfig := database.MySQLConfig{
-		Host:     config.MySQL.Host,
-		Port:     config.MySQL.Port,
-		User:     config.MySQL.User,
-		Password: config.MySQL.Password,
-		Database: config.MySQL.Database,
-		Charset:  config.MySQL.Charset,
+		Host:            config.MySQL.Host,
+		Port:            config.MySQL.Port,
+		User:            config.MySQL.User,
+		Password:        config.MySQL.Password,
+		Database:        config.MySQL.Database,
+		Charset:         config.MySQL.Charset,
+		MaxIdleConns:    config.MySQL.MaxIdleConns,
+		MaxOpenConns:    config.MySQL.MaxOpenConns,
+		ConnMaxLifetime: config.MySQL.ConnMaxLifetime,
+		ConnMaxIdleTime: config.MySQL.ConnMaxIdleTime,
 	}
 	db := database.MustNewMySQLConnection(dbConfig)
 

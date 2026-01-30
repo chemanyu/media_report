@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"net/http"
 
 	"media_report/service/api/internal/logic/config"
@@ -13,6 +14,12 @@ import (
 // 获取服务费配置列表
 func GetServiceFeeListHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			if err := recover(); err != nil {
+				httpx.ErrorCtx(r.Context(), w, fmt.Errorf("服务器内部错误: %v", err))
+			}
+		}()
+
 		l := config.NewGetServiceFeeListLogic(r.Context(), svcCtx)
 		resp, err := l.GetServiceFeeList()
 		if err != nil {

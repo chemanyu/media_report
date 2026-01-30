@@ -27,12 +27,16 @@ type OAuthConfig struct {
 }
 
 type MySQLConfig struct {
-	Host     string // 数据库地址
-	Port     int    // 端口
-	User     string // 用户名
-	Password string // 密码
-	Database string // 数据库名
-	Charset  string // 字符集
+	Host            string // 数据库地址
+	Port            int    // 端口
+	User            string // 用户名
+	Password        string // 密码
+	Database        string // 数据库名
+	Charset         string // 字符集
+	MaxIdleConns    int    // 最大空闲连接数
+	MaxOpenConns    int    // 最大打开连接数
+	ConnMaxLifetime int    // 连接最大生命周期（秒）
+	ConnMaxIdleTime int    // 连接最大空闲时间（秒）
 }
 
 type ScheduleConfig struct {

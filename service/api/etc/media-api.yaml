@@ -2,6 +2,9 @@ Name: media-api
 Host: 0.0.0.0
 Port: 8888
 
+# 设置超时时间避免nginx超时
+Timeout: 30000  # 30秒
+
 Log:
   ServiceName: media-api
   Mode: console
@@ -26,9 +29,14 @@ MySQL:
   Host: 127.0.0.1
   Port: 3306
   User: root
-  Password: "123456"
+  Password: ""
   Database: release_atd
   Charset: utf8mb4
+  # 连接池配置
+  MaxIdleConns: 10        # 最大空闲连接数
+  MaxOpenConns: 50        # 最大打开连接数
+  ConnMaxLifetime: 3600   # 连接最大生命周期（秒）
+  ConnMaxIdleTime: 600    # 连接最大空闲时间（秒）
 
 # 定时任务配置
 Schedule:

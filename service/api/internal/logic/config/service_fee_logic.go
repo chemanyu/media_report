@@ -38,6 +38,8 @@ func (l *GetServiceFeeListLogic) GetServiceFeeList() (resp *types.ServiceFeeList
 		}, nil
 	}
 
+	l.Logger.Infof("成功获取到 %d 条服务费配置记录", len(fees))
+
 	var list []*types.ServiceFeeResp
 	for _, f := range fees {
 		list = append(list, &types.ServiceFeeResp{
