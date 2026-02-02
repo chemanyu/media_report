@@ -129,6 +129,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/report/juliang/trigger",
 				Handler: report.TriggerJuliangReportHandler(serverCtx),
 			},
+			{
+				// 获取京橙Cookie
+				Method:  http.MethodGet,
+				Path:    "/report/jingcheng/cookie",
+				Handler: report.GetJingchengCookieHandler(serverCtx),
+			},
 		},
 	)
 
@@ -141,7 +147,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: update.UpdateJuliangCookieHandler(serverCtx),
 			},
 			{
-				// 更新竞成Cookie
+				// 更新京橙Cookie
 				Method:  http.MethodPost,
 				Path:    "/update/jingcheng/cookie",
 				Handler: update.UpdateJingchengCookieHandler(serverCtx),

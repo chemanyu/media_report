@@ -153,6 +153,12 @@ type (
 		Code    int    `json:"code"`
 		Message string `json:"message"`
 	}
+	// =============== 获取京橙Cookie ===============
+	GetJingchengCookieResp {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+		Data    string `json:"data"`
+	}
 )
 
 @server (
@@ -257,4 +263,8 @@ service media-api {
 	@doc "触发巨量报表任务"
 	@handler triggerJuliangReport
 	post /report/juliang/trigger returns (TriggerJuliangReportResp)
+	
+	@doc "获取京橙Cookie"
+	@handler getJingchengCookie
+	get /report/jingcheng/cookie returns (GetJingchengCookieResp)
 }

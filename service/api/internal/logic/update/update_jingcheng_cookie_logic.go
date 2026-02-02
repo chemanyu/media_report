@@ -34,7 +34,7 @@ func (l *UpdateJingchengCookieLogic) UpdateJingchengCookie(req *types.UpdateJing
 		})
 
 	if result.Error != nil {
-		l.Logger.Errorf("更新竞成Cookie失败: %v", result.Error)
+		l.Logger.Errorf("更新京橙Cookie失败: %v", result.Error)
 		return &types.UpdateJingchengCookieResp{
 			Code:    500,
 			Message: "更新失败: " + result.Error.Error(),
@@ -49,7 +49,7 @@ func (l *UpdateJingchengCookieLogic) UpdateJingchengCookie(req *types.UpdateJing
 		}, nil
 	}
 
-	l.Logger.Infof("成功更新竞成Cookie，影响行数: %d", result.RowsAffected)
+	l.Logger.Infof("成功更新京橙Cookie，影响行数: %d", result.RowsAffected)
 
 	return &types.UpdateJingchengCookieResp{
 		Code:    200,
