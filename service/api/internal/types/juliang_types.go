@@ -15,6 +15,18 @@ type UpdateJuliangCookieResp struct {
 	Message string `json:"message"`
 }
 
+// 更新竞成Cookie请求
+type UpdateJingchengCookieReq struct {
+	Token        string `json:"cookie"`
+	RefreshToken string `json:"csrfToken"`
+}
+
+// 更新竞成Cookie响应
+type UpdateJingchengCookieResp struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 // 巨量 API 响应结构
 type JuliangApiResponse struct {
 	Code      int                    `json:"code"`

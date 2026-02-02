@@ -140,6 +140,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/update/juliang/cookie",
 				Handler: update.UpdateJuliangCookieHandler(serverCtx),
 			},
+			{
+				// 更新竞成Cookie
+				Method:  http.MethodPost,
+				Path:    "/update/jingcheng/cookie",
+				Handler: update.UpdateJingchengCookieHandler(serverCtx),
+			},
 		},
 	)
 

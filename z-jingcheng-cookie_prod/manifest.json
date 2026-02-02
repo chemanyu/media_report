@@ -1,0 +1,28 @@
+{
+  "manifest_version": 3,
+  "name": "京橙Cookie更新",
+  "version": "1.0",
+  "description": "用于更新京橙在钉钉时报的Cookie",
+  "permissions": [
+    "cookies",
+    "activeTab",
+    "alarms",
+    "notifications",
+    "tabs",
+    "storage"
+  ],
+  "host_permissions": [
+        "http://*/*",
+        "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "更新Cookie"
+  },
+  "icons": {
+    "48": "icon48.png"
+  }
+}
