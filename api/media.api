@@ -17,11 +17,11 @@ type (
 	}
 	// 快手账户报表响应数据项
 	KsReportDataItem {
-		Charge          float64 `json:"charge"` // 消耗 * 1.2
+		Charge          float64 `json:"charge"` // 消耗 * 1
 		AdShow          float64 `json:"ad_show"` // 曝光数
 		Bclick          int64   `json:"bclick"` // 点击数
 		Activation      int64   `json:"activation"` // 激活数
-		ConversionCost  float64 `json:"conversion_cost"` // 转化成本 * 1.2
+		ConversionCost  float64 `json:"conversion_cost"` // 转化成本 * 1
 		ConversionRatio float64 `json:"conversion_ratio"` // 转化率 * 100
 	}
 	// 快手账户报表响应

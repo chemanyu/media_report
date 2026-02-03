@@ -189,7 +189,7 @@ func executeReportJob(db *gorm.DB, ksConfig config.KuaishouConfig, dingTalk conf
 	}
 
 	// 计算平均转化率 和 转化成本
-	totalDetail.Charge = totalDetail.Charge * 1.2
+	totalDetail.Charge = totalDetail.Charge * 1
 	totalDetail.ConversionRatio = float64(totalDetail.Activation) / float64(totalDetail.Bclick)
 	totalDetail.ConversionCost = totalDetail.Charge / float64(totalDetail.Activation)
 
