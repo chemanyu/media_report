@@ -137,3 +137,45 @@ type DownloadTask struct {
 	ExtraKV             map[string]string `json:"extraKV"`
 	CanRetry            bool              `json:"canRetry"`
 }
+
+// 巨量引擎自定义报表请求 - 用于给饿了么汇川回传数据
+type JuliangCustomReportReq struct {
+	AdvertiserId int64            `json:"advertiser_id"` // 广告主ID
+	Dimensions   []string         `json:"dimensions"`    // 维度列表
+	Metrics      []string         `json:"metrics"`       // 指标列表
+	Filters      []interface{}    `json:"filters"`       // 过滤条件
+	StartTime    string           `json:"start_time"`    // 开始时间
+	EndTime      string           `json:"end_time"`      // 结束时间
+	OrderBy      []JuliangOrderBy `json:"order_by"`      // 排序字段
+}
+
+type JuliangOrderBy struct {
+	Field string `json:"field"` // 排序字段
+	Type  string `json:"type"`  // 排序类型: ASC/DESC
+}
+
+// 巨量引擎自定义报表响应
+type JuliangCustomReportResp struct {
+	Code      int                     `json:"code"`
+	Message   string                  `json:"message"`
+	RequestId string                  `json:"request_id"`
+	Data      JuliangCustomReportData `json:"data"`
+}
+
+type JuliangCustomReportData struct {
+	PageInfo     JuliangPageInfo        `json:"page_info"`
+	Rows         []JuliangReportRow     `json:"rows"`
+	TotalMetrics map[string]interface{} `json:"total_metrics"`
+}
+
+type JuliangPageInfo struct {
+	Page        int `json:"page"`
+	PageSize    int `json:"page_size"`
+	TotalNumber int `json:"total_number"`
+	TotalPage   int `json:"total_page"`
+}
+
+type JuliangReportRow struct {
+	Dimensions map[string]interface{} `json:"dimensions"`
+	Metrics    map[string]interface{} `json:"metrics"`
+}

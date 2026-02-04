@@ -26,12 +26,31 @@ OAuthConfig:
   AppId: 165914637
   Secret: J73@=A$~zY7l+7-V
 
+# 巨量引擎DLS配置
+JuliangDLS:
+  BaseUrl: https://api.oceanengine.com
+  Timeout: 30
+  AppId: 1826831568917779
+  Secret: "8d7595a6cb38ac82c692015b3a22cc2761070c8a"
+
+# 巨量引擎KH配置
+JuliangKH:
+  BaseUrl: https://api.oceanengine.com
+  Timeout: 30
+  AppId: 1826895561951595
+  Secret: "8605a16876612ca7ea7089be6e700b6069cec9fb"
+
+# 回传饿了么配置
+HuichuanElm:
+  AdvertiserIds:  # 广告主 ID 列表
+    - 1826264271670538
+
 # MySQL 数据库配置
 MySQL:
   Host: 127.0.0.1
   Port: 3306
   User: root
-  Password: "123456"
+  Password: ""
   Database: release_atd
   Charset: utf8mb4
   # 连接池配置

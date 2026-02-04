@@ -9,10 +9,13 @@ type Config struct {
 	rest.RestConf
 	Kuaishou    KuaishouConfig
 	OAuthConfig OAuthConfig
-	MySQL       MySQLConfig      // 数据库配置
-	Schedule    ScheduleConfig   // 定时任务配置
-	DingTalk    DingTalkConfig   // 钉钉配置
-	FileServer  FileServerConfig // 文件服务器配置
+	JuliangDLS  JuliangConfig     // 巨量DLS配置
+	JuliangKH   JuliangConfig     // 巨量KH配置
+	HuichuanElm HuichuanElmConfig // 回传饿了么配置
+	MySQL       MySQLConfig       // 数据库配置
+	Schedule    ScheduleConfig    // 定时任务配置
+	DingTalk    DingTalkConfig    // 钉钉配置
+	FileServer  FileServerConfig  // 文件服务器配置
 }
 
 type KuaishouConfig struct {
@@ -24,6 +27,17 @@ type KuaishouConfig struct {
 type OAuthConfig struct {
 	AppId  int64  // 应用 ID
 	Secret string // 应用密钥
+}
+
+type JuliangConfig struct {
+	BaseUrl string // API基础地址
+	Timeout int    // 请求超时时间（秒）
+	AppId   int64  // 应用 ID
+	Secret  string // 应用密钥
+}
+
+type HuichuanElmConfig struct {
+	AdvertiserIds []int64 // 广告主 ID 列表
 }
 
 type MySQLConfig struct {
