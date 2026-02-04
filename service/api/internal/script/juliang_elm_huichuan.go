@@ -222,3 +222,45 @@ func getJuliangReportData(db *gorm.DB, juliangConfig config.JuliangConfig, adver
 	logx.Infof("成功获取巨量引擎报表数据：%v", resp.Data.Rows)
 	return &resp, nil
 }
+
+// FetchHuichuanElmReportsByHour 获取回传饿了么所有账户的小时级报表数据
+func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConfig, huichuanElmConfig config.HuichuanElmConfig) {
+	logx.Infof("开始获取回传饿了么小时级报表数据 - %s", time.Now().Format("2006-01-02 15:04:05"))
+
+	// 获取当前时间，计算上一个小时的时间范围
+	now := time.Now()
+	// 上一个小时的开始时间：当前小时-1，分钟和秒为00
+	startTime := now.Add(-1*time.Hour).Format("2006-01-02 15") + ":00:00"
+	// 上一个小时的结束时间：当前小时，分钟为00，秒为00
+	endTime := now.Format("2006-01-02 15") + ":00:00"
+
+	logx.Infof("查询时间范围: %s ~ %s", startTime, endTime)
+
+	// 遍历所有广告主ID
+	for _, advertiserId := range huichuanElmConfig.AdvertiserIds {
+		logx.Infof("正在获取广告主 %d 的小时级报表数据...", advertiserId)
+
+		resp, err := getJuliangReportData(db, juliangConfig, advertiserId, startTime, endTime)
+		if err != nil {
+			logx.Errorf("获取广告主 %d 的小时级报表数据失败: %v", advertiserId, err)
+			continue
+		}
+
+		// 处理返回的数据
+		logx.Infof("广告主 %d 小时级报表数据获取成功:", advertiserId)
+		logx.Infof("  总记录数: %d", len(resp.Data.Rows))
+		if len(resp.Data.Rows) > 0 {
+			logx.Infof("  总指标: %+v", resp.Data.TotalMetrics)
+			// 打印前3条记录作为示例
+			for i, row := range resp.Data.Rows {
+				if i < 3 {
+					logx.Infof("  记录 %d - 维度: %+v, 指标: %+v", i+1, row.Dimensions, row.Metrics)
+				}
+			}
+		}
+
+		// TODO: 这里可以添加保存数据到数据库或其他处理逻辑
+	}
+
+	logx.Infof("回传饿了么小时级报表数据获取完成")
+}

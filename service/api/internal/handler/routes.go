@@ -28,6 +28,15 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 	})
 
+	// 汇川饿了么报表页面
+	server.AddRoute(rest.Route{
+		Method: http.MethodGet,
+		Path:   "/elm_hc_report.html",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			http.ServeFile(w, r, filepath.Join(webDir, "elm_hc_report.html"))
+		},
+	})
+
 	server.AddRoutes(
 		[]rest.Route{
 			{
@@ -111,6 +120,35 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/config/tasktype/update",
 				Handler: config.UpdateTaskTypeHandler(serverCtx),
+			},
+		},
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 创建汇川饿了么数据报表
+				Method:  http.MethodPost,
+				Path:    "/config/elmhc/create",
+				Handler: config.CreateElmHcReportHandler(serverCtx),
+			},
+			{
+				// 删除汇川饿了么数据报表
+				Method:  http.MethodPost,
+				Path:    "/config/elmhc/delete",
+				Handler: config.DeleteElmHcReportHandler(serverCtx),
+			},
+			{
+				// 获取汇川饿了么数据报表列表
+				Method:  http.MethodGet,
+				Path:    "/config/elmhc/list",
+				Handler: config.GetElmHcReportListHandler(serverCtx),
+			},
+			{
+				// 更新汇川饿了么数据报表
+				Method:  http.MethodPost,
+				Path:    "/config/elmhc/update",
+				Handler: config.UpdateElmHcReportHandler(serverCtx),
 			},
 		},
 	)

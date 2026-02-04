@@ -148,6 +148,59 @@ type (
 		Code    int    `json:"code"`
 		Message string `json:"message"`
 	}
+	// =============== 汇川饿了么数据报表 ===============
+	CreateElmHcReportReq {
+		CustomerName      string `json:"customer_name"`
+		CustomerShort     string `json:"customer_short"`
+		AgentName         string `json:"agent_name"`
+		AgentShort        string `json:"agent_short"`
+		MediaPlatformName string `json:"media_platform_name"`
+		MediaAdvId        string `json:"media_adv_id"`
+		MediaAdvName      string `json:"media_adv_name"`
+		HuichuanAdvId     int64  `json:"huichuan_adv_id"`
+		RedirectNum       int    `json:"redirect_num"`
+		PayNum            int    `json:"pay_num"`
+	}
+	UpdateElmHcReportReq {
+		ID                int64  `json:"id"`
+		CustomerName      string `json:"customer_name"`
+		CustomerShort     string `json:"customer_short"`
+		AgentName         string `json:"agent_name"`
+		AgentShort        string `json:"agent_short"`
+		MediaPlatformName string `json:"media_platform_name"`
+		MediaAdvId        string `json:"media_adv_id"`
+		MediaAdvName      string `json:"media_adv_name"`
+		HuichuanAdvId     int64  `json:"huichuan_adv_id"`
+		RedirectNum       int    `json:"redirect_num"`
+		PayNum            int    `json:"pay_num"`
+	}
+	DeleteElmHcReportReq {
+		ID int64 `json:"id"`
+	}
+	ElmHcReportResp {
+		ID                int64  `json:"id"`
+		CustomerName      string `json:"customer_name"`
+		CustomerShort     string `json:"customer_short"`
+		AgentName         string `json:"agent_name"`
+		AgentShort        string `json:"agent_short"`
+		MediaPlatformName string `json:"media_platform_name"`
+		MediaAdvId        string `json:"media_adv_id"`
+		MediaAdvName      string `json:"media_adv_name"`
+		HuichuanAdvId     int64  `json:"huichuan_adv_id"`
+		RedirectNum       int    `json:"redirect_num"`
+		PayNum            int    `json:"pay_num"`
+		CreateTime        string `json:"create_time"`
+		UpdateTime        string `json:"update_time"`
+	}
+	ElmHcReportListResp {
+		Code    int                `json:"code"`
+		Message string             `json:"message"`
+		Data    []*ElmHcReportResp `json:"data"`
+	}
+	ElmHcReportCommonResp {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
 	// =============== 巨量报表任务 ===============
 	TriggerJuliangReportResp {
 		Code    int    `json:"code"`
@@ -243,6 +296,28 @@ service media-api {
 	@doc "删除任务类型"
 	@handler deleteTaskType
 	post /config/tasktype/delete (DeleteTaskTypeReq) returns (TaskTypeCommonResp)
+}
+
+// =============== 汇川饿了么数据报表接口 ===============
+@server (
+	group: config
+)
+service media-api {
+	@doc "获取汇川饿了么数据报表列表"
+	@handler getElmHcReportList
+	get /config/elmhc/list returns (ElmHcReportListResp)
+
+	@doc "创建汇川饿了么数据报表"
+	@handler createElmHcReport
+	post /config/elmhc/create (CreateElmHcReportReq) returns (ElmHcReportCommonResp)
+
+	@doc "更新汇川饿了么数据报表"
+	@handler updateElmHcReport
+	post /config/elmhc/update (UpdateElmHcReportReq) returns (ElmHcReportCommonResp)
+
+	@doc "删除汇川饿了么数据报表"
+	@handler deleteElmHcReport
+	post /config/elmhc/delete (DeleteElmHcReportReq) returns (ElmHcReportCommonResp)
 }
 
 // =============== 文件下载接口 ===============

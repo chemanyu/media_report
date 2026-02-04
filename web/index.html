@@ -223,6 +223,10 @@
                         <div class="stat-value">{{ activeTaskCount }}</div>
                         <div class="stat-label">启用任务</div>
                     </div>
+                    <div class="stat-item" style="cursor: pointer;" @click="goToElmHcReport">
+                        <div class="stat-value">🍔</div>
+                        <div class="stat-label">汇川饿了么报表</div>
+                    </div>
                 </div>
             </div>
 
@@ -506,8 +510,8 @@
         createApp({
             setup() {
                 // API Base URL - 根据实际情况修改
-                //const API_BASE_URL = 'http://127.0.0.1:8888';
-                const API_BASE_URL = 'https://rta.zhltech.net/guangyixinmedia';
+                const API_BASE_URL = 'http://127.0.0.1:8888';
+                //const API_BASE_URL = 'https://rta.zhltech.net/guangyixinmedia';
 
                 // 当前激活的标签页
                 const activeTab = ref('rebate');
@@ -800,6 +804,11 @@
                     return taskTypeList.value.filter(task => task.status === 1).length;
                 });
 
+                // 跳转到汇川饿了么报表页面
+                const goToElmHcReport = () => {
+                    window.location.href = '/elm_hc_report.html';
+                };
+
                 // 组件挂载时加载数据
                 onMounted(() => {
                     loadRebateList();
@@ -837,7 +846,9 @@
                     showTaskTypeDialog,
                     submitTaskType,
                     deleteTaskType,
-                    activeTaskCount
+                    activeTaskCount,
+                    // 页面跳转
+                    goToElmHcReport
                 };
             }
         }).use(ElementPlus).mount('#app');
