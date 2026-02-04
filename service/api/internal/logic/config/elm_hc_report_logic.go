@@ -46,9 +46,6 @@ func (l *GetElmHcReportListLogic) GetElmHcReportList() (*types.ElmHcReportListRe
 			AgentName:         report.AgentName,
 			AgentShort:        report.AgentShort,
 			MediaPlatformName: report.MediaPlatformName,
-			MediaAdvId:        report.MediaAdvId,
-			MediaAdvName:      report.MediaAdvName,
-			HuichuanAdvId:     report.HuichuanAdvId,
 			RedirectNum:       report.RedirectNum,
 			PayNum:            report.PayNum,
 			CreateTime:        report.CreateTime.Format("2006-01-02 15:04:05"),
@@ -80,10 +77,10 @@ func NewCreateElmHcReportLogic(ctx context.Context, svcCtx *svc.ServiceContext) 
 
 func (l *CreateElmHcReportLogic) CreateElmHcReport(req *types.CreateElmHcReportReq) (*types.ElmHcReportCommonResp, error) {
 	// 参数校验
-	if req.CustomerName == "" || req.MediaPlatformName == "" || req.MediaAdvId == "" {
+	if req.CustomerName == "" || req.MediaPlatformName == "" {
 		return &types.ElmHcReportCommonResp{
 			Code:    400,
-			Message: "客户名称、媒体平台名称和媒体账户ID不能为空",
+			Message: "客户名称和媒体平台名称不能为空",
 		}, nil
 	}
 
@@ -93,9 +90,6 @@ func (l *CreateElmHcReportLogic) CreateElmHcReport(req *types.CreateElmHcReportR
 		AgentName:         req.AgentName,
 		AgentShort:        req.AgentShort,
 		MediaPlatformName: req.MediaPlatformName,
-		MediaAdvId:        req.MediaAdvId,
-		MediaAdvName:      req.MediaAdvName,
-		HuichuanAdvId:     req.HuichuanAdvId,
 		RedirectNum:       req.RedirectNum,
 		PayNum:            req.PayNum,
 		CreateTime:        time.Now(),
@@ -140,10 +134,10 @@ func (l *UpdateElmHcReportLogic) UpdateElmHcReport(req *types.UpdateElmHcReportR
 		}, nil
 	}
 
-	if req.CustomerName == "" || req.MediaPlatformName == "" || req.MediaAdvId == "" {
+	if req.CustomerName == "" || req.MediaPlatformName == "" {
 		return &types.ElmHcReportCommonResp{
 			Code:    400,
-			Message: "客户名称、媒体平台名称和媒体账户ID不能为空",
+			Message: "客户名称和媒体平台名称不能为空",
 		}, nil
 	}
 
@@ -154,9 +148,6 @@ func (l *UpdateElmHcReportLogic) UpdateElmHcReport(req *types.UpdateElmHcReportR
 		AgentName:         req.AgentName,
 		AgentShort:        req.AgentShort,
 		MediaPlatformName: req.MediaPlatformName,
-		MediaAdvId:        req.MediaAdvId,
-		MediaAdvName:      req.MediaAdvName,
-		HuichuanAdvId:     req.HuichuanAdvId,
 		RedirectNum:       req.RedirectNum,
 		PayNum:            req.PayNum,
 	}

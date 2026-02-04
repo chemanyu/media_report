@@ -150,6 +150,24 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/config/elmhc/update",
 				Handler: config.UpdateElmHcReportHandler(serverCtx),
 			},
+			{
+				// 获取汇川饿了么媒体账户列表
+				Method:  http.MethodGet,
+				Path:    "/config/elmhc/media/list",
+				Handler: config.GetElmHcMediaListHandler(serverCtx),
+			},
+			{
+				// 创建汇川饿了么媒体账户
+				Method:  http.MethodPost,
+				Path:    "/config/elmhc/media/create",
+				Handler: config.CreateElmHcMediaHandler(serverCtx),
+			},
+			{
+				// 删除汇川饿了么媒体账户
+				Method:  http.MethodPost,
+				Path:    "/config/elmhc/media/delete",
+				Handler: config.DeleteElmHcMediaHandler(serverCtx),
+			},
 		},
 	)
 
