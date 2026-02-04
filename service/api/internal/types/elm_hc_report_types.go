@@ -98,3 +98,33 @@ type ElmHcMediaCommonResp struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
+
+// =============== ADX 接口相关 ===============
+
+// ADXReportData ADX 日数据导入请求体
+type ADXReportData struct {
+	CustomerName      string  `json:"customerName"`              // 客户名称
+	CustomerShort     string  `json:"customerShort"`             // 客户简称
+	AgentName         string  `json:"agentName"`                 // 代理名称
+	AgentShort        string  `json:"agentShort"`                // 代理简称
+	MediaPlatformName string  `json:"mediaPlatformName"`         // 媒体平台名称
+	MediaAdvId        string  `json:"mediaAdvId"`                // 媒体账户ID
+	MediaAdvName      string  `json:"mediaAdvName"`              // 媒体账户名称
+	HuichuanAdvId     int64   `json:"huichuanAdvId"`             // 汇川账户ID
+	Cost              float64 `json:"cost,omitempty"`            // 消费
+	ShowNum           int64   `json:"showNum"`                   // 展示数
+	ClickNum          int64   `json:"clickNum"`                  // 点击数
+	ConvertNum        int64   `json:"convertNum"`                // 转化数
+	DeepConvertNum    int     `json:"deepConvertNum"`            // 深度转化数
+	ConvertType       string  `json:"convertType,omitempty"`     // 转化类型
+	DeepConvertType   string  `json:"deepConvertType,omitempty"` // 深度转化类型
+	RedirectNum       int     `json:"redirectNum"`               // 调起数
+	PayNum            int     `json:"payNum"`                    // 付费数
+	Dt                string  `json:"dt"`                        // 日期：yyyyMMdd
+	Hh                string  `json:"hh,omitempty"`              // 小时:hh，例如：01, 02（仅小时数据使用）
+}
+
+// ADXResponse ADX 接口响应
+type ADXResponse struct {
+	Data bool `json:"data"` // 操作是否成功
+}

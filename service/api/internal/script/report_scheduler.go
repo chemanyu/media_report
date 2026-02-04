@@ -65,10 +65,10 @@ func Cron(config config.Config, db *gorm.DB) {
 	// 立即刷新一次 token（可选）
 	if config.Schedule.TokenRefreshCron != "" {
 		logx.Info("立即刷新一次 token...")
-		refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
+		//refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
 		// refreshJuliangDLSAccessToken(db, config.JuliangDLS)
 		// refreshJuliangKHAccessToken(db, config.JuliangKH)
-		FetchHuichuanElmReports(db, config.JuliangDLS, config.HuichuanElm)
+		FetchHuichuanElmReports(db, config.JuliangDLS, config.ADX)
 	}
 }
 

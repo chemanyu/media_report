@@ -40,10 +40,12 @@ JuliangKH:
   AppId: 1826895561951595
   Secret: "8605a16876612ca7ea7089be6e700b6069cec9fb"
 
-# 回传饿了么配置
-HuichuanElm:
-  AdvertiserIds:  # 广告主 ID 列表
-    - 1826264271670538
+# ADX 外部接口配置
+ADX:
+  BaseURL: https://agent.kkforce.com/assistant-external  # ADX 接口地址
+  APIKey: "agent_meishu"  # X-API-KEY，每个客户端会有自己的KEY，需要配置
+  Secret: "246bb40b-a39c-4e17-bb82-5eb22fb93971"  # 用于签名的密钥
+  Timeout: 30  # 请求超时时间（秒）
 
 # MySQL 数据库配置
 MySQL:
