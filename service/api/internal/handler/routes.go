@@ -28,15 +28,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 	})
 
-	// 汇川饿了么报表页面
-	server.AddRoute(rest.Route{
-		Method: http.MethodGet,
-		Path:   "/elm_hc_report.html",
-		Handler: func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, filepath.Join(webDir, "elm_hc_report.html"))
-		},
-	})
-
 	server.AddRoutes(
 		[]rest.Route{
 			{

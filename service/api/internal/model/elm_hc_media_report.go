@@ -69,62 +69,6 @@ func DeleteElmHcMediaReport(db *gorm.DB, id int64) error {
 	return db.Delete(&ElmHcMediaReport{}, id).Error
 }
 
-// CreateOrUpdate 创建或更新（根据唯一键判断）
-func CreateOrUpdateElmHcMediaReport(db *gorm.DB, report *ElmHcMediaReport) error {
-	// 先尝试查询是否存在
-	existing, err := GetElmHcMediaReportByUniqueKey(db, report.MediaAdvId, report.HuichuanAdvId)
-	if err != nil {
-		if err == gorm.ErrRecordNotFound {
-			// 不存在，创建新记录
-			return CreateElmHcMediaReport(db, report)
-		}
-		return err
-	}
-
-	// 已存在，更新记录
-	report.ID = existing.ID
-	return UpdateElmHcMediaReport(db, report)
-}
-
-// BatchCreate 批量创建汇川饿了么账户报表
-func BatchCreateElmHcMediaReports(db *gorm.DB, reports []ElmHcMediaReport) error {
-	if len(reports) == 0 {
-		return nil
-	}
-	return db.Create(&reports).Error
-}
-
-// BatchCreateOrUpdate 批量创建或更新
-func BatchCreateOrUpdateElmHcMediaReports(db *gorm.DB, reports []ElmHcMediaReport) error {
-	if len(reports) == 0 {
-		return nil
-	}
-
-	// 使用事务处理
-	return db.Transaction(func(tx *gorm.DB) error {
-		for _, report := range reports {
-			if err := CreateOrUpdateElmHcMediaReport(tx, &report); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
-}
-
-// GetByMediaAdvId 根据媒体账户ID查询
-func GetElmHcMediaReportsByMediaAdvId(db *gorm.DB, mediaAdvId string) ([]ElmHcMediaReport, error) {
-	var reports []ElmHcMediaReport
-	err := db.Where("media_adv_id = ?", mediaAdvId).Order("id DESC").Find(&reports).Error
-	return reports, err
-}
-
-// GetByHuichuanAdvId 根据汇川账户ID查询
-func GetElmHcMediaReportsByHuichuanAdvId(db *gorm.DB, huichuanAdvId int64) ([]ElmHcMediaReport, error) {
-	var reports []ElmHcMediaReport
-	err := db.Where("huichuan_adv_id = ?", huichuanAdvId).Order("id DESC").Find(&reports).Error
-	return reports, err
-}
-
 // GetByPerformanceId 根据客户表ID获取汇川饿了么账户报表
 func GetElmHcMediaReportsByPerformanceId(db *gorm.DB, performanceId int) ([]ElmHcMediaReport, error) {
 	var reports []ElmHcMediaReport
