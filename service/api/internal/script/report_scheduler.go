@@ -90,7 +90,7 @@ func Cron(config config.Config, db *gorm.DB) {
 		refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
 		refreshJuliangDLSAccessToken(db, config.JuliangDLS)
 		refreshJuliangKHAccessToken(db, config.JuliangKH)
-		FetchHuichuanElmReports(db, config.JuliangDLS, config.ADX)
+		//FetchHuichuanElmReports(db, config.JuliangDLS, config.ADX)
 	}
 }
 
