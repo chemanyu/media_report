@@ -52,7 +52,7 @@ MySQL:
   Host: 127.0.0.1
   Port: 3306
   User: root
-  Password: ""
+  Password: "123456"
   Database: release_atd
   Charset: utf8mb4
   # 连接池配置
