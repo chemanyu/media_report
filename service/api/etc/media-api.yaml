@@ -71,7 +71,7 @@ Schedule:
   #JuliangReportCron: "0 10,12,14,16,18,22 * * *" 
   JuliangReportCron: "0 * * * *"
   HuichuanElmDailyCron: "2 11 * * *"        # 每天凌晨1点执行汇川饿了么日报表任务
-  HuichuanElmHourlyCron: "3 * * * *"       # 每小时执行汇川饿了么小时报表任务 
+  HuichuanElmHourlyCron: "7 * * * *"       # 每小时执行汇川饿了么小时报表任务 
 
 # 钉钉机器人配置
 DingTalk:
