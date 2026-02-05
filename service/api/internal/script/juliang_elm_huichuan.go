@@ -131,6 +131,13 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 
 	logx.Infof("查询日期: %s, 时间范围: %s ~ %s", dt, startTime, endTime)
 
+	// 从数据库获取 access_token（在循环外查询一次，避免频繁查询数据库）
+	mediaToken, err := model.GetByMedia(db, "juliang_dls")
+	if err != nil {
+		logx.Errorf("从数据库获取 juliang_dls token 失败: %v", err)
+		return
+	}
+
 	// 从数据库获取所有客户及其媒体账户
 	performances, err := model.GetAllElmHcPerformanceReports(db)
 	if err != nil {
@@ -168,7 +175,7 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 
 			// 调用巨量引擎API获取报表数据
 			advertiser_id, _ := strconv.Atoi(media.MediaAdvId)
-			resp, err := getJuliangReportData(db, juliangConfig, advertiser_id, startTime, endTime, "stat_time_day")
+			resp, err := getJuliangReportData(juliangConfig, mediaToken.Token, advertiser_id, startTime, endTime, "stat_time_day")
 			if err != nil {
 				logx.Errorf("获取账户 %s 的报表数据失败: %v", media.MediaAdvName, err)
 				continue
@@ -256,22 +263,13 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 }
 
 // getJuliangReportData 获取巨量引擎报表数据
-func getJuliangReportData(db *gorm.DB, juliangConfig config.JuliangConfig, advertiserId int, startTime, endTime, stat_date string) (*types.JuliangCustomReportResp, error) {
+func getJuliangReportData(juliangConfig config.JuliangConfig, accessToken string, advertiserId int, startTime, endTime, stat_date string) (*types.JuliangCustomReportResp, error) {
 	ctx := context.Background()
 	logx.Infof("开始获取巨量引擎报表数据 - advertiser_id: %d, 时间范围: %s ~ %s", advertiserId, startTime, endTime)
 
-	mediaType := "juliang_dls"
-
-	// 从数据库获取 access_token
-	mediaToken, err := model.GetByMedia(db, mediaType)
-	if err != nil {
-		logx.Errorf("从数据库获取 %s token 失败: %v", mediaType, err)
-		return nil, err
-	}
-
 	// 创建 HTTP 客户端
 	client := httpclient.NewClient(juliangConfig.BaseUrl, juliangConfig.Timeout)
-	client.SetHeader("Access-Token", mediaToken.Token)
+	client.SetHeader("Access-Token", accessToken)
 
 	// 构建查询参数（需要序列化为JSON字符串）
 	dimensions := []string{
@@ -313,7 +311,7 @@ func getJuliangReportData(db *gorm.DB, juliangConfig config.JuliangConfig, adver
 
 	// 调用报表 API (GET请求，参数通过query string传递)
 	var resp types.JuliangCustomReportResp
-	err = client.Get(ctx, "/open_api/v3.0/report/custom/get/", params, &resp)
+	err := client.Get(ctx, "/open_api/v3.0/report/custom/get/", params, &resp)
 	if err != nil {
 		logx.Errorf("调用巨量引擎报表 API 失败: %v", err)
 		return nil, err
@@ -345,6 +343,13 @@ func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConf
 	hh := lastHour.Format("15") // 24小时制的小时，如：01, 02, 15, 23
 
 	logx.Infof("查询日期: %s, 小时: %s, 时间范围: %s ~ %s", dt, hh, startTime, endTime)
+
+	// 从数据库获取 access_token（在循环外查询一次，避免频繁查询数据库）
+	mediaToken, err := model.GetByMedia(db, "juliang_dls")
+	if err != nil {
+		logx.Errorf("从数据库获取 juliang_dls token 失败: %v", err)
+		return
+	}
 
 	// 从数据库获取所有客户及其媒体账户
 	performances, err := model.GetAllElmHcPerformanceReports(db)
@@ -383,7 +388,7 @@ func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConf
 
 			// 调用巨量引擎API获取报表数据
 			advertiser_id, _ := strconv.Atoi(media.MediaAdvId)
-			resp, err := getJuliangReportData(db, juliangConfig, advertiser_id, startTime, endTime, "stat_time_hour")
+			resp, err := getJuliangReportData(juliangConfig, mediaToken.Token, advertiser_id, startTime, endTime, "stat_time_hour")
 			if err != nil {
 				logx.Errorf("获取账户 %s 的小时级报表数据失败: %v", media.MediaAdvName, err)
 				continue
