@@ -39,6 +39,8 @@ func main() {
 		MaxOpenConns:    config.MySQL.MaxOpenConns,
 		ConnMaxLifetime: config.MySQL.ConnMaxLifetime,
 		ConnMaxIdleTime: config.MySQL.ConnMaxIdleTime,
+		LogFile:         config.MySQL.LogFile,
+		LogLevel:        config.MySQL.LogLevel,
 	}
 	db := database.MustNewMySQLConnection(dbConfig)
 

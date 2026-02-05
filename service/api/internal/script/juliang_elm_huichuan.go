@@ -65,8 +65,8 @@ func refreshJuliangDLSAccessToken(db *gorm.DB, juliangConfig config.JuliangConfi
 		return
 	}
 
-	logx.Infof("巨量DLS Token 刷新成功，新 AccessToken: %s, 有效期: %d 秒", resp.Data.AccessToken, resp.Data.ExpiresIn)
-	logx.Infof("新 RefreshToken: %s, 有效期: %d 秒", resp.Data.RefreshToken, resp.Data.RefreshTokenExpiresIn)
+	//logx.Infof("巨量DLS Token 刷新成功，新 AccessToken: %s, 有效期: %d 秒", resp.Data.AccessToken, resp.Data.ExpiresIn)
+	//logx.Infof("新 RefreshToken: %s, 有效期: %d 秒", resp.Data.RefreshToken, resp.Data.RefreshTokenExpiresIn)
 }
 
 // refreshJuliangKHAccessToken 刷新巨量KH的 access token
@@ -115,8 +115,8 @@ func refreshJuliangKHAccessToken(db *gorm.DB, juliangConfig config.JuliangConfig
 		return
 	}
 
-	logx.Infof("巨量KH Token 刷新成功，新 AccessToken: %s, 有效期: %d 秒", resp.Data.AccessToken, resp.Data.ExpiresIn)
-	logx.Infof("新 RefreshToken: %s, 有效期: %d 秒", resp.Data.RefreshToken, resp.Data.RefreshTokenExpiresIn)
+	//logx.Infof("巨量KH Token 刷新成功，新 AccessToken: %s, 有效期: %d 秒", resp.Data.AccessToken, resp.Data.ExpiresIn)
+	//logx.Infof("新 RefreshToken: %s, 有效期: %d 秒", resp.Data.RefreshToken, resp.Data.RefreshTokenExpiresIn)
 }
 
 // FetchHuichuanElmReports 获取回传饿了么所有账户的报表数据并发送到ADX
@@ -168,7 +168,7 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 
 			// 调用巨量引擎API获取报表数据
 			advertiser_id, _ := strconv.Atoi(media.MediaAdvId)
-			resp, err := getJuliangReportData(db, juliangConfig, advertiser_id, startTime, endTime)
+			resp, err := getJuliangReportData(db, juliangConfig, advertiser_id, startTime, endTime, "stat_time_day")
 			if err != nil {
 				logx.Errorf("获取账户 %s 的报表数据失败: %v", media.MediaAdvName, err)
 				continue
@@ -256,7 +256,7 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 }
 
 // getJuliangReportData 获取巨量引擎报表数据
-func getJuliangReportData(db *gorm.DB, juliangConfig config.JuliangConfig, advertiserId int, startTime, endTime string) (*types.JuliangCustomReportResp, error) {
+func getJuliangReportData(db *gorm.DB, juliangConfig config.JuliangConfig, advertiserId int, startTime, endTime, stat_date string) (*types.JuliangCustomReportResp, error) {
 	ctx := context.Background()
 	logx.Infof("开始获取巨量引擎报表数据 - advertiser_id: %d, 时间范围: %s ~ %s", advertiserId, startTime, endTime)
 
@@ -275,7 +275,7 @@ func getJuliangReportData(db *gorm.DB, juliangConfig config.JuliangConfig, adver
 
 	// 构建查询参数（需要序列化为JSON字符串）
 	dimensions := []string{
-		"stat_time_day",
+		stat_date,
 		"external_action",
 		"deep_external_action",
 	}
@@ -289,7 +289,7 @@ func getJuliangReportData(db *gorm.DB, juliangConfig config.JuliangConfig, adver
 	filters := []interface{}{}
 	orderBy := []types.JuliangOrderBy{
 		{
-			Field: "stat_time_day",
+			Field: stat_date,
 			Type:  "DESC",
 		},
 	}
@@ -339,7 +339,7 @@ func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConf
 	lastHour := now.Add(-1 * time.Hour)
 	startTime := lastHour.Format("2006-01-02 15") + ":00:00"
 	// 上一个小时的结束时间：当前小时，分钟为00，秒为00
-	endTime := now.Format("2006-01-02 15") + ":00:00"
+	endTime := lastHour.Format("2006-01-02 15") + ":59:59"
 	// 日期和小时
 	dt := lastHour.Format("20060102")
 	hh := lastHour.Format("15") // 24小时制的小时，如：01, 02, 15, 23
@@ -383,7 +383,7 @@ func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConf
 
 			// 调用巨量引擎API获取报表数据
 			advertiser_id, _ := strconv.Atoi(media.MediaAdvId)
-			resp, err := getJuliangReportData(db, juliangConfig, advertiser_id, startTime, endTime)
+			resp, err := getJuliangReportData(db, juliangConfig, advertiser_id, startTime, endTime, "stat_time_hour")
 			if err != nil {
 				logx.Errorf("获取账户 %s 的小时级报表数据失败: %v", media.MediaAdvName, err)
 				continue
@@ -506,7 +506,7 @@ func sendDataToADX(adxConfig config.ADXConfig, data []types.ADXReportData) error
 		url := "/adx/agent/customer/media/data/day/input"
 
 		// 生成签名
-		signature := generateSignature(adxConfig.Secret, url, timestamp)
+		signature := generateSignature(adxConfig.Secret, "/assistant-external"+url, timestamp)
 
 		// 创建 HTTP 客户端
 		client := httpclient.NewClient(adxConfig.BaseURL, adxConfig.Timeout)
@@ -517,18 +517,19 @@ func sendDataToADX(adxConfig config.ADXConfig, data []types.ADXReportData) error
 
 		var resp types.ADXResponse
 		err := client.Post(ctx, url, batch, &resp)
+		batchJSON, _ := json.Marshal(batch)
+		headers := map[string]string{
+			"Content-Type": "application/json",
+			"X-API-KEY":    adxConfig.APIKey,
+			"X-Timestamp":  timestamp,
+			"X-Signature":  signature,
+		}
 		if err != nil {
-			batchJSON, _ := json.Marshal(batch)
-			headers := map[string]string{
-				"Content-Type": "application/json",
-				"X-API-KEY":    adxConfig.APIKey,
-				"X-Timestamp":  timestamp,
-				"X-Signature":  signature,
-			}
 			headersJSON, _ := json.Marshal(headers)
 			logx.Errorf("第 %d 批数据发送失败: %v, URL: %s, Headers: %s, 数据: %s", batchNum, err, adxConfig.BaseURL+url, string(headersJSON), string(batchJSON))
 			return fmt.Errorf("第 %d 批数据发送失败: %v", batchNum, err)
 		}
+		logx.Infof("hour input: %v", string(batchJSON))
 
 		// 检查响应
 		if !resp.Data {
@@ -571,7 +572,7 @@ func sendHourDataToADX(adxConfig config.ADXConfig, data []types.ADXReportData) e
 		url := "/adx/agent/customer/media/data/hour/input"
 
 		// 生成签名
-		signature := generateSignature(adxConfig.Secret, url, timestamp)
+		signature := generateSignature(adxConfig.Secret, "/assistant-external"+url, timestamp)
 
 		// 创建 HTTP 客户端
 		client := httpclient.NewClient(adxConfig.BaseURL, adxConfig.Timeout)
@@ -582,18 +583,19 @@ func sendHourDataToADX(adxConfig config.ADXConfig, data []types.ADXReportData) e
 
 		var resp types.ADXResponse
 		err := client.Post(ctx, url, batch, &resp)
+		batchJSON, _ := json.Marshal(batch)
+		headers := map[string]string{
+			"Content-Type": "application/json",
+			"X-API-KEY":    adxConfig.APIKey,
+			"X-Timestamp":  timestamp,
+			"X-Signature":  signature,
+		}
+		headersJSON, _ := json.Marshal(headers)
 		if err != nil {
-			batchJSON, _ := json.Marshal(batch)
-			headers := map[string]string{
-				"Content-Type": "application/json",
-				"X-API-KEY":    adxConfig.APIKey,
-				"X-Timestamp":  timestamp,
-				"X-Signature":  signature,
-			}
-			headersJSON, _ := json.Marshal(headers)
 			logx.Errorf("第 %d 批小时数据发送失败: %v, URL: %s, Headers: %s, 数据: %s", batchNum, err, adxConfig.BaseURL+url, string(headersJSON), string(batchJSON))
 			return fmt.Errorf("第 %d 批小时数据发送失败: %v", batchNum, err)
 		}
+		logx.Infof("hour input: %v", string(batchJSON))
 
 		// 检查响应
 		if !resp.Data {

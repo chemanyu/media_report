@@ -54,12 +54,16 @@ type MySQLConfig struct {
 	MaxOpenConns    int    // 最大打开连接数
 	ConnMaxLifetime int    // 连接最大生命周期（秒）
 	ConnMaxIdleTime int    // 连接最大空闲时间（秒）
+	LogFile         string // SQL日志文件路径
+	LogLevel        string // SQL日志级别: silent, error, warn, info
 }
 
 type ScheduleConfig struct {
-	ReportCron        string // 报表任务 cron 表达式
-	TokenRefreshCron  string // token 刷新 cron 表达式
-	JuliangReportCron string // 巨量报表任务 cron 表达式
+	ReportCron            string // 报表任务 cron 表达式
+	TokenRefreshCron      string // token 刷新 cron 表达式
+	JuliangReportCron     string // 巨量报表任务 cron 表达式
+	HuichuanElmDailyCron  string // 汇川饿了么日报表任务 cron 表达式
+	HuichuanElmHourlyCron string // 汇川饿了么小时报表任务 cron 表达式
 }
 
 type DingTalkConfig struct {

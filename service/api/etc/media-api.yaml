@@ -60,13 +60,18 @@ MySQL:
   MaxOpenConns: 50        # 最大打开连接数
   ConnMaxLifetime: 3600   # 连接最大生命周期（秒）
   ConnMaxIdleTime: 600    # 连接最大空闲时间（秒）
+  # SQL 日志配置
+  LogFile: "../../logs/sql.log"  # SQL日志文件路径
+  LogLevel: info             # SQL日志级别: silent, error, warn, info
 
 # 定时任务配置
 Schedule:
   ReportCron: "0 10,12,14,16,18,22 * * *"  # 每天10点、12点、14点、16点、18点、22点执行报表任务
   TokenRefreshCron: "0 0 * * *"            # 每天0点刷新 token
   #JuliangReportCron: "0 10,12,14,16,18,22 * * *" 
-  JuliangReportCron: "0 * * * *" 
+  JuliangReportCron: "0 * * * *"
+  HuichuanElmDailyCron: "0 1 * * *"        # 每天凌晨1点执行汇川饿了么日报表任务
+  HuichuanElmHourlyCron: "0 * * * *"       # 每小时执行汇川饿了么小时报表任务 
 
 # 钉钉机器人配置
 DingTalk:

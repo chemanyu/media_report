@@ -59,15 +59,37 @@ func Cron(config config.Config, db *gorm.DB) {
 		logx.Infof("巨量报表定时任务已启动，Cron 表达式: %s", config.Schedule.JuliangReportCron)
 	}
 
+	// 添加汇川饿了么日报表任务
+	if config.Schedule.HuichuanElmDailyCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.HuichuanElmDailyCron, func() {
+			FetchHuichuanElmReports(db, config.JuliangDLS, config.ADX)
+		})
+		if err != nil {
+			log.Fatalf("添加汇川饿了么日报表定时任务失败: %v", err)
+		}
+		logx.Infof("汇川饿了么日报表定时任务已启动，Cron 表达式: %s", config.Schedule.HuichuanElmDailyCron)
+	}
+
+	// 添加汇川饿了么小时报表任务
+	if config.Schedule.HuichuanElmHourlyCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.HuichuanElmHourlyCron, func() {
+			FetchHuichuanElmReportsByHour(db, config.JuliangDLS, config.ADX)
+		})
+		if err != nil {
+			log.Fatalf("添加汇川饿了么小时报表定时任务失败: %v", err)
+		}
+		logx.Infof("汇川饿了么小时报表定时任务已启动，Cron 表达式: %s", config.Schedule.HuichuanElmHourlyCron)
+	}
+
 	// 启动调度器
 	cronScheduler.Start()
 
 	// 立即刷新一次 token（可选）
 	if config.Schedule.TokenRefreshCron != "" {
 		logx.Info("立即刷新一次 token...")
-		//refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
-		// refreshJuliangDLSAccessToken(db, config.JuliangDLS)
-		// refreshJuliangKHAccessToken(db, config.JuliangKH)
+		refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
+		refreshJuliangDLSAccessToken(db, config.JuliangDLS)
+		refreshJuliangKHAccessToken(db, config.JuliangKH)
 		FetchHuichuanElmReports(db, config.JuliangDLS, config.ADX)
 	}
 }
@@ -118,8 +140,8 @@ func refreshAccessToken(db *gorm.DB, ksConfig config.KuaishouConfig, oauthConfig
 		return
 	}
 
-	logx.Infof("Token 刷新成功，新 AccessToken: %s, 有效期: %d 秒", resp.Data.AccessToken, resp.Data.AccessTokenExpiresIn)
-	logx.Infof("新 RefreshToken: %s, 有效期: %d 秒", resp.Data.RefreshToken, resp.Data.RefreshTokenExpiresIn)
+	//logx.Infof("Token 刷新成功，新 AccessToken: %s, 有效期: %d 秒", resp.Data.AccessToken, resp.Data.AccessTokenExpiresIn)
+	//logx.Infof("新 RefreshToken: %s, 有效期: %d 秒", resp.Data.RefreshToken, resp.Data.RefreshTokenExpiresIn)
 }
 
 // executeReportJob 执行报表任务
