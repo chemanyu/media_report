@@ -104,3 +104,9 @@ INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_
 INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `redirect_num`, `pay_num`, `create_time`, `update_time`) VALUES (3, 1, '1852910715285515', 'RD-饿了么-41', 211571785, 0, 0, '2026-02-04 22:46:49', '2026-02-04 22:46:49');
 INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `redirect_num`, `pay_num`, `create_time`, `update_time`) VALUES (4, 1, '1826263935546762', 'RD-饿了么-11', 211554240, 1098, 6, '2026-02-04 22:47:05', '2026-02-05 11:23:47');
 INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `redirect_num`, `pay_num`, `create_time`, `update_time`) VALUES (5, 1, '1826264272231820', 'RD-饿了么-18', 211557314, 1274, 0, '2026-02-04 22:47:17', '2026-02-05 11:23:56');
+
+
+INSERT INTO `release_atd`.`media_token` (`id`, `media`, `token`, `refresh_token`, `agent_id`, `advertiser_id`, `del_flag`, `create_time`, `update_time`) VALUES (4, 'juliang_dls', 'fe86917a26cc233cd35711b89a95b9ea2e3afd40', '3ebe770516a9b74af1e888ae50a7d3321b81a58e', '', '', 0, 0, 1770175342);
+INSERT INTO `release_atd`.`media_token` (`id`, `media`, `token`, `refresh_token`, `agent_id`, `advertiser_id`, `del_flag`, `create_time`, `update_time`) VALUES (5, 'juliang_kh', 'ec681917499b575393d1c3b4a8f1ef5451fdd036', 'c6926dfe89bfb4edf7ab4845c6f9efa7aacec6c0', '', '', 0, 0, 1770175342);
+
+
