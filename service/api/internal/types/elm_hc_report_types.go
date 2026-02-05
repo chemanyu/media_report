@@ -68,11 +68,24 @@ type CreateElmHcMediaReq struct {
 	MediaAdvId    string `json:"media_adv_id" binding:"required"`    // 媒体账户ID
 	MediaAdvName  string `json:"media_adv_name" binding:"required"`  // 媒体账户名称
 	HuichuanAdvId int64  `json:"huichuan_adv_id" binding:"required"` // 汇川账户ID
+	RedirectNum   int    `json:"redirect_num"`                       // 调起数
+	PayNum        int    `json:"pay_num"`                            // 付费数
 }
 
 // 删除汇川饿了么媒体账户请求
 type DeleteElmHcMediaReq struct {
 	ID int64 `json:"id" binding:"required"`
+}
+
+// 更新汇川饿了么媒体账户请求
+type UpdateElmHcMediaReq struct {
+	ID            int64  `json:"id" binding:"required"`
+	PerformanceID int64  `json:"performance_id" binding:"required"`
+	MediaAdvId    string `json:"media_adv_id" binding:"required"`
+	MediaAdvName  string `json:"media_adv_name" binding:"required"`
+	HuichuanAdvId int64  `json:"huichuan_adv_id" binding:"required"`
+	RedirectNum   int    `json:"redirect_num"`
+	PayNum        int    `json:"pay_num"`
 }
 
 // 汇川饿了么媒体账户响应
@@ -82,6 +95,8 @@ type ElmHcMediaResp struct {
 	MediaAdvId    string `json:"media_adv_id"`
 	MediaAdvName  string `json:"media_adv_name"`
 	HuichuanAdvId int64  `json:"huichuan_adv_id"`
+	RedirectNum   int    `json:"redirect_num"` // 调起数
+	PayNum        int    `json:"pay_num"`      // 付费数
 	CreateTime    string `json:"create_time"`
 	UpdateTime    string `json:"update_time"`
 }

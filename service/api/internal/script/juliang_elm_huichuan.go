@@ -223,11 +223,11 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 						ShowNum:           showNum,
 						ClickNum:          clickNum,
 						ConvertNum:        convertNum,
-						DeepConvertNum:    performance.PayNum,
+						DeepConvertNum:    media.PayNum,
 						ConvertType:       "调起",
 						DeepConvertType:   "付费",
-						RedirectNum:       performance.RedirectNum,
-						PayNum:            performance.PayNum,
+						RedirectNum:       media.RedirectNum,
+						PayNum:            media.PayNum,
 						Dt:                dt,
 					}
 					allReportData = append(allReportData, reportData)
@@ -438,11 +438,11 @@ func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConf
 						ShowNum:           showNum,
 						ClickNum:          clickNum,
 						ConvertNum:        convertNum,
-						DeepConvertNum:    performance.PayNum,
+						DeepConvertNum:    media.PayNum,
 						ConvertType:       "调起",
 						DeepConvertType:   "付费",
-						RedirectNum:       performance.RedirectNum,
-						PayNum:            performance.PayNum,
+						RedirectNum:       media.RedirectNum,
+						PayNum:            media.PayNum,
 						Dt:                dt,
 						Hh:                hh,
 					}
@@ -529,7 +529,7 @@ func sendDataToADX(adxConfig config.ADXConfig, data []types.ADXReportData) error
 			logx.Errorf("第 %d 批数据发送失败: %v, URL: %s, Headers: %s, 数据: %s", batchNum, err, adxConfig.BaseURL+url, string(headersJSON), string(batchJSON))
 			return fmt.Errorf("第 %d 批数据发送失败: %v", batchNum, err)
 		}
-		logx.Infof("hour input: %v", string(batchJSON))
+		//logx.Infof("day input: %v", string(batchJSON))
 
 		// 检查响应
 		if !resp.Data {
@@ -595,7 +595,7 @@ func sendHourDataToADX(adxConfig config.ADXConfig, data []types.ADXReportData) e
 			logx.Errorf("第 %d 批小时数据发送失败: %v, URL: %s, Headers: %s, 数据: %s", batchNum, err, adxConfig.BaseURL+url, string(headersJSON), string(batchJSON))
 			return fmt.Errorf("第 %d 批小时数据发送失败: %v", batchNum, err)
 		}
-		logx.Infof("hour input: %v", string(batchJSON))
+		//logx.Infof("hour input: %v", string(batchJSON))
 
 		// 检查响应
 		if !resp.Data {

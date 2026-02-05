@@ -60,3 +60,22 @@ func DeleteElmHcMediaHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 	}
 }
+
+// UpdateElmHcMediaHandler 更新汇川饿了么媒体账户
+func UpdateElmHcMediaHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.UpdateElmHcMediaReq
+		if err := httpx.Parse(r, &req); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
+		l := config.NewUpdateElmHcMediaLogic(r.Context(), svcCtx)
+		resp, err := l.UpdateElmHcMedia(&req)
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, resp)
+		}
+	}
+}

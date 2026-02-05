@@ -70,7 +70,7 @@ Schedule:
   TokenRefreshCron: "0 0 * * *"            # 每天0点刷新 token
   #JuliangReportCron: "0 10,12,14,16,18,22 * * *" 
   JuliangReportCron: "0 * * * *"
-  HuichuanElmDailyCron: "0 1 * * *"        # 每天凌晨1点执行汇川饿了么日报表任务
+  HuichuanElmDailyCron: "0 11 * * *"        # 每天凌晨1点执行汇川饿了么日报表任务
   HuichuanElmHourlyCron: "0 * * * *"       # 每小时执行汇川饿了么小时报表任务 
 
 # 钉钉机器人配置

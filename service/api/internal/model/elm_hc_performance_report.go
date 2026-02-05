@@ -14,8 +14,6 @@ type ElmHcPerformanceReport struct {
 	AgentName         string    `gorm:"column:agent_name;type:varchar(200);not null" json:"agent_name"`                   // 代理名称（如：北京美数信息科技有限公司）
 	AgentShort        string    `gorm:"column:agent_short;type:varchar(50);not null" json:"agent_short"`                  // 代理简称（如：美数）
 	MediaPlatformName string    `gorm:"column:media_platform_name;type:varchar(100);not null" json:"media_platform_name"` // 媒体平台名称（如：巨量引擎）
-	RedirectNum       int       `gorm:"column:redirect_num;not null;default:0" json:"redirect_num"`                       // 调起数
-	PayNum            int       `gorm:"column:pay_num;not null;default:0" json:"pay_num"`                                 // 付费数
 	CreateTime        time.Time `gorm:"column:create_time;autoCreateTime" json:"create_time"`                             // 创建时间
 	UpdateTime        time.Time `gorm:"column:update_time;autoUpdateTime" json:"update_time"`                             // 更新时间
 }
@@ -55,8 +53,6 @@ func UpdateElmHcPerformanceReport(db *gorm.DB, report *ElmHcPerformanceReport) e
 		"agent_name":          report.AgentName,
 		"agent_short":         report.AgentShort,
 		"media_platform_name": report.MediaPlatformName,
-		"redirect_num":        report.RedirectNum,
-		"pay_num":             report.PayNum,
 	}).Error
 }
 

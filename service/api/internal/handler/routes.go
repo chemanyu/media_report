@@ -159,6 +159,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/config/elmhc/media/delete",
 				Handler: config.DeleteElmHcMediaHandler(serverCtx),
 			},
+			{
+				// 更新汇川饿了么媒体账户
+				Method:  http.MethodPost,
+				Path:    "/config/elmhc/media/update",
+				Handler: config.UpdateElmHcMediaHandler(serverCtx),
+			},
 		},
 	)
 

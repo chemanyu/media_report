@@ -409,18 +409,6 @@
                                         <div class="config-field-label">媒体平台</div>
                                         <div class="config-field-value">{{ item.media_platform_name }}</div>
                                     </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">调起数</div>
-                                        <div class="config-field-value">
-                                            <el-tag type="info">{{ item.redirect_num.toLocaleString() }}</el-tag>
-                                        </div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">付费数</div>
-                                        <div class="config-field-value">
-                                            <el-tag type="success">{{ item.pay_num.toLocaleString() }}</el-tag>
-                                        </div>
-                                    </div>
                                     
                                     <!-- 显示该客户下的账户列表 -->
                                     <div class="config-field" style="grid-column: 1 / -1; margin-top: 12px; border-top: 1px dashed #dcdfe6; padding-top: 12px;">
@@ -449,9 +437,18 @@
                                                                 <span style="color: #909399; font-size: 12px; width: 80px;">汇川账户ID</span>
                                                                 <span style="color: #606266; font-size: 13px; font-family: 'Courier New', monospace;">{{ media.huichuan_adv_id }}</span>
                                                             </div>
+                                                            <div style="display: flex; align-items: center;">
+                                                                <span style="color: #909399; font-size: 12px; width: 80px;">调起数</span>
+                                                                <el-tag type="info" size="small">{{ media.redirect_num }}</el-tag>
+                                                            </div>
+                                                            <div style="display: flex; align-items: center;">
+                                                                <span style="color: #909399; font-size: 12px; width: 80px;">付费数</span>
+                                                                <el-tag type="success" size="small">{{ media.pay_num }}</el-tag>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                     <div style="margin-left: 12px;">
+                                                        <el-button size="small" type="primary" plain @click="showEditMediaDialog(media)">编辑</el-button>
                                                         <el-button size="small" type="danger" plain @click="deleteMediaAccount(media)">删除</el-button>
                                                     </div>
                                                 </div>
@@ -519,19 +516,6 @@
                         </el-form-item>
                     </el-col>
                 </el-row>
-
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="调起数">
-                            <el-input-number v-model="elmHcReportForm.redirect_num" :min="0" :controls="false" style="width: 100%;" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="付费数">
-                            <el-input-number v-model="elmHcReportForm.pay_num" :min="0" :controls="false" style="width: 100%;" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
             </el-form>
             <template #footer>
                 <el-button @click="elmHcReportDialogVisible = false">取消</el-button>
@@ -539,10 +523,10 @@
             </template>
         </el-dialog>
 
-        <!-- 添加账户对话框 -->
+        <!-- 添加/编辑账户对话框 -->
         <el-dialog 
             v-model="addMediaDialogVisible" 
-            title="添加媒体账户"
+            :title="mediaDialogMode === 'create' ? '添加媒体账户' : '编辑媒体账户'"
             width="600px"
         >
             <el-form :model="mediaForm" label-width="130px">
@@ -555,6 +539,18 @@
                 <el-form-item label="汇川账户ID" required>
                     <el-input v-model="mediaForm.huichuan_adv_id" placeholder="如：211571796" />
                 </el-form-item>
+                <el-row :gutter="20">
+                    <el-col :span="12">
+                        <el-form-item label="调起数">
+                            <el-input-number v-model="mediaForm.redirect_num" :min="0" :controls="false" style="width: 100%;" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="付费数">
+                            <el-input-number v-model="mediaForm.pay_num" :min="0" :controls="false" style="width: 100%;" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
             </el-form>
             <template #footer>
                 <el-button @click="addMediaDialogVisible = false">取消</el-button>
@@ -975,19 +971,20 @@
                     customer_short: '',
                     agent_name: '',
                     agent_short: '',
-                    media_platform_name: '',
-                    redirect_num: 0,
-                    pay_num: 0
+                    media_platform_name: ''
                 });
 
                 // 添加账户对话框
                 const addMediaDialogVisible = ref(false);
+                const mediaDialogMode = ref('create'); // 'create' or 'edit'
                 const currentPerformanceId = ref(null);
                 const mediaForm = ref({
                     media_platform_name: '',
                     media_adv_id: '',
                     media_adv_name: '',
-                    huichuan_adv_id: 0
+                    huichuan_adv_id: 0,
+                    redirect_num: 0,
+                    pay_num: 0
                 });
 
                 // 加载汇川饿了么数据报表列表
@@ -1028,11 +1025,29 @@
 
                 // 显示添加账户对话框
                 const showAddMediaDialog = (performance) => {
+                    mediaDialogMode.value = 'create';
                     currentPerformanceId.value = performance.id;
                     mediaForm.value = {
                         media_adv_id: '',
                         media_adv_name: '',
-                        huichuan_adv_id: ''
+                        huichuan_adv_id: '',
+                        redirect_num: 0,
+                        pay_num: 0
+                    };
+                    addMediaDialogVisible.value = true;
+                };
+
+                // 显示编辑账户对话框
+                const showEditMediaDialog = (media) => {
+                    mediaDialogMode.value = 'edit';
+                    currentPerformanceId.value = media.performance_id;
+                    mediaForm.value = {
+                        id: media.id,
+                        media_adv_id: media.media_adv_id,
+                        media_adv_name: media.media_adv_name,
+                        huichuan_adv_id: media.huichuan_adv_id,
+                        redirect_num: media.redirect_num,
+                        pay_num: media.pay_num
                     };
                     addMediaDialogVisible.value = true;
                 };
@@ -1045,19 +1060,31 @@
                     }
 
                     try {
-                        const response = await axios.post(`${API_BASE_URL}/config/elmhc/media/create`, {
+                        const url = mediaDialogMode.value === 'create' 
+                            ? `${API_BASE_URL}/config/elmhc/media/create`
+                            : `${API_BASE_URL}/config/elmhc/media/update`;
+                        
+                        const data = {
                             performance_id: currentPerformanceId.value,
                             media_adv_id: mediaForm.value.media_adv_id,
                             media_adv_name: mediaForm.value.media_adv_name,
-                            huichuan_adv_id: parseInt(mediaForm.value.huichuan_adv_id) || 0
-                        });
+                            huichuan_adv_id: parseInt(mediaForm.value.huichuan_adv_id) || 0,
+                            redirect_num: parseInt(mediaForm.value.redirect_num) || 0,
+                            pay_num: parseInt(mediaForm.value.pay_num) || 0
+                        };
+                        
+                        if (mediaDialogMode.value === 'edit') {
+                            data.id = mediaForm.value.id;
+                        }
+                        
+                        const response = await axios.post(url, data);
                         
                         if (response.data.code === 0) {
-                            ElMessage.success('添加账户成功');
+                            ElMessage.success(mediaDialogMode.value === 'create' ? '添加账户成功' : '更新账户成功');
                             addMediaDialogVisible.value = false;
                             loadElmHcMediaList();
                         } else {
-                            ElMessage.error(response.data.message || '添加账户失败');
+                            ElMessage.error(response.data.message || '操作失败');
                         }
                     } catch (error) {
                         ElMessage.error('网络错误：' + error.message);
@@ -1102,9 +1129,7 @@
                             customer_short: '',
                             agent_name: '',
                             agent_short: '',
-                            media_platform_name: '',
-                            redirect_num: 0,
-                            pay_num: 0
+                            media_platform_name: ''
                         };
                     } else {
                         elmHcReportForm.value = { ...row };
@@ -1218,7 +1243,9 @@
                     deleteElmHcReport,
                     getMediaAccounts,
                     showAddMediaDialog,
+                    showEditMediaDialog,
                     addMediaDialogVisible,
+                    mediaDialogMode,
                     mediaForm,
                     submitMediaAccount,
                     deleteMediaAccount,

@@ -46,8 +46,6 @@ func (l *GetElmHcReportListLogic) GetElmHcReportList() (*types.ElmHcReportListRe
 			AgentName:         report.AgentName,
 			AgentShort:        report.AgentShort,
 			MediaPlatformName: report.MediaPlatformName,
-			RedirectNum:       report.RedirectNum,
-			PayNum:            report.PayNum,
 			CreateTime:        report.CreateTime.Format("2006-01-02 15:04:05"),
 			UpdateTime:        report.UpdateTime.Format("2006-01-02 15:04:05"),
 		})
@@ -90,8 +88,6 @@ func (l *CreateElmHcReportLogic) CreateElmHcReport(req *types.CreateElmHcReportR
 		AgentName:         req.AgentName,
 		AgentShort:        req.AgentShort,
 		MediaPlatformName: req.MediaPlatformName,
-		RedirectNum:       req.RedirectNum,
-		PayNum:            req.PayNum,
 		CreateTime:        time.Now(),
 		UpdateTime:        time.Now(),
 	}
@@ -148,8 +144,6 @@ func (l *UpdateElmHcReportLogic) UpdateElmHcReport(req *types.UpdateElmHcReportR
 		AgentName:         req.AgentName,
 		AgentShort:        req.AgentShort,
 		MediaPlatformName: req.MediaPlatformName,
-		RedirectNum:       req.RedirectNum,
-		PayNum:            req.PayNum,
 	}
 
 	if err := model.UpdateElmHcPerformanceReport(l.svcCtx.DB, report); err != nil {

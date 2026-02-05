@@ -13,6 +13,8 @@ type ElmHcMediaReport struct {
 	MediaAdvId    string    `gorm:"column:media_adv_id;type:varchar(100);not null" json:"media_adv_id"`     // 媒体账户ID
 	MediaAdvName  string    `gorm:"column:media_adv_name;type:varchar(200);not null" json:"media_adv_name"` // 媒体账户名称
 	HuichuanAdvId int64     `gorm:"column:huichuan_adv_id;not null" json:"huichuan_adv_id"`                 // 汇川账户ID
+	RedirectNum   int       `gorm:"column:redirect_num;not null;default:0" json:"redirect_num"`             // 调起数
+	PayNum        int       `gorm:"column:pay_num;not null;default:0" json:"pay_num"`                       // 付费数
 	CreateTime    time.Time `gorm:"column:create_time;autoCreateTime" json:"create_time"`                   // 创建时间
 	UpdateTime    time.Time `gorm:"column:update_time;autoUpdateTime" json:"update_time"`                   // 更新时间
 }
@@ -61,6 +63,8 @@ func UpdateElmHcMediaReport(db *gorm.DB, report *ElmHcMediaReport) error {
 		"media_adv_id":    report.MediaAdvId,
 		"media_adv_name":  report.MediaAdvName,
 		"huichuan_adv_id": report.HuichuanAdvId,
+		"redirect_num":    report.RedirectNum,
+		"pay_num":         report.PayNum,
 	}).Error
 }
 
