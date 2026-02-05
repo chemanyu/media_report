@@ -49,15 +49,15 @@ func Cron(config config.Config, db *gorm.DB) {
 	}
 
 	// 添加巨量报表任务
-	if config.Schedule.JuliangReportCron != "" {
-		_, err := cronScheduler.AddFunc(config.Schedule.JuliangReportCron, func() {
-			executeJuliangReportJob(db, config.DingTalk, config.FileServer)
-		})
-		if err != nil {
-			log.Fatalf("添加巨量报表定时任务失败: %v", err)
-		}
-		logx.Infof("巨量报表定时任务已启动，Cron 表达式: %s", config.Schedule.JuliangReportCron)
-	}
+	// if config.Schedule.JuliangReportCron != "" {
+	// 	_, err := cronScheduler.AddFunc(config.Schedule.JuliangReportCron, func() {
+	// 		executeJuliangReportJob(db, config.DingTalk, config.FileServer)
+	// 	})
+	// 	if err != nil {
+	// 		log.Fatalf("添加巨量报表定时任务失败: %v", err)
+	// 	}
+	// 	logx.Infof("巨量报表定时任务已启动，Cron 表达式: %s", config.Schedule.JuliangReportCron)
+	// }
 
 	// 添加汇川饿了么日报表任务
 	if config.Schedule.HuichuanElmDailyCron != "" {
@@ -70,10 +70,11 @@ func Cron(config config.Config, db *gorm.DB) {
 		logx.Infof("汇川饿了么日报表定时任务已启动，Cron 表达式: %s", config.Schedule.HuichuanElmDailyCron)
 	}
 
-	// 添加汇川饿了么小时报表任务
+	// 添加汇川饿了么小时报表任务 & 巨量数据报告
 	if config.Schedule.HuichuanElmHourlyCron != "" {
 		_, err := cronScheduler.AddFunc(config.Schedule.HuichuanElmHourlyCron, func() {
 			FetchHuichuanElmReportsByHour(db, config.JuliangDLS, config.ADX)
+			executeJuliangReportJob(db, config.DingTalk, config.FileServer)
 		})
 		if err != nil {
 			log.Fatalf("添加汇川饿了么小时报表定时任务失败: %v", err)
