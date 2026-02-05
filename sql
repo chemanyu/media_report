@@ -75,15 +75,13 @@ CREATE TABLE `elm_hc_performance_report` (
   `agent_name` varchar(200) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '代理名称（如：北京美数信息科技有限公司）',
   `agent_short` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '代理简称（如：美数）',
   `media_platform_name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '媒体平台名称（如：巨量引擎）',
-  `redirect_num` int NOT NULL DEFAULT '0' COMMENT '调起数',
-  `pay_num` int NOT NULL DEFAULT '0' COMMENT '付费数',
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_unique_record` (`media_platform_name`) COMMENT '唯一约束：防止重复数据'
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='汇川饿了么数据报表';
 
-INSERT INTO `release_atd`.`elm_hc_performance_report` (`id`, `customer_name`, `customer_short`, `agent_name`, `agent_short`, `media_platform_name`, `redirect_num`, `pay_num`, `create_time`, `update_time`) VALUES (1, '拉扎斯网络科技（上海）有限公司', '淘宝闪购', '北京美数信息科技有限公司', '美数', '巨量引擎', 188, 15, '2026-02-04 22:34:11', '2026-02-05 10:53:47');
+INSERT INTO `release_atd`.`elm_hc_performance_report` (`id`, `customer_name`, `customer_short`, `agent_name`, `agent_short`, `media_platform_name`, `create_time`, `update_time`) VALUES (1, '拉扎斯网络科技（上海）有限公司', '淘宝闪购', '北京美数信息科技有限公司', '美数', '巨量引擎', '2026-02-04 22:34:11', '2026-02-05 10:53:47');
 
 
 CREATE TABLE `elm_hc_media_report` (
@@ -92,14 +90,17 @@ CREATE TABLE `elm_hc_media_report` (
   `media_adv_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '媒体账户ID（如：巨量引擎平台账户ID）',
   `media_adv_name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '媒体账户名称（如：巨量引擎平台账户名称）',
   `huichuan_adv_id` bigint NOT NULL COMMENT '汇川账户ID',
+  `redirect_num` int NOT NULL DEFAULT '0' COMMENT '调起数',
+  `pay_num` int NOT NULL DEFAULT '0' COMMENT '付费数',
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_unique_record` (`media_adv_id`,`huichuan_adv_id`) COMMENT '唯一约束：防止重复数据'
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='汇川饿了么账户报表';
 
-INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `create_time`, `update_time`) VALUES (1, 1, '1826264272898059', 'RD-饿了么-19', 211571796, '2026-02-04 22:43:06', '2026-02-04 22:43:06');
-INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `create_time`, `update_time`) VALUES (2, 1, '1826264271670538', 'RD-饿了么-17', 211571795, '2026-02-04 22:46:34', '2026-02-04 22:46:34');
-INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `create_time`, `update_time`) VALUES (3, 1, '1852910715285515', 'RD-饿了么-41', 211571785, '2026-02-04 22:46:49', '2026-02-04 22:46:49');
-INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `create_time`, `update_time`) VALUES (4, 1, '1826263935546762', 'RD-饿了么-11', 211554240, '2026-02-04 22:47:05', '2026-02-04 22:47:05');
-INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `create_time`, `update_time`) VALUES (5, 1, '1826264272231820', 'RD-饿了么-18', 211557314, '2026-02-04 22:47:17', '2026-02-04 22:47:17');
+
+INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `redirect_num`, `pay_num`, `create_time`, `update_time`) VALUES (1, 1, '1826264272898059', 'RD-饿了么-19', 211571796, 0, 0, '2026-02-04 22:43:06', '2026-02-04 22:43:06');
+INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `redirect_num`, `pay_num`, `create_time`, `update_time`) VALUES (2, 1, '1826264271670538', 'RD-饿了么-17', 211571795, 0, 0, '2026-02-04 22:46:34', '2026-02-04 22:46:34');
+INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `redirect_num`, `pay_num`, `create_time`, `update_time`) VALUES (3, 1, '1852910715285515', 'RD-饿了么-41', 211571785, 0, 0, '2026-02-04 22:46:49', '2026-02-04 22:46:49');
+INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `redirect_num`, `pay_num`, `create_time`, `update_time`) VALUES (4, 1, '1826263935546762', 'RD-饿了么-11', 211554240, 1098, 6, '2026-02-04 22:47:05', '2026-02-05 11:23:47');
+INSERT INTO `release_atd`.`elm_hc_media_report` (`id`, `performance_id`, `media_adv_id`, `media_adv_name`, `huichuan_adv_id`, `redirect_num`, `pay_num`, `create_time`, `update_time`) VALUES (5, 1, '1826264272231820', 'RD-饿了么-18', 211557314, 1274, 0, '2026-02-04 22:47:17', '2026-02-05 11:23:56');
