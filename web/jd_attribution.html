@@ -210,7 +210,7 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="/guangyixinmedia/index.html">
+                        <a class="nav-link" href="/guangyixinmedia/">
                             <i class="fas fa-home me-1"></i>返回主页
                         </a>
                     </li>
@@ -325,7 +325,7 @@
             queryBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>查询中...';
             
             try {
-                const response = await fetch(`/guangyixinmedia/jd/attribution/data?date=${queryDate}`);
+                const response = await fetch(`/guangyixinmedia/api/jd/attribution/data?date=${queryDate}`);
                 const result = await response.json();
                 console.info(result)
                 if (response.ok && result.date) {
@@ -811,7 +811,7 @@
                 exportBtn.disabled = true;
                 exportBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>导出中...';
                 
-                const response = await fetch('/guangyixinmedia/jd/attribution/export');
+                const response = await fetch('/guangyixinmedia/api/jd/attribution/export');
                 
                 if (!response.ok) {
                     const errorData = await response.json();
