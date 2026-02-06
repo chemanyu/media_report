@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>京东归因数据分析系统 - Media Report</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        /* 自定义样式 */
+        body {
+            background-color: #f8f9fa;
+        }
+
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            transition: box-shadow 0.15s ease-in-out;
+        }
+
+        .card:hover {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        .navbar-brand {
+            font-weight: bold;
+        }
+
+        .table th {
+            border-top: none;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .badge {
+            font-size: 0.875em;
+        }
+
+        /* 折叠面板样式增强 */
+        .accordion-button {
+            font-weight: 500;
+            background-color: #f8f9fa;
+            transition: all 0.2s ease-in-out;
+            border: 1px solid #dee2e6;
+            padding: 1rem 1.25rem;
+        }
+
+        .accordion-button:not(.collapsed) {
+            background-color: #e7f1ff;
+            border-color: #b8daff;
+            box-shadow: 0 0 0 0.125rem rgba(13, 110, 253, 0.25);
+        }
+
+        .accordion-button:focus {
+            box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+            border-color: #86b7fe;
+        }
+
+        .accordion-button:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+        }
+
+        .accordion-body {
+            padding: 1rem 1.25rem;
+        }
+
+        /* 表格样式 */
+        .table-responsive {
+            max-width: 100%;
+            overflow-x: auto;
+            border-radius: 0.375rem;
+        }
+
+        .table {
+            table-layout: fixed;
+            width: 100%;
+            margin-bottom: 0;
+        }
+
+        .table th:first-child,
+        .table td:first-child {
+            width: 180px;
+            min-width: 180px;
+            max-width: 180px;
+        }
+
+        .table th:nth-child(2),
+        .table td:nth-child(2),
+        .table th:nth-child(3),
+        .table td:nth-child(3) {
+            width: 120px;
+            min-width: 120px;
+            max-width: 120px;
+            text-align: right;
+        }
+
+        .table th:nth-child(4),
+        .table td:nth-child(4) {
+            width: 200px;
+            min-width: 200px;
+            max-width: 200px;
+        }
+
+        .table td {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        .badge.bg-secondary {
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            display: inline-block;
+            font-family: monospace;
+            font-size: 0.75rem;
+        }
+
+        .table.error-table th:first-child,
+        .table.error-table td:first-child {
+            width: 150px;
+        }
+
+        .table.error-table th:nth-child(2),
+        .table.error-table td:nth-child(2) {
+            width: 250px;
+        }
+
+        .table.error-table th:nth-child(3),
+        .table.error-table td:nth-child(3),
+        .table.error-table th:nth-child(4),
+        .table.error-table td:nth-child(4) {
+            width: 100px;
+        }
+
+        /* 统计卡片样式 */
+        .card.bg-primary h4,
+        .card.bg-primary h6 {
+            color: white !important;
+        }
+
+        .card.bg-danger h4,
+        .card.bg-danger h6 {
+            color: white !important;
+        }
+
+        .card.bg-success h4,
+        .card.bg-success h6 {
+            color: white !important;
+        }
+
+        code {
+            color: #e83e8c;
+            background-color: #f8f9fa;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 85%;
+        }
+
+        code.small {
+            font-size: 0.75rem;
+        }
+
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            .accordion-button .d-flex {
+                flex-direction: column;
+                align-items: flex-start !important;
+                gap: 0.5rem;
+            }
+
+            .accordion-button .d-flex > div:last-child {
+                align-self: flex-end;
+            }
+        }
+
+        /* 卡片动画 */
+        .card-animate {
+            animation: fadeInUp 0.5s ease-in-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-chart-line me-2"></i>京东归因数据分析系统
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/web/jd_attribution.html">
+                            <i class="fas fa-tachometer-alt me-1"></i>归因分析
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="container mt-4">
+        <div class="row">
+            <div class="col-12">
+                <h2 class="mb-4">
+                    <i class="fas fa-tachometer-alt me-2"></i>京东归因数据分析
+                </h2>
+            </div>
+        </div>
+
+        <!-- 数据查询区域 -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-search me-2"></i>数据查询
+                        </h5>
+                        <button type="button" class="btn btn-success btn-sm" id="exportBtn" title="导出过去10天的错误统计数据为Excel">
+                            <i class="fas fa-download me-1"></i>导出数据 (10天)
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <form id="queryForm" class="row g-3">
+                            <div class="col-md-6">
+                                <label for="queryDate" class="form-label">查询日期</label>
+                                <input type="date" class="form-control" id="queryDate" name="date" required>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="accountSearch" class="form-label">账户ID搜索（可选）</label>
+                                <input type="text" class="form-control" id="accountSearch" placeholder="输入账户ID进行过滤">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary" id="queryBtn">
+                                        <i class="fas fa-search me-1"></i>查询
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载状态 -->
+        <div id="loadingSection" class="row mb-4" style="display: none;">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-2 mb-0">正在获取数据...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 查询结果区域 -->
+        <div id="resultsSection" style="display: none;"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p class="text-muted mb-0">&copy; 2026 京东归因数据分析系统. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <small class="text-muted">Version 1.0.0</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // 页面加载时设置默认日期
+        document.addEventListener('DOMContentLoaded', function() {
+            const dateInput = document.getElementById('queryDate');
+            const today = new Date();
+            dateInput.value = today.toISOString().split('T')[0];
+        });
+
+        // 处理查询表单提交
+        document.getElementById('queryForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const queryBtn = document.getElementById('queryBtn');
+            const loadingSection = document.getElementById('loadingSection');
+            const resultsSection = document.getElementById('resultsSection');
+            const queryDate = document.getElementById('queryDate').value;
+            const accountSearch = document.getElementById('accountSearch').value;
+            
+            // 显示加载状态
+            loadingSection.style.display = 'block';
+            resultsSection.style.display = 'none';
+            queryBtn.disabled = true;
+            queryBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>查询中...';
+            
+            try {
+                const response = await fetch(`/api/jd/attribution/data?date=${queryDate}`);
+                const result = await response.json();
+                console.info(result)
+                if (response.ok && result.date) {
+                    // 后端直接返回数据，不需要 result.data
+                    displayResults(result, queryDate, accountSearch);
+                } else {
+                    showError(result.msg || result.message || '查询失败');
+                }
+            } catch (error) {
+                showError('网络错误：' + error.message);
+            } finally {
+                // 隐藏加载状态
+                loadingSection.style.display = 'none';
+                queryBtn.disabled = false;
+                queryBtn.innerHTML = '<i class="fas fa-search me-1"></i>查询';
+            }
+        });
+
+        // 显示查询结果
+        function displayResults(data, queryDate, accountFilter) {
+            const resultsSection = document.getElementById('resultsSection');
+            
+            // 过滤账户数据
+            let filteredTotalRequests = data.total_requests || {};
+            let filteredErrorCounts = data.error_counts || {};
+            
+            if (accountFilter) {
+                filteredTotalRequests = {};
+                filteredErrorCounts = {};
+                
+                Object.keys(data.total_requests || {}).forEach(accountId => {
+                    if (accountId.includes(accountFilter)) {
+                        filteredTotalRequests[accountId] = data.total_requests[accountId];
+                        if (data.error_counts[accountId]) {
+                            filteredErrorCounts[accountId] = data.error_counts[accountId];
+                        }
+                    }
+                });
+            }
+            
+            const totalFilteredRequests = Object.entries(filteredTotalRequests).reduce((sum, [key, count]) => {
+                if (!key.startsWith('error_')) {
+                    return sum + count;
+                }
+                return sum;
+            }, 0);
+            
+            const totalFilteredErrors = Object.values(filteredErrorCounts).reduce((sum, errors) => {
+                return sum + Object.values(errors).reduce((s, c) => s + c, 0);
+            }, 0);
+            
+            const successRate = totalFilteredRequests > 0 ? 
+                ((totalFilteredRequests - totalFilteredErrors) / totalFilteredRequests * 100).toFixed(1) : 0;
+            
+            resultsSection.innerHTML = `
+                <!-- 汇总统计卡片 -->
+                <div class="row mb-4">
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-primary text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">总请求数</h6>
+                                        <h4 class="mb-0">${totalFilteredRequests.toLocaleString()}</h4>
+                                        <small>查询日期: ${queryDate}</small>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-server fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-danger text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">错误总数</h6>
+                                        <h4 class="mb-0">${totalFilteredErrors.toLocaleString()}</h4>
+                                        <small>${accountFilter ? '过滤后结果' : '全部账户'}</small>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="card bg-success text-white">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <h6 class="card-title">成功率</h6>
+                                        <h4 class="mb-0">${successRate}%</h4>
+                                        <small>成功请求占比</small>
+                                    </div>
+                                    <div class="align-self-center">
+                                        <i class="fas fa-check-circle fa-2x"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 折叠控制栏 -->
+                <div class="row mb-3">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h5 class="mb-0">
+                                    <i class="fas fa-chart-bar me-2"></i>详细统计
+                                </h5>
+                                <small class="text-muted">
+                                    快捷键: Ctrl+1/2/3 切换模块, Ctrl+0 全部收起, Ctrl+9 全部展开
+                                </small>
+                            </div>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-primary" onclick="expandAllAccordions()" title="展开所有模块 (Ctrl+9)">
+                                    <i class="fas fa-expand-alt me-1"></i>展开全部
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" onclick="collapseAllAccordions()" title="收起所有模块 (Ctrl+0)">
+                                    <i class="fas fa-compress-alt me-1"></i>收起全部
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 可折叠的详细统计 -->
+                <div class="accordion" id="resultsAccordion">
+                    ${generateAccountErrorsAccordion(filteredErrorCounts)}
+                </div>
+            `;
+            
+            resultsSection.style.display = 'block';
+            
+            // 智能展开
+            setTimeout(() => {
+                const accountCount = Object.keys(filteredTotalRequests).length;
+                
+                if (accountCount <= 5 && accountCount > 0) {
+                    const accountCollapse = document.getElementById('accountRequestsCollapse');
+                    const accountButton = document.querySelector('[data-bs-target="#accountRequestsCollapse"]');
+                    if (accountCollapse && accountButton) {
+                        accountCollapse.classList.add('show');
+                        accountButton.classList.remove('collapsed');
+                        accountButton.setAttribute('aria-expanded', 'true');
+                    }
+                }
+                
+            }, 100);
+        }
+
+        // 生成账户请求统计折叠面板
+        function generateAccountRequestsAccordion(totalRequests, totalFilteredRequests) {
+            if (Object.keys(totalRequests).length === 0) return '';
+            
+            const accountRows = Object.entries(totalRequests)
+                .sort((a, b) => b[1] - a[1])
+                .map(([accountId, count]) => {
+                    const percentage = totalFilteredRequests > 0 ? 
+                        (count / totalFilteredRequests * 100).toFixed(1) : 0;
+                    const displayAccountId = accountId.length > 20 ? 
+                        accountId.substring(0, 18) + '...' : accountId;
+                    return `
+                        <tr>
+                            <td title="${accountId}">
+                                <span class="badge bg-secondary" title="${accountId}">${displayAccountId}</span>
+                            </td>
+                            <td class="text-end">${count.toLocaleString()}</td>
+                            <td class="text-end">${percentage}%</td>
+                            <td>
+                                <div class="progress" style="height: 20px;">
+                                    <div class="progress-bar" role="progressbar" style="width: ${percentage}%" 
+                                         aria-valuenow="${percentage}" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            
+            return `
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#accountRequestsCollapse" aria-expanded="false"
+                                title="点击这里折叠/展开账户统计详情 (快捷键: Ctrl+1)">
+                            <div class="d-flex justify-content-between w-100 me-3">
+                                <div>
+                                    <i class="fas fa-users me-2"></i>账户请求统计
+                                    <small class="text-muted ms-2">(点击折叠/展开 | Ctrl+1)</small>
+                                </div>
+                                <div>
+                                    <span class="badge bg-info me-1">${Object.keys(totalRequests).length} 个账户</span>
+                                    <span class="badge bg-primary">${totalFilteredRequests.toLocaleString()} 次请求</span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="accountRequestsCollapse" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>账户ID</th>
+                                            <th class="text-end">请求次数</th>
+                                            <th class="text-end">占比</th>
+                                            <th>分布</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${accountRows}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 生成错误类型统计折叠面板
+        function generateErrorTypesAccordion(errorTypes) {
+            if (!errorTypes || Object.keys(errorTypes).length === 0) return '';
+            
+            const totalErrors = Object.values(errorTypes).reduce((sum, info) => sum + info.count, 0);
+            
+            const errorRows = Object.entries(errorTypes)
+                .sort((a, b) => b[1].count - a[1].count)
+                .map(([errorType, info]) => {
+                    const percentage = totalErrors > 0 ? (info.count / totalErrors * 100).toFixed(1) : 0;
+                    return `
+                        <tr>
+                            <td><code>${errorType}</code></td>
+                            <td>${info.description}</td>
+                            <td class="text-end"><span class="badge bg-danger">${info.count}</span></td>
+                            <td class="text-end">${percentage}%</td>
+                        </tr>
+                    `;
+                }).join('');
+            
+            return `
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#errorTypesCollapse" aria-expanded="false"
+                                title="点击这里折叠/展开错误类型统计 (快捷键: Ctrl+2)">
+                            <div class="d-flex justify-content-between w-100 me-3">
+                                <div>
+                                    <i class="fas fa-bug me-2"></i>错误类型统计
+                                    <small class="text-muted ms-2">(点击折叠/展开 | Ctrl+2)</small>
+                                </div>
+                                <div>
+                                    <span class="badge bg-danger me-1">${totalErrors.toLocaleString()} 个错误</span>
+                                    <span class="badge bg-secondary">${Object.keys(errorTypes).length} 种类型</span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="errorTypesCollapse" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover table-sm error-table">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>错误类型</th>
+                                            <th>错误描述</th>
+                                            <th class="text-end">错误次数</th>
+                                            <th class="text-end">占错误比例</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${errorRows}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 生成账户错误详情折叠面板
+        function generateAccountErrorsAccordion(errorCounts) {
+            if (!errorCounts || Object.keys(errorCounts).length === 0) return '';
+            
+            const totalAccountErrors = Object.values(errorCounts).reduce((sum, errors) => {
+                return sum + Object.values(errors).reduce((s, c) => s + c, 0);
+            }, 0);
+            
+            const accountErrorsContent = Object.entries(errorCounts).map(([accountId, errors]) => {
+                const totalAccountErrors = Object.values(errors).reduce((sum, count) => sum + count, 0);
+                
+                const errorRows = Object.entries(errors).map(([errorType, count]) => {
+                    return `
+                        <tr>
+                            <td><code class="small">${errorType}</code></td>
+                            <td class="small">${getErrorDescription(errorType)}</td>
+                            <td class="text-end"><span class="badge bg-warning text-dark">${count}</span></td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                return `
+                    <div class="mb-3">
+                        <h6 class="text-primary">
+                            <i class="fas fa-user me-1"></i>账户: <span class="badge bg-secondary">${accountId}</span>
+                            <small class="text-muted ms-2">共 ${totalAccountErrors} 个错误</small>
+                        </h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm mb-0 error-table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>错误类型</th>
+                                        <th>错误描述</th>
+                                        <th class="text-end">次数</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${errorRows}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                `;
+            }).join('<hr class="my-3">');
+            
+            return `
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#accountErrorsCollapse" aria-expanded="false"
+                                title="点击这里折叠/展开账户错误详情 (快捷键: Ctrl+3)">
+                            <div class="d-flex justify-content-between w-100 me-3">
+                                <div>
+                                    <i class="fas fa-list-alt me-2"></i>账户错误详情
+                                    <small class="text-muted ms-2">(点击折叠/展开 | Ctrl+3)</small>
+                                </div>
+                                <div>
+                                    <span class="badge bg-warning text-dark me-1">${Object.keys(errorCounts).length} 个账户</span>
+                                    <span class="badge bg-danger">${totalAccountErrors.toLocaleString()} 个错误</span>
+                                </div>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="accountErrorsCollapse" class="accordion-collapse collapse">
+                        <div class="accordion-body">
+                            ${accountErrorsContent}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 获取错误描述
+        function getErrorDescription(errorType) {
+            const descriptions = {
+                'channer_not_found': '链接异常',
+                'cid_callback_error': '归因异常',
+                'cid_callback_empty': '归因字段为空',
+                'parse_callback_raw_error': '数据解析异常',
+                'p1_missing': '平台异常',
+                'send_track_flag_false': '回传字段判断不通过',
+                'advertiser_rate_false': '扣量过滤'
+            };
+            return descriptions[errorType] || errorType;
+        }
+
+        // 显示错误信息
+        function showError(message) {
+            const resultsSection = document.getElementById('resultsSection');
+            resultsSection.innerHTML = `
+                <div class="row">
+                    <div class="col-12">
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            ${message}
+                        </div>
+                    </div>
+                </div>
+            `;
+            resultsSection.style.display = 'block';
+        }
+
+        // 展开所有折叠面板
+        function expandAllAccordions() {
+            const accordion = document.getElementById('resultsAccordion');
+            if (!accordion) return;
+            
+            const collapseElements = accordion.querySelectorAll('.accordion-collapse');
+            const buttons = accordion.querySelectorAll('.accordion-button');
+            
+            collapseElements.forEach(element => {
+                element.classList.add('show');
+            });
+            
+            buttons.forEach(button => {
+                button.classList.remove('collapsed');
+                button.setAttribute('aria-expanded', 'true');
+            });
+        }
+
+        // 收起所有折叠面板
+        function collapseAllAccordions() {
+            const accordion = document.getElementById('resultsAccordion');
+            if (!accordion) return;
+            
+            const collapseElements = accordion.querySelectorAll('.accordion-collapse');
+            const buttons = accordion.querySelectorAll('.accordion-button');
+            
+            collapseElements.forEach(element => {
+                element.classList.remove('show');
+            });
+            
+            buttons.forEach(button => {
+                button.classList.add('collapsed');
+                button.setAttribute('aria-expanded', 'false');
+            });
+        }
+
+        // 快速折叠特定模块
+        function toggleSpecificAccordion(targetId) {
+            const targetElement = document.getElementById(targetId);
+            const targetButton = document.querySelector(`[data-bs-target="#${targetId}"]`);
+            
+            if (targetElement && targetButton) {
+                if (targetElement.classList.contains('show')) {
+                    targetElement.classList.remove('show');
+                    targetButton.classList.add('collapsed');
+                    targetButton.setAttribute('aria-expanded', 'false');
+                } else {
+                    targetElement.classList.add('show');
+                    targetButton.classList.remove('collapsed');
+                    targetButton.setAttribute('aria-expanded', 'true');
+                }
+            }
+        }
+
+        // 键盘快捷键支持
+        document.addEventListener('keydown', function(e) {
+            const resultsSection = document.getElementById('resultsSection');
+            if (!resultsSection || resultsSection.style.display === 'none') return;
+            
+            if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey) {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        toggleSpecificAccordion('accountRequestsCollapse');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        toggleSpecificAccordion('errorTypesCollapse');
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        toggleSpecificAccordion('accountErrorsCollapse');
+                        break;
+                    case '0':
+                        e.preventDefault();
+                        collapseAllAccordions();
+                        break;
+                    case '9':
+                        e.preventDefault();
+                        expandAllAccordions();
+                        break;
+                }
+            }
+        });
+
+        // 导出功能
+        document.getElementById('exportBtn').addEventListener('click', async function() {
+            const exportBtn = this;
+            const originalText = exportBtn.innerHTML;
+            
+            try {
+                exportBtn.disabled = true;
+                exportBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>导出中...';
+                
+                const response = await fetch('/api/jd/attribution/export');
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert('导出失败: ' + (errorData.msg || '未知错误'));
+                    return;
+                }
+                
+                const contentDisposition = response.headers.get('content-disposition');
+                let fileName = 'jd_attribution_error_counts.xlsx';
+                if (contentDisposition) {
+                    const fileNameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (fileNameMatch) {
+                        fileName = decodeURIComponent(fileNameMatch[1]);
+                    }
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+                
+                // 显示成功消息
+                showSuccessMessage('导出成功！文件已下载: ' + fileName);
+                
+            } catch (error) {
+                console.error('导出出错:', error);
+                alert('导出失败: ' + error.message);
+            } finally {
+                exportBtn.disabled = false;
+                exportBtn.innerHTML = originalText;
+            }
+        });
+
+        // 显示成功消息
+        function showSuccessMessage(message) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show position-fixed top-0 start-50 translate-middle-x mt-3';
+            alertDiv.style.zIndex = '9999';
+            alertDiv.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                <strong>${message}</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            document.body.appendChild(alertDiv);
+            
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

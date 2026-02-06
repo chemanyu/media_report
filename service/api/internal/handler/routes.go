@@ -19,12 +19,35 @@ import (
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	// 添加静态文件服务
 	webDir := filepath.Join("..", "..", "web")
+
 	// 根路径重定向到主页
 	server.AddRoute(rest.Route{
 		Method: http.MethodGet,
 		Path:   "/",
 		Handler: func(w http.ResponseWriter, r *http.Request) {
 			http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
+		},
+	})
+
+	// 添加 web 目录下所有 HTML 文件的路由
+	server.AddRoute(rest.Route{
+		Method: http.MethodGet,
+		Path:   "/web/:filename",
+		Handler: func(w http.ResponseWriter, r *http.Request) {
+			filename := r.URL.Query().Get(":filename")
+			if filename == "" {
+				// 从路径参数中获取
+				pathParts := filepath.SplitList(r.URL.Path)
+				if len(pathParts) > 0 {
+					filename = filepath.Base(r.URL.Path)
+				}
+			}
+			if filename == "" {
+				http.NotFound(w, r)
+				return
+			}
+			filePath := filepath.Join(webDir, filename)
+			http.ServeFile(w, r, filePath)
 		},
 	})
 
@@ -189,6 +212,24 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: report.GetJingchengCookieHandler(serverCtx),
 			},
 		},
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 获取京东归因数据
+				Method:  http.MethodGet,
+				Path:    "/jd/attribution/data",
+				Handler: report.GetJDAttributionDataHandler(serverCtx),
+			},
+			{
+				// 导出京东错误统计数据
+				Method:  http.MethodGet,
+				Path:    "/jd/attribution/export",
+				Handler: report.ExportJDErrorCountsHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/api"),
 	)
 
 	server.AddRoutes(

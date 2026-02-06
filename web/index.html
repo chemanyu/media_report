@@ -207,6 +207,22 @@
 
         <!-- 主容器 -->
         <div class="main-container">
+            <!-- 快速导航卡片 -->
+            <div class="quick-nav" style="margin-bottom: 20px;">
+                <el-card shadow="hover" style="cursor: pointer;" @click="goToJDAttribution">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="font-size: 32px;">📊</div>
+                            <div>
+                                <div style="font-size: 18px; font-weight: 600; margin-bottom: 5px;">京东广义转化过滤数据统计</div>
+                                <div style="font-size: 14px; color: #909399;">查看京东广义转化过滤数据统计</div>
+                            </div>
+                        </div>
+                        <el-icon style="font-size: 24px; color: #409EFF;"><ArrowRight /></el-icon>
+                    </div>
+                </el-card>
+            </div>
+
             <!-- 标签页 -->
             <el-tabs v-model="activeTab" type="card">
                 <!-- 返点配置 -->
@@ -665,8 +681,8 @@
         createApp({
             setup() {
                 // API Base URL - 根据实际情况修改
-                //const API_BASE_URL = 'http://127.0.0.1:8888';
-                const API_BASE_URL = 'https://rta.zhltech.net/guangyixinmedia';
+                const API_BASE_URL = 'http://127.0.0.1:8888';
+                //const API_BASE_URL = 'https://rta.zhltech.net/guangyixinmedia';
 
                 // 当前激活的标签页
                 const activeTab = ref('rebate');
@@ -1199,9 +1215,15 @@
                     loadElmHcReportList();
                 });
 
+                // 跳转到京东归因页面
+                const goToJDAttribution = () => {
+                    window.location.href = '/web/jd_attribution.html';
+                };
+
                 return {
                     activeTab,
                     formatTime,
+                    goToJDAttribution,
                     // 返点配置
                     rebateList,
                     rebateDialogVisible,

@@ -40,6 +40,33 @@ type (
 		Code    int    `json:"code"`
 		Message string `json:"message"`
 	}
+	// =============== 京东归因数据 ===============
+	// 查询京东归因数据的请求
+	JDAttributionRequest {
+		Date string `form:"date"` // 日期格式：YYYYMMDD 或 YYYY-MM-DD
+	}
+	// 归因数据的响应
+	JDAttributionResponse {
+		Date          string                        `json:"date"`
+		TotalRequests map[string]int64              `json:"total_requests"` // 每个账户的总请求数
+		ErrorCounts   map[string]map[string]int64   `json:"error_counts"`   // 账户ID -> 错误类型 -> 错误数量
+		Summary       JDAttributionSummary          `json:"summary"`
+	}
+	// 汇总数据
+	JDAttributionSummary {
+		TotalRequestCount int64                     `json:"total_request_count"`
+		TotalErrorCount   int64                     `json:"total_error_count"`
+		ErrorTypes        map[string]ErrorTypeDetail `json:"error_types"` // 错误类型及其数量和描述
+	}
+	// 错误类型详情
+	ErrorTypeDetail {
+		Count       int64  `json:"count"`
+		Description string `json:"description"`
+	}
+	// 导出错误统计数据的请求
+	JDErrorExportRequest {
+		NumDays int `form:"num_days,default=10"` // 导出过去多少天的数据，默认10天
+	}
 	// =============== 返点配置 ===============
 	CreateRebateReq {
 		Subject     string  `json:"subject"`
@@ -342,4 +369,12 @@ service media-api {
 	@doc "获取京橙Cookie"
 	@handler getJingchengCookie
 	get /report/jingcheng/cookie returns (GetJingchengCookieResp)
+	
+	@doc "获取京东归因数据"
+	@handler getJDAttributionData
+	get /report/jd/attribution (JDAttributionRequest) returns (JDAttributionResponse)
+	
+	@doc "导出京东错误统计数据"
+	@handler exportJDErrorCounts
+	get /report/jd/export-errors (JDErrorExportRequest)
 }
