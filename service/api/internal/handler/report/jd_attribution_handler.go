@@ -1,6 +1,7 @@
 package report
 
 import (
+	"fmt"
 	"net/http"
 
 	logic "media_report/service/api/internal/logic/report"
@@ -48,7 +49,7 @@ func ExportJDErrorCountsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		// 设置响应头
 		w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 		w.Header().Set("Content-Disposition", "attachment; filename="+filename)
-		w.Header().Set("Content-Length", string(len(excelData)))
+		w.Header().Set("Content-Length", fmt.Sprint(len(excelData)))
 
 		// 写入Excel数据
 		w.Write(excelData)
