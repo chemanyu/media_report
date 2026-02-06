@@ -329,7 +329,7 @@
             queryBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>查询中...';
             
             try {
-                const response = await fetch(`/api/jd/attribution/data?date=${queryDate}`);
+                const response = await fetch(`/jd/attribution/data?date=${queryDate}`);
                 const result = await response.json();
                 console.info(result)
                 if (response.ok && result.date) {
@@ -815,7 +815,7 @@
                 exportBtn.disabled = true;
                 exportBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>导出中...';
                 
-                const response = await fetch('/api/jd/attribution/export');
+                const response = await fetch('/jd/attribution/export');
                 
                 if (!response.ok) {
                     const errorData = await response.json();
