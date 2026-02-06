@@ -239,6 +239,28 @@ type (
 		Message string `json:"message"`
 		Data    string `json:"data"`
 	}
+	// =============== 菜鸟账户配置 ===============
+	CainiaoAdvertiserAddReq {
+		MediaAdvId string `json:"media_adv_id"`
+	}
+	CainiaoAdvertiserDeleteReq {
+		Id int64 `json:"id"`
+	}
+	CainiaoAdvertiserResp {
+		Id         int64  `json:"id"`
+		MediaAdvId string `json:"media_adv_id"`
+		CreateTime string `json:"create_time"`
+		UpdateTime string `json:"update_time"`
+	}
+	CainiaoAdvertiserListResp {
+		Code    int                      `json:"code"`
+		Message string                   `json:"message"`
+		Data    []*CainiaoAdvertiserResp `json:"data"`
+	}
+	CainiaoAdvertiserCommonResp {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	}
 )
 
 @server (
@@ -345,6 +367,24 @@ service media-api {
 	@doc "删除汇川饿了么数据报表"
 	@handler deleteElmHcReport
 	post /config/elmhc/delete (DeleteElmHcReportReq) returns (ElmHcReportCommonResp)
+}
+
+// =============== 菜鸟账户配置接口 ===============
+@server (
+	group: config
+)
+service media-api {
+	@doc "获取菜鸟账户列表"
+	@handler getCainiaoAdvertiserList
+	get /config/cainiao/list returns (CainiaoAdvertiserListResp)
+
+	@doc "添加菜鸟账户"
+	@handler addCainiaoAdvertiser
+	post /config/cainiao/add (CainiaoAdvertiserAddReq) returns (CainiaoAdvertiserCommonResp)
+
+	@doc "删除菜鸟账户"
+	@handler deleteCainiaoAdvertiser
+	post /config/cainiao/delete (CainiaoAdvertiserDeleteReq) returns (CainiaoAdvertiserCommonResp)
 }
 
 // =============== 文件下载接口 ===============

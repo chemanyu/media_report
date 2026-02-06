@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/robfig/cron/v3"
@@ -169,8 +170,20 @@ func executeReportJob(db *gorm.DB, ksConfig config.KuaishouConfig, dingTalk conf
 	var totalDetail types.KsApiReportDetail
 	var hasData bool
 
+	// 从数据库获取广告主ID列表
+	advertiserIds, err := model.GetAllAdvertiserIds(db)
+	if err != nil {
+		logx.Errorf("获取广告主ID列表失败: %v", err)
+		return
+	}
+	if len(advertiserIds) == 0 {
+		logx.Info("没有配置广告主ID，跳过快手报表任务")
+		return
+	}
+
 	// 循环查询所有广告主
-	for _, advertiserId := range ksConfig.AdvertiserIds {
+	for _, advertiserIdStr := range advertiserIds {
+		advertiserId, _ := strconv.ParseInt(advertiserIdStr, 10, 64)
 		// 构建请求参数
 		req := map[string]interface{}{
 			"start_date":           today,

@@ -14,14 +14,7 @@ Log:
 Kuaishou:
   BaseUrl: https://ad.e.kuaishou.com
   Timeout: 30  # 请求超时时间（秒）
-  AdvertiserIds:  # 广告主 ID 列表
-    - 95790767
-    - 95790768
-    - 95790769
-    - 95790770
-    - 95790765
-    - 95790766
-    - 95790764
+  # AdvertiserIds 已迁移到数据库表 cainiao_advertiser 管理
 
 OAuthConfig:
   AppId: 165914637

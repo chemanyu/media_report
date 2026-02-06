@@ -240,6 +240,14 @@
                     </div>
                 </div>
 
+                <!-- 菜鸟账户 -->
+                <div>
+                    <div class="menu-item" :class="{active: currentPage === 'cainiao'}" @click="navigateTo('cainiao', '菜鸟时报账户')">
+                        <span class="menu-item-icon">🏪</span>
+                        <span class="menu-item-text">菜鸟时报账户</span>
+                    </div>
+                </div>
+
                 <!-- 京东广义数据统计 -->
                 <div>
                     <div class="menu-item" :class="{active: currentPage === 'jd_attribution'}" @click="navigateTo('jd_attribution', '京东广义数据统计')">
@@ -331,6 +339,10 @@
                         'elm_hc': {
                             url: `${pathPrefix}/web/elm_hc_report.html`,
                             subtitle: '查看汇川饿了么报表数据'
+                        },
+                        'cainiao': {
+                            url: `${pathPrefix}/web/config_cainiao.html`,
+                            subtitle: '管理菜鸟账户（快手广告主ID）'
                         },
                         'jd_attribution': {
                             url: `${pathPrefix}/web/jd_attribution.html`,

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>菜鸟账户管理</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        #app {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <h2>菜鸟账户管理</h2>
+        
+        <!-- 添加表单 -->
+        <el-form :inline="true" @submit.prevent style="margin-bottom: 20px;">
+            <el-form-item label="广告主ID">
+                <el-input 
+                    v-model="newAdvertiserId" 
+                    placeholder="请输入广告主ID"
+                    style="width: 250px;"
+                    @keyup.enter="addAdvertiser">
+                </el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="addAdvertiser" :loading="loading">添加</el-button>
+                <el-button @click="loadAdvertisers" :loading="loading">刷新</el-button>
+            </el-form-item>
+        </el-form>
+
+        <!-- 账户列表表格 -->
+        <el-table :data="advertisers" border stripe>
+            <el-table-column prop="media_adv_id" label="广告主ID" width="180"></el-table-column>
+            <el-table-column prop="create_time" label="创建时间" width="180">
+                <template #default="scope">
+                    {{ formatTime(scope.row.create_time) }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="update_time" label="更新时间" width="180">
+                <template #default="scope">
+                    {{ formatTime(scope.row.update_time) }}
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" width="100">
+                <template #default="scope">
+                    <el-button 
+                        type="danger" 
+                        size="small" 
+                        @click="deleteAdvertiser(scope.row)"
+                        :loading="deleteLoadingId === scope.row.id">
+                        删除
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+    </div>
+
+    <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+
+        // 动态判断环境
+        const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+        const API_BASE_URL = isProduction ? '/guangyixinmedia' : '';
+
+        createApp({
+            data() {
+                return {
+                    advertisers: [],
+                    newAdvertiserId: '',
+                    loading: false,
+                    deleteLoadingId: null
+                }
+            },
+            methods: {
+                // 加载账户列表
+                async loadAdvertisers() {
+                    this.loading = true;
+                    try {
+                        const response = await axios.get(`${API_BASE_URL}/api/cainiao_advertiser/list`);
+                        this.advertisers = response.data || [];
+                    } catch (error) {
+                        ElMessage.error('加载账户列表失败: ' + (error.response?.data?.message || error.message));
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // 添加账户
+                async addAdvertiser() {
+                    if (!this.newAdvertiserId.trim()) {
+                        ElMessage.warning('请输入广告主ID');
+                        return;
+                    }
+
+                    this.loading = true;
+                    try {
+                        const response = await axios.post(`${API_BASE_URL}/api/cainiao_advertiser/add`, {
+                            media_adv_id: this.newAdvertiserId.trim()
+                        });
+                        
+                        if (response.data.code === 0) {
+                            ElMessage.success('添加成功');
+                            this.newAdvertiserId = '';
+                            await this.loadAdvertisers();
+                        } else {
+                            ElMessage.error(response.data.message || '添加失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('添加失败: ' + (error.response?.data?.message || error.message));
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // 删除账户
+                async deleteAdvertiser(adv) {
+                    try {
+                        await ElMessageBox.confirm(
+                            `确定要删除广告主ID "${adv.media_adv_id}" 吗？`,
+                            '删除确认',
+                            {
+                                confirmButtonText: '确定',
+                                cancelButtonText: '取消',
+                                type: 'warning'
+                            }
+                        );
+
+                        this.deleteLoadingId = adv.id;
+                        const response = await axios.post(`${API_BASE_URL}/api/cainiao_advertiser/delete`, {
+                            id: adv.id
+                        });
+                        
+                        if (response.data.code === 0) {
+                            ElMessage.success('删除成功');
+                            await this.loadAdvertisers();
+                        } else {
+                            ElMessage.error(response.data.message || '删除失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') {
+                            ElMessage.error('删除失败: ' + (error.response?.data?.message || error.message));
+                        }
+                    } finally {
+                        this.deleteLoadingId = null;
+                    }
+                },
+
+                // 格式化时间
+                formatTime(timeStr) {
+                    if (!timeStr) return '-';
+                    const date = new Date(timeStr);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hour = String(date.getHours()).padStart(2, '0');
+                    const minute = String(date.getMinutes()).padStart(2, '0');
+                    return `${year}-${month}-${day} ${hour}:${minute}`;
+                }
+            },
+            mounted() {
+                this.loadAdvertisers();
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

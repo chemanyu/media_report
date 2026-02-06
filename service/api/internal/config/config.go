@@ -19,9 +19,9 @@ type Config struct {
 }
 
 type KuaishouConfig struct {
-	BaseUrl       string
-	Timeout       int
-	AdvertiserIds []int64 // 广告主 ID 列表
+	BaseUrl string
+	Timeout int
+	// AdvertiserIds 已移到数据库表 cainiao_advertiser 管理
 }
 
 type OAuthConfig struct {

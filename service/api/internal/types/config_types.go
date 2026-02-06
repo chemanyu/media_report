@@ -155,3 +155,21 @@ type TriggerJuliangReportResp struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
+
+// =============== 菜鸟账户配置 ===============
+
+// 添加菜鸟账户请求
+type CainiaoAdvertiserAddReq struct {
+	MediaAdvId string `json:"media_adv_id"` // 广告主ID
+}
+
+// 删除菜鸟账户请求
+type CainiaoAdvertiserDeleteReq struct {
+	Id int64 `json:"id"` // 账户ID
+}
+
+// 通用响应
+type CommonResp struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}

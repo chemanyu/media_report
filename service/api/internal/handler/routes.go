@@ -46,6 +46,27 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 	})
 
+	// 菜鸟账户路由
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/api/cainiao_advertiser/list",
+				Handler: config.CainiaoAdvertiserListHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/cainiao_advertiser/add",
+				Handler: config.CainiaoAdvertiserAddHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/cainiao_advertiser/delete",
+				Handler: config.CainiaoAdvertiserDeleteHandler(serverCtx),
+			},
+		},
+	)
+
 	server.AddRoutes(
 		[]rest.Route{
 			{
