@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>任务类型配置</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        .action-bar { margin-bottom: 20px; }
+        .config-list { display: grid; gap: 16px; }
+        .config-item { background: white; border: 1px solid #e4e7ed; border-radius: 8px; padding: 20px; transition: all 0.3s; display: flex; align-items: center; justify-content: space-between; }
+        .config-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .config-item-left { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; align-items: center; }
+        .config-field { display: flex; flex-direction: column; min-width: 0; }
+        .config-field-label { font-size: 12px; color: #909399; margin-bottom: 4px; }
+        .config-field-value { font-size: 14px; color: #303133; font-weight: 500; }
+        .config-item-actions { display: flex; gap: 8px; margin-left: 20px; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #909399; background: white; border-radius: 8px; }
+        .empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <div class="action-bar">
+            <el-button type="primary" @click="showDialog('create')" icon="Plus">新建任务类型</el-button>
+            <el-button @click="loadList" icon="Refresh">刷新</el-button>
+        </div>
+
+        <div class="config-list" v-if="list.length > 0">
+            <div class="config-item" v-for="item in list" :key="item.id">
+                <div class="config-item-left">
+                    <div class="config-field">
+                        <div class="config-field-label">任务名称</div>
+                        <div class="config-field-value">{{ item.name }}</div>
+                    </div>
+                    <div class="config-field">
+                        <div class="config-field-label">任务代码</div>
+                        <div class="config-field-value">{{ item.code }}</div>
+                    </div>
+                    <div class="config-field">
+                        <div class="config-field-label">媒体平台</div>
+                        <div class="config-field-value">{{ item.media }}</div>
+                    </div>
+                    <div class="config-field">
+                        <div class="config-field-label">结算单价</div>
+                        <div class="config-field-value">
+                            <el-tag type="danger">¥{{ item.settlement_price.toFixed(2) }}</el-tag>
+                        </div>
+                    </div>
+                    <div class="config-field">
+                        <div class="config-field-label">状态</div>
+                        <div class="config-field-value">
+                            <el-tag :type="item.status === 1 ? 'success' : 'info'">{{ item.status === 1 ? '启用' : '停用' }}</el-tag>
+                        </div>
+                    </div>
+                    <div class="config-field">
+                        <div class="config-field-label">更新时间</div>
+                        <div class="config-field-value">{{ formatTime(item.update_time) }}</div>
+                    </div>
+                </div>
+                <div class="config-item-actions">
+                    <el-button size="small" type="primary" @click="showDialog('edit', item)">编辑</el-button>
+                    <el-button size="small" type="danger" @click="deleteItem(item)">删除</el-button>
+                </div>
+            </div>
+        </div>
+        <div class="empty-state" v-else>
+            <div class="empty-state-icon">📋</div>
+            <div>暂无任务类型配置，点击上方按钮新建</div>
+        </div>
+
+        <el-dialog v-model="dialogVisible" :title="dialogMode === 'create' ? '新建任务类型' : '编辑任务类型'" width="600px">
+            <el-form :model="form" label-width="100px">
+                <el-form-item label="任务名称" required>
+                    <el-input v-model="form.name" placeholder="如：激活任务" />
+                </el-form-item>
+                <el-form-item label="任务代码" required>
+                    <el-input v-model="form.code" placeholder="如：ACTIVATION" />
+                </el-form-item>
+                <el-form-item label="媒体平台" required>
+                    <el-input v-model="form.media" placeholder="如：快手、抖音" />
+                </el-form-item>
+                <el-form-item label="结算单价" required>
+                    <el-input-number v-model="form.settlement_price" :min="0" :step="0.01" :precision="2" />
+                    <span style="margin-left: 10px; color: #909399;">元</span>
+                </el-form-item>
+                <el-form-item label="状态" required>
+                    <el-radio-group v-model="form.status">
+                        <el-radio :label="1">启用</el-radio>
+                        <el-radio :label="0">停用</el-radio>
+                    </el-radio-group>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="submit">确定</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+        // 动态判断 API 路径前缀：根据URL路径判断
+        const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+        const API_BASE_URL = isProduction ? '/guangyixinmedia' : '';
+
+        createApp({
+            setup() {
+                const list = ref([]);
+                const dialogVisible = ref(false);
+                const dialogMode = ref('create');
+                const form = ref({ id: null, name: '', code: '', media: '', settlement_price: 0, status: 1 });
+
+                const formatTime = (timeStr) => {
+                    if (!timeStr) return '-';
+                    const date = new Date(timeStr);
+                    return date.toLocaleString('zh-CN');
+                };
+
+                const loadList = async () => {
+                    try {
+                        const response = await axios.get(`${API_BASE_URL}/config/tasktype/list`);
+                        if (response.data.code === 200) {
+                            list.value = response.data.data || [];
+                        } else {
+                            ElMessage.error(response.data.message || '加载失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                const showDialog = (mode, row = null) => {
+                    dialogMode.value = mode;
+                    if (mode === 'create') {
+                        form.value = { id: null, name: '', code: '', media: '', settlement_price: 0, status: 1 };
+                    } else {
+                        form.value = { ...row };
+                    }
+                    dialogVisible.value = true;
+                };
+
+                const submit = async () => {
+                    const url = dialogMode.value === 'create' ? `${API_BASE_URL}/config/tasktype/create` : `${API_BASE_URL}/config/tasktype/update`;
+                    try {
+                        const response = await axios.post(url, form.value);
+                        if (response.data.code === 200) {
+                            ElMessage.success(dialogMode.value === 'create' ? '创建成功' : '更新成功');
+                            dialogVisible.value = false;
+                            loadList();
+                        } else {
+                            ElMessage.error(response.data.message || '操作失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                const deleteItem = async (row) => {
+                    try {
+                        await ElMessageBox.confirm('确定要删除吗？', '提示', { type: 'warning' });
+                        const response = await axios.post(`${API_BASE_URL}/config/tasktype/delete`, { id: row.id });
+                        if (response.data.code === 200) {
+                            ElMessage.success('删除成功');
+                            loadList();
+                        } else {
+                            ElMessage.error(response.data.message || '删除失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                onMounted(() => loadList());
+
+                return { list, dialogVisible, dialogMode, form, formatTime, loadList, showDialog, submit, deleteItem };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

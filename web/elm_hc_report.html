@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汇川饿了么报表</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        .action-bar { margin-bottom: 20px; }
+        .config-list { display: grid; gap: 16px; }
+        .config-item { background: white; border: 1px solid #e4e7ed; border-radius: 8px; padding: 20px; transition: all 0.3s; display: flex; align-items: flex-start; justify-content: space-between; }
+        .config-item:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        .config-item-left { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+        .config-field { display: flex; flex-direction: column; min-width: 0; }
+        .config-field-label { font-size: 12px; color: #909399; margin-bottom: 4px; }
+        .config-field-value { font-size: 14px; color: #303133; font-weight: 500; }
+        .config-item-actions { display: flex; flex-direction: column; gap: 8px; margin-left: 20px; }
+        .media-account-card { background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); border: 1px solid #e4e7ed; padding: 16px; border-radius: 8px; transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+        .media-account-card:hover { box-shadow: 0 4px 8px rgba(0,0,0,0.1); transform: translateY(-2px); }
+        .empty-state { text-align: center; padding: 60px 20px; color: #909399; background: white; border-radius: 8px; }
+        .empty-state-icon { font-size: 64px; margin-bottom: 16px; opacity: 0.5; }
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <div class="action-bar">
+            <el-button type="primary" @click="showReportDialog('create')" icon="Plus">新建客户</el-button>
+            <el-button @click="loadList" icon="Refresh">刷新</el-button>
+        </div>
+
+        <div class="config-list" v-if="list.length > 0">
+            <div class="config-item" v-for="item in list" :key="item.id">
+                <div class="config-item-left">
+                    <div class="config-field">
+                        <div class="config-field-label">客户简称</div>
+                        <div class="config-field-value"><strong>{{ item.customer_short }}</strong></div>
+                    </div>
+                    <div class="config-field">
+                        <div class="config-field-label">客户名称</div>
+                        <div class="config-field-value">{{ item.customer_name }}</div>
+                    </div>
+                    <div class="config-field">
+                        <div class="config-field-label">代理简称</div>
+                        <div class="config-field-value">{{ item.agent_short }}</div>
+                    </div>
+                    <div class="config-field">
+                        <div class="config-field-label">媒体平台</div>
+                        <div class="config-field-value">{{ item.media_platform_name }}</div>
+                    </div>
+
+                    <!-- 账户列表 -->
+                    <div class="config-field" style="grid-column: 1 / -1; margin-top: 12px; border-top: 1px dashed #dcdfe6; padding-top: 12px;">
+                        <div class="config-field-label" style="font-weight: 600; margin-bottom: 12px;">
+                            <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;">
+                                账户列表 ({{ getMediaAccounts(item.id).length }})
+                            </span>
+                        </div>
+                        <div v-if="getMediaAccounts(item.id).length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 12px;">
+                            <div v-for="media in getMediaAccounts(item.id)" :key="media.id" class="media-account-card">
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="flex: 1;">
+                                        <div style="font-weight: 600; font-size: 15px; color: #303133; margin-bottom: 12px; display: flex; align-items: center;">
+                                            <span style="background: #667eea; width: 4px; height: 16px; display: inline-block; margin-right: 8px; border-radius: 2px;"></span>
+                                            {{ media.media_adv_name }}
+                                        </div>
+                                        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
+                                            <div><span style="color: #909399; width: 90px; display: inline-block;">媒体账户ID</span><code>{{ media.media_adv_id }}</code></div>
+                                            <div><span style="color: #909399; width: 90px; display: inline-block;">汇川账户ID</span><code>{{ media.huichuan_adv_id }}</code></div>
+                                            <div><span style="color: #909399; width: 90px; display: inline-block;">调起数</span><el-tag type="info" size="small">{{ media.redirect_num }}</el-tag></div>
+                                            <div><span style="color: #909399; width: 90px; display: inline-block;">付费数</span><el-tag type="success" size="small">{{ media.pay_num }}</el-tag></div>
+                                        </div>
+                                    </div>
+                                    <div style="margin-left: 12px; display: flex; flex-direction: column; gap: 4px;">
+                                        <el-button size="small" type="primary" plain @click="showMediaDialog('edit', media)">编辑</el-button>
+                                        <el-button size="small" type="danger" plain @click="deleteMedia(media)">删除</el-button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else style="background: #f5f7fa; border: 1px dashed #dcdfe6; border-radius: 8px; padding: 24px; text-align: center;">
+                            <div style="color: #909399; font-size: 14px;">📭 暂无账户数据</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="config-item-actions">
+                    <el-button size="small" type="success" @click="showMediaDialog('create', null, item.id)" icon="Plus">添加账户</el-button>
+                    <el-button size="small" type="primary" @click="showReportDialog('edit', item)">编辑</el-button>
+                    <el-button size="small" type="danger" @click="deleteReport(item)">删除</el-button>
+                </div>
+            </div>
+        </div>
+        <div class="empty-state" v-else>
+            <div class="empty-state-icon">🍔</div>
+            <div>暂无客户数据，点击上方按钮新建</div>
+        </div>
+
+        <!-- 客户对话框 -->
+        <el-dialog v-model="reportDialogVisible" :title="reportDialogMode === 'create' ? '新建客户' : '编辑客户'" width="700px">
+            <el-form :model="reportForm" label-width="130px">
+                <el-row :gutter="20">
+                    <el-col :span="12">
+                        <el-form-item label="客户名称" required>
+                            <el-input v-model="reportForm.customer_name" placeholder="如：拉扎斯网络科技" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="客户简称" required>
+                            <el-input v-model="reportForm.customer_short" placeholder="如：淘宝闪购" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row :gutter="20">
+                    <el-col :span="12">
+                        <el-form-item label="代理名称" required>
+                            <el-input v-model="reportForm.agent_name" placeholder="如：北京美数信息科技" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="代理简称" required>
+                            <el-input v-model="reportForm.agent_short" placeholder="如：美数" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+                <el-row :gutter="20">
+                    <el-col :span="24">
+                        <el-form-item label="媒体平台名称" required>
+                            <el-input v-model="reportForm.media_platform_name" placeholder="如：巨量引擎" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-form>
+            <template #footer>
+                <el-button @click="reportDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitReport">确定</el-button>
+            </template>
+        </el-dialog>
+
+        <!-- 账户对话框 -->
+        <el-dialog v-model="mediaDialogVisible" :title="mediaDialogMode === 'create' ? '添加账户' : '编辑账户'" width="600px">
+            <el-form :model="mediaForm" label-width="130px">
+                <el-form-item label="媒体账户ID" required>
+                    <el-input v-model="mediaForm.media_adv_id" placeholder="如：1826264272898059" />
+                </el-form-item>
+                <el-form-item label="媒体账户名称" required>
+                    <el-input v-model="mediaForm.media_adv_name" placeholder="如：RD-饿了么-19" />
+                </el-form-item>
+                <el-form-item label="汇川账户ID" required>
+                    <el-input v-model="mediaForm.huichuan_adv_id" placeholder="如：211571796" />
+                </el-form-item>
+                <el-row :gutter="20">
+                    <el-col :span="12">
+                        <el-form-item label="调起数">
+                            <el-input-number v-model="mediaForm.redirect_num" :min="0" :controls="false" style="width: 100%;" />
+                        </el-form-item>
+                    </el-col>
+                    <el-col :span="12">
+                        <el-form-item label="付费数">
+                            <el-input-number v-model="mediaForm.pay_num" :min="0" :controls="false" style="width: 100%;" />
+                        </el-form-item>
+                    </el-col>
+                </el-row>
+            </el-form>
+            <template #footer>
+                <el-button @click="mediaDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="submitMedia">确定</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+        // 动态判断 API 路径前缀：根据URL路径判断
+        const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+        const API_BASE_URL = isProduction ? '/guangyixinmedia' : '';
+
+        createApp({
+            setup() {
+                const list = ref([]);
+                const mediaList = ref([]);
+                const reportDialogVisible = ref(false);
+                const reportDialogMode = ref('create');
+                const reportForm = ref({ id: null, customer_name: '', customer_short: '', agent_name: '', agent_short: '', media_platform_name: '' });
+                const mediaDialogVisible = ref(false);
+                const mediaDialogMode = ref('create');
+                const currentPerformanceId = ref(null);
+                const mediaForm = ref({ id: null, media_adv_id: '', media_adv_name: '', huichuan_adv_id: '', redirect_num: 0, pay_num: 0 });
+
+                const loadList = async () => {
+                    try {
+                        const response = await axios.get(`${API_BASE_URL}/config/elmhc/list`);
+                        if (response.data.code === 0) {
+                            list.value = response.data.data || [];
+                            await loadMediaList();
+                        } else {
+                            ElMessage.error(response.data.message || '加载失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                const loadMediaList = async () => {
+                    try {
+                        const response = await axios.get(`${API_BASE_URL}/config/elmhc/media/list`);
+                        if (response.data.code === 0) {
+                            mediaList.value = response.data.data || [];
+                        }
+                    } catch (error) {
+                        console.error('加载账户列表失败:', error);
+                    }
+                };
+
+                const getMediaAccounts = (performanceId) => {
+                    return mediaList.value.filter(m => m.performance_id === performanceId);
+                };
+
+                const showReportDialog = (mode, row = null) => {
+                    reportDialogMode.value = mode;
+                    if (mode === 'create') {
+                        reportForm.value = { id: null, customer_name: '', customer_short: '', agent_name: '', agent_short: '', media_platform_name: '' };
+                    } else {
+                        reportForm.value = { ...row };
+                    }
+                    reportDialogVisible.value = true;
+                };
+
+                const submitReport = async () => {
+                    const url = reportDialogMode.value === 'create' ? `${API_BASE_URL}/config/elmhc/create` : `${API_BASE_URL}/config/elmhc/update`;
+                    try {
+                        const response = await axios.post(url, reportForm.value);
+                        if (response.data.code === 0) {
+                            ElMessage.success(reportDialogMode.value === 'create' ? '创建成功' : '更新成功');
+                            reportDialogVisible.value = false;
+                            loadList();
+                        } else {
+                            ElMessage.error(response.data.message || '操作失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                const deleteReport = async (row) => {
+                    try {
+                        await ElMessageBox.confirm('确定要删除吗？删除后该客户下的所有账户也会被删除。', '提示', { type: 'warning' });
+                        const response = await axios.post(`${API_BASE_URL}/config/elmhc/delete`, { id: row.id });
+                        if (response.data.code === 0) {
+                            ElMessage.success('删除成功');
+                            loadList();
+                        } else {
+                            ElMessage.error(response.data.message || '删除失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                const showMediaDialog = (mode, media = null, performanceId = null) => {
+                    mediaDialogMode.value = mode;
+                    if (mode === 'create') {
+                        currentPerformanceId.value = performanceId;
+                        mediaForm.value = { id: null, media_adv_id: '', media_adv_name: '', huichuan_adv_id: '', redirect_num: 0, pay_num: 0 };
+                    } else {
+                        currentPerformanceId.value = media.performance_id;
+                        mediaForm.value = { ...media };
+                    }
+                    mediaDialogVisible.value = true;
+                };
+
+                const submitMedia = async () => {
+                    const url = mediaDialogMode.value === 'create' ? `${API_BASE_URL}/config/elmhc/media/create` : `${API_BASE_URL}/config/elmhc/media/update`;
+                    const data = {
+                        performance_id: currentPerformanceId.value,
+                        media_adv_id: mediaForm.value.media_adv_id,
+                        media_adv_name: mediaForm.value.media_adv_name,
+                        huichuan_adv_id: parseInt(mediaForm.value.huichuan_adv_id) || 0,
+                        redirect_num: parseInt(mediaForm.value.redirect_num) || 0,
+                        pay_num: parseInt(mediaForm.value.pay_num) || 0
+                    };
+                    if (mediaDialogMode.value === 'edit') data.id = mediaForm.value.id;
+
+                    try {
+                        const response = await axios.post(url, data);
+                        if (response.data.code === 0) {
+                            ElMessage.success(mediaDialogMode.value === 'create' ? '添加成功' : '更新成功');
+                            mediaDialogVisible.value = false;
+                            loadMediaList();
+                        } else {
+                            ElMessage.error(response.data.message || '操作失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                const deleteMedia = async (media) => {
+                    try {
+                        await ElMessageBox.confirm('确定要删除该账户吗？', '提示', { type: 'warning' });
+                        const response = await axios.post(`${API_BASE_URL}/config/elmhc/media/delete`, { id: media.id });
+                        if (response.data.code === 0) {
+                            ElMessage.success('删除成功');
+                            loadMediaList();
+                        } else {
+                            ElMessage.error(response.data.message || '删除失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') ElMessage.error('网络错误：' + error.message);
+                    }
+                };
+
+                onMounted(() => loadList());
+
+                return { list, mediaList, reportDialogVisible, reportDialogMode, reportForm, mediaDialogVisible, mediaDialogMode, mediaForm, currentPerformanceId, loadList, getMediaAccounts, showReportDialog, submitReport, deleteReport, showMediaDialog, submitMedia, deleteMedia };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

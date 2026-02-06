@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>媒体报表系统 - 配置管理中心</title>
+    <title>媒体报表系统 - 管理中心</title>
     <!-- Element Plus CSS -->
     <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
-    <!-- Element Plus Icons -->
-    <link rel="stylesheet" href="https://unpkg.com/@element-plus/icons-vue@2.1.0/dist/index.css" />
     <style>
         * {
             margin: 0;
@@ -23,171 +21,170 @@
 
         #app {
             min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
-        .main-header {
+        /* 顶部导航栏 */
+        .top-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px 0;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
-        }
-
-        .header-content {
-            max-width: 1400px;
-            margin: 0 auto;
+            height: 60px;
+            display: flex;
+            align-items: center;
             padding: 0 20px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 100;
         }
 
         .header-title {
-            font-size: 32px;
+            font-size: 20px;
             font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* 主体容器 */
+        .main-wrapper {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        /* 左侧边栏 */
+        .sidebar {
+            width: 240px;
+            background: #fff;
+            border-right: 1px solid #e4e7ed;
+            overflow-y: auto;
+            transition: width 0.3s;
+        }
+
+        .sidebar.collapsed {
+            width: 64px;
+        }
+
+        /* 侧边栏菜单项 */
+        .menu-item {
+            padding: 14px 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-left: 3px solid transparent;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #303133;
+        }
+
+        .menu-item:hover {
+            background: #f5f7fa;
+            border-left-color: #409EFF;
+        }
+
+        .menu-item.active {
+            background: #ecf5ff;
+            border-left-color: #409EFF;
+            color: #409EFF;
+            font-weight: 600;
+        }
+
+        .menu-item-icon {
+            font-size: 18px;
+            min-width: 18px;
+            text-align: center;
+        }
+
+        .menu-item-text {
+            flex: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .menu-item-arrow {
+            font-size: 12px;
+            transition: transform 0.3s;
+        }
+
+        .menu-item-arrow.expanded {
+            transform: rotate(90deg);
+        }
+
+        /* 子菜单 */
+        .submenu {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            background: #fafafa;
+        }
+
+        .submenu.expanded {
+            max-height: 500px;
+        }
+
+        .submenu-item {
+            padding: 12px 20px 12px 48px;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #606266;
+            font-size: 14px;
+            border-left: 3px solid transparent;
+        }
+
+        .submenu-item:hover {
+            background: #f0f2f5;
+            border-left-color: #409EFF;
+        }
+
+        .submenu-item.active {
+            background: #e6f7ff;
+            border-left-color: #409EFF;
+            color: #409EFF;
+            font-weight: 500;
+        }
+
+        /* 内容区域 */
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        .content-header {
+            margin-bottom: 20px;
+        }
+
+        .content-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #303133;
             margin-bottom: 8px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .header-subtitle {
-            font-size: 16px;
-            opacity: 0.9;
+        .content-subtitle {
+            font-size: 14px;
+            color: #909399;
         }
 
-        .main-container {
-            max-width: 1400px;
-            margin: 30px auto;
-            padding: 0 20px;
-        }
-
-        .tab-content {
+        /* 内容卡片 */
+        .content-card {
             background: white;
             border-radius: 8px;
             padding: 24px;
             box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         }
 
-        .action-bar {
-            margin-bottom: 20px;
-        }
-
-        .stats-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 32px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .stat-label {
-            font-size: 14px;
-            opacity: 0.9;
-        }
-
-        .el-tabs {
-            --el-tabs-header-height: 48px;
-        }
-
-        .el-tabs__item {
-            font-size: 16px;
-            font-weight: 500;
-        }
-
-        .form-label-required::before {
-            content: '* ';
-            color: #f56c6c;
-        }
-
-        /* 卡片列表样式 */
-        .config-list {
-            display: grid;
-            gap: 16px;
-        }
-
-        .config-item {
+        /* iframe 容器 */
+        .iframe-container {
+            width: 100%;
+            height: calc(100vh - 140px);
+            border: none;
             background: white;
-            border: 1px solid #e4e7ed;
             border-radius: 8px;
-            padding: 20px;
-            transition: all 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .config-item:hover {
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            transform: translateY(-2px);
-        }
-
-        .config-item-left {
-            flex: 1;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 16px;
-            align-items: center;
-        }
-
-        .config-field {
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-        }
-
-        .config-field-label {
-            font-size: 12px;
-            color: #909399;
-            margin-bottom: 4px;
-            white-space: nowrap;
-        }
-
-        .config-field-value {
-            font-size: 14px;
-            color: #303133;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-
-        .config-item-actions {
-            display: flex;
-            gap: 8px;
-            margin-left: 20px;
-            align-self: flex-start;
-            position: sticky;
-            top: 20px;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 60px 20px;
-            color: #909399;
-        }
-
-        .empty-state-icon {
-            font-size: 64px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        .footer {
-            text-align: center;
-            color: white;
-            opacity: 0.9;
-            font-size: 14px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.08);
         }
 
         [v-cloak] {
@@ -197,1094 +194,161 @@
 </head>
 <body>
     <div id="app" v-cloak>
-        <!-- 头部 -->
-        <div class="main-header">
-            <div class="header-content">
-                <div class="header-title">📊 媒体报表系统 - 配置管理中心</div>
-                <div class="header-subtitle">Configuration Management Center</div>
+        <!-- 顶部导航栏 -->
+        <div class="top-header">
+            <div class="header-title">
+                <span>📊</span>
+                <span>媒体报表系统</span>
             </div>
         </div>
 
-        <!-- 主容器 -->
-        <div class="main-container">
-            <!-- 快速导航卡片 -->
-            <div class="quick-nav" style="margin-bottom: 20px;">
-                <el-card shadow="hover" style="cursor: pointer;" @click="goToJDAttribution">
-                    <div style="display: flex; align-items: center; justify-content: space-between;">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <div style="font-size: 32px;">📊</div>
-                            <div>
-                                <div style="font-size: 18px; font-weight: 600; margin-bottom: 5px;">京东广义转化过滤数据统计</div>
-                                <div style="font-size: 14px; color: #909399;">查看京东广义转化过滤数据统计</div>
-                            </div>
-                        </div>
-                        <el-icon style="font-size: 24px; color: #409EFF;"><ArrowRight /></el-icon>
+        <!-- 主体容器 -->
+        <div class="main-wrapper">
+            <!-- 左侧边栏 -->
+            <div class="sidebar">
+                <!-- 巨量报表 -->
+                <div>
+                    <div class="menu-item" :class="{active: currentMenu === 'juliang'}" @click="toggleMenu('juliang')">
+                        <span class="menu-item-icon">📈</span>
+                        <span class="menu-item-text">巨量报表</span>
+                        <span class="menu-item-arrow" :class="{expanded: expandedMenus.includes('juliang')}">▶</span>
                     </div>
-                </el-card>
+                    <div class="submenu" :class="{expanded: expandedMenus.includes('juliang')}">
+                        <div class="submenu-item" :class="{active: currentPage === 'rebate'}" @click="navigateTo('rebate', '返点配置')">
+                            返点配置
+                        </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'servicefee'}" @click="navigateTo('servicefee', '服务费配置')">
+                            服务费配置
+                        </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'tasktype'}" @click="navigateTo('tasktype', '任务类型配置')">
+                            任务类型配置
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 汇川报表 -->
+                <div>
+                    <div class="menu-item" :class="{active: currentMenu === 'huichuan'}" @click="toggleMenu('huichuan')">
+                        <span class="menu-item-icon">📊</span>
+                        <span class="menu-item-text">汇川报表</span>
+                        <span class="menu-item-arrow" :class="{expanded: expandedMenus.includes('huichuan')}">▶</span>
+                    </div>
+                    <div class="submenu" :class="{expanded: expandedMenus.includes('huichuan')}">
+                        <div class="submenu-item" :class="{active: currentPage === 'elm_hc'}" @click="navigateTo('elm_hc', '汇川饿了么报表')">
+                            汇川饿了么报表
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 京东广义数据统计 -->
+                <div>
+                    <div class="menu-item" :class="{active: currentPage === 'jd_attribution'}" @click="navigateTo('jd_attribution', '京东广义数据统计')">
+                        <span class="menu-item-icon">📉</span>
+                        <span class="menu-item-text">京东广义数据统计</span>
+                    </div>
+                </div>
             </div>
 
-            <!-- 标签页 -->
-            <el-tabs v-model="activeTab" type="card">
-                <!-- 返点配置 -->
-                <el-tab-pane label="💰 返点配置" name="rebate">
-                    <div class="tab-content">
-                        <div class="action-bar">
-                            <el-button type="primary" @click="showRebateDialog('create')" icon="Plus">
-                                新建返点配置
-                            </el-button>
-                            <el-button @click="loadRebateList" icon="Refresh">
-                                刷新
-                            </el-button>
-                        </div>
+            <!-- 内容区域 -->
+            <div class="content-area">
+                <div class="content-header">
+                    <div class="content-title">{{ pageTitle }}</div>
+                    <div class="content-subtitle">{{ pageSubtitle }}</div>
+                </div>
 
-                        <div class="config-list" v-if="rebateList.length > 0">
-                            <div class="config-item" v-for="(item, index) in rebateList" :key="item.id">
-                                <div class="config-item-left">
-                                    <div class="config-field">
-                                        <div class="config-field-label">主体</div>
-                                        <div class="config-field-value">{{ item.subject }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">端口</div>
-                                        <div class="config-field-value">{{ item.port }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">返点率</div>
-                                        <div class="config-field-value">
-                                            <el-tag>{{ (item.rebate_rate * 100).toFixed(2) }}%</el-tag>
-                                        </div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">主体类型</div>
-                                        <div class="config-field-value">
-                                            <el-tag :type="item.subject_type === 1 ? 'success' : 'warning'">
-                                                {{ item.subject_type === 1 ? '京东主体' : '三方主体' }}
-                                            </el-tag>
-                                        </div>
-                                    </div>
-                                    <div class="config-field" v-if="item.remark">
-                                        <div class="config-field-label">备注</div>
-                                        <div class="config-field-value">{{ item.remark }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">更新时间</div>
-                                        <div class="config-field-value">{{ formatTime(item.update_time) }}</div>
-                                    </div>
-                                </div>
-                                <div class="config-item-actions">
-                                    <el-button size="small" type="primary" @click="showRebateDialog('edit', item)">编辑</el-button>
-                                    <el-button size="small" type="danger" @click="deleteRebate(item)">删除</el-button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="empty-state" v-else>
-                            <div class="empty-state-icon">📝</div>
-                            <div>暂无返点配置，点击上方按钮新建</div>
-                        </div>
+                <!-- 使用 iframe 加载不同页面 -->
+                <iframe v-if="currentPageUrl" 
+                        :src="currentPageUrl" 
+                        class="iframe-container"
+                        frameborder="0">
+                </iframe>
+
+                <!-- 默认欢迎页面 -->
+                <div v-else class="content-card" style="text-align: center; padding: 60px 20px;">
+                    <div style="font-size: 64px; margin-bottom: 20px;">👋</div>
+                    <div style="font-size: 24px; font-weight: 600; color: #303133; margin-bottom: 10px;">
+                        欢迎使用媒体报表系统
                     </div>
-                </el-tab-pane>
-
-                <!-- 服务费配置 -->
-                <el-tab-pane label="🏢 服务费配置" name="servicefee">
-                    <div class="tab-content">
-                        <div class="action-bar">
-                            <el-button type="primary" @click="showServiceFeeDialog('create')" icon="Plus">
-                                新建服务费配置
-                            </el-button>
-                            <el-button @click="loadServiceFeeList" icon="Refresh">
-                                刷新
-                            </el-button>
-                        </div>
-
-                        <div class="config-list" v-if="serviceFeeList.length > 0">
-                            <div class="config-item" v-for="(item, index) in serviceFeeList" :key="item.id">
-                                <div class="config-item-left">
-                                    <div class="config-field">
-                                        <div class="config-field-label">服务商</div>
-                                        <div class="config-field-value">{{ item.service_provider }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">服务费率</div>
-                                        <div class="config-field-value">
-                                            <el-tag type="success">{{ (item.fee_rate * 100).toFixed(2) }}%</el-tag>
-                                        </div>
-                                    </div>
-                                    <div class="config-field" v-if="item.remark">
-                                        <div class="config-field-label">备注</div>
-                                        <div class="config-field-value">{{ item.remark }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">创建时间</div>
-                                        <div class="config-field-value">{{ formatTime(item.create_time) }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">更新时间</div>
-                                        <div class="config-field-value">{{ formatTime(item.update_time) }}</div>
-                                    </div>
-                                </div>
-                                <div class="config-item-actions">
-                                    <el-button size="small" type="primary" @click="showServiceFeeDialog('edit', item)">编辑</el-button>
-                                    <el-button size="small" type="danger" @click="deleteServiceFee(item)">删除</el-button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="empty-state" v-else>
-                            <div class="empty-state-icon">🏢</div>
-                            <div>暂无服务费配置，点击上方按钮新建</div>
-                        </div>
+                    <div style="font-size: 14px; color: #909399;">
+                        请从左侧菜单选择要查看的功能
                     </div>
-                </el-tab-pane>
-
-                <!-- 任务类型配置 -->
-                <el-tab-pane label="📋 任务类型配置" name="tasktype">
-                    <div class="tab-content">
-                        <div class="action-bar">
-                            <el-button type="primary" @click="showTaskTypeDialog('create')" icon="Plus">
-                                新建任务类型
-                            </el-button>
-                            <el-button @click="loadTaskTypeList" icon="Refresh">
-                                刷新
-                            </el-button>
-                        </div>
-
-                        <div class="config-list" v-if="taskTypeList.length > 0">
-                            <div class="config-item" v-for="(item, index) in taskTypeList" :key="item.id">
-                                <div class="config-item-left">
-                                    <div class="config-field">
-                                        <div class="config-field-label">任务名称</div>
-                                        <div class="config-field-value">{{ item.name }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">任务代码</div>
-                                        <div class="config-field-value">{{ item.code }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">媒体平台</div>
-                                        <div class="config-field-value">{{ item.media }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">结算单价</div>
-                                        <div class="config-field-value">
-                                            <el-tag type="danger">¥{{ item.settlement_price.toFixed(2) }}</el-tag>
-                                        </div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">状态</div>
-                                        <div class="config-field-value">
-                                            <el-tag :type="item.status === 1 ? 'success' : 'info'">
-                                                {{ item.status === 1 ? '启用' : '停用' }}
-                                            </el-tag>
-                                        </div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">更新时间</div>
-                                        <div class="config-field-value">{{ formatTime(item.update_time) }}</div>
-                                    </div>
-                                </div>
-                                <div class="config-item-actions">
-                                    <el-button size="small" type="primary" @click="showTaskTypeDialog('edit', item)">编辑</el-button>
-                                    <el-button size="small" type="danger" @click="deleteTaskType(item)">删除</el-button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="empty-state" v-else>
-                            <div class="empty-state-icon">📋</div>
-                            <div>暂无任务类型配置，点击上方按钮新建</div>
-                        </div>
-                    </div>
-                </el-tab-pane>
-
-                <!-- 汇川饿了么数据报表 -->
-                <el-tab-pane label="🍔 汇川饿了么报表" name="elmhc">
-                    <div class="tab-content">
-                        <div class="action-bar">
-                            <el-button type="primary" @click="showElmHcReportDialog('create')" icon="Plus">
-                                新建数据报表
-                            </el-button>
-                            <el-button @click="loadElmHcReportList" icon="Refresh">
-                                刷新
-                            </el-button>
-                        </div>
-
-                        <div class="config-list" v-if="elmHcReportList.length > 0">
-                            <div class="config-item" v-for="(item, index) in elmHcReportList" :key="item.id">
-                                <div class="config-item-left">
-                                    <div class="config-field">
-                                        <div class="config-field-label">客户简称</div>
-                                        <div class="config-field-value"><strong>{{ item.customer_short }}</strong></div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">客户名称</div>
-                                        <div class="config-field-value">{{ item.customer_name }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">代理简称</div>
-                                        <div class="config-field-value">{{ item.agent_short }}</div>
-                                    </div>
-                                    <div class="config-field">
-                                        <div class="config-field-label">媒体平台</div>
-                                        <div class="config-field-value">{{ item.media_platform_name }}</div>
-                                    </div>
-                                    
-                                    <!-- 显示该客户下的账户列表 -->
-                                    <div class="config-field" style="grid-column: 1 / -1; margin-top: 12px; border-top: 1px dashed #dcdfe6; padding-top: 12px;">
-                                        <div class="config-field-label" style="font-weight: 600; margin-bottom: 12px; display: flex; align-items: center;">
-                                            <span style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 4px 12px; border-radius: 12px; font-size: 13px;">
-                                                账户列表 ({{ getMediaAccounts(item.id).length }})
-                                            </span>
-                                        </div>
-                                        <div v-if="getMediaAccounts(item.id).length > 0" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)); gap: 12px;">
-                                            <div v-for="media in getMediaAccounts(item.id)" :key="media.id" 
-                                                 style="background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%); 
-                                                        border: 1px solid #e4e7ed; padding: 16px; border-radius: 8px; 
-                                                        transition: all 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                                    <div style="flex: 1;">
-                                                        <div style="font-weight: 600; font-size: 15px; color: #303133; margin-bottom: 12px; display: flex; align-items: center;">
-                                                            <span style="background: #667eea; width: 4px; height: 16px; display: inline-block; margin-right: 8px; border-radius: 2px;"></span>
-                                                            {{ media.media_adv_name }}
-                                                        </div>
-                                                        <div style="display: flex; flex-direction: column; gap: 6px;">
-                                                            <div style="display: flex; align-items: center;">
-                                                                <span style="color: #909399; font-size: 12px; width: 80px;">媒体账户ID</span>
-                                                                <span style="color: #606266; font-size: 13px; font-family: 'Courier New', monospace;">{{ media.media_adv_id }}</span>
-                                                            </div>
-                                                            <div style="display: flex; align-items: center;">
-                                                                <span style="color: #909399; font-size: 12px; width: 80px;">汇川账户ID</span>
-                                                                <span style="color: #606266; font-size: 13px; font-family: 'Courier New', monospace;">{{ media.huichuan_adv_id }}</span>
-                                                            </div>
-                                                            <div style="display: flex; align-items: center;">
-                                                                <span style="color: #909399; font-size: 12px; width: 80px;">调起数</span>
-                                                                <el-tag type="info" size="small">{{ media.redirect_num }}</el-tag>
-                                                            </div>
-                                                            <div style="display: flex; align-items: center;">
-                                                                <span style="color: #909399; font-size: 12px; width: 80px;">付费数</span>
-                                                                <el-tag type="success" size="small">{{ media.pay_num }}</el-tag>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <div style="margin-left: 12px;">
-                                                        <el-button size="small" type="primary" plain @click="showEditMediaDialog(media)">编辑</el-button>
-                                                        <el-button size="small" type="danger" plain @click="deleteMediaAccount(media)">删除</el-button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div v-else style="background: #f5f7fa; border: 1px dashed #dcdfe6; border-radius: 8px; padding: 24px; text-align: center;">
-                                            <div style="color: #909399; font-size: 14px;">📭 暂无账户数据</div>
-                                            <div style="color: #c0c4cc; font-size: 12px; margin-top: 4px;">点击下方"添加账户"按钮创建</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="config-item-actions">
-                                    <el-button size="small" type="success" @click="showAddMediaDialog(item)" icon="Plus">添加账户</el-button>
-                                    <el-button size="small" type="primary" @click="showElmHcReportDialog('edit', item)">编辑</el-button>
-                                    <el-button size="small" type="danger" @click="deleteElmHcReport(item)">删除</el-button>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="empty-state" v-else>
-                            <div class="empty-state-icon">🍔</div>
-                            <div>暂无汇川饿了么数据报表，点击上方按钮新建</div>
-                        </div>
-                    </div>
-                </el-tab-pane>
-            </el-tabs>
+                </div>
+            </div>
         </div>
-
-        <!-- 汇川饿了么数据报表对话框 -->
-        <el-dialog 
-            v-model="elmHcReportDialogVisible" 
-            :title="elmHcReportDialogMode === 'create' ? '新建汇川饿了么数据报表' : '编辑汇川饿了么数据报表'"
-            width="700px"
-        >
-            <el-form :model="elmHcReportForm" label-width="130px">
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="客户名称" required>
-                            <el-input v-model="elmHcReportForm.customer_name" placeholder="如：拉扎斯网络科技" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="客户简称" required>
-                            <el-input v-model="elmHcReportForm.customer_short" placeholder="如：淘宝闪购" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="代理名称" required>
-                            <el-input v-model="elmHcReportForm.agent_name" placeholder="如：北京美数信息科技" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="代理简称" required>
-                            <el-input v-model="elmHcReportForm.agent_short" placeholder="如：美数" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-
-                <el-row :gutter="20">
-                    <el-col :span="24">
-                        <el-form-item label="媒体平台名称" required>
-                            <el-input v-model="elmHcReportForm.media_platform_name" placeholder="如：巨量引擎" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-            </el-form>
-            <template #footer>
-                <el-button @click="elmHcReportDialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="submitElmHcReport">确定</el-button>
-            </template>
-        </el-dialog>
-
-        <!-- 添加/编辑账户对话框 -->
-        <el-dialog 
-            v-model="addMediaDialogVisible" 
-            :title="mediaDialogMode === 'create' ? '添加媒体账户' : '编辑媒体账户'"
-            width="600px"
-        >
-            <el-form :model="mediaForm" label-width="130px">
-                <el-form-item label="媒体账户ID" required>
-                    <el-input v-model="mediaForm.media_adv_id" placeholder="如：1826264272898059" />
-                </el-form-item>
-                <el-form-item label="媒体账户名称" required>
-                    <el-input v-model="mediaForm.media_adv_name" placeholder="如：RD-饿了么-19" />
-                </el-form-item>
-                <el-form-item label="汇川账户ID" required>
-                    <el-input v-model="mediaForm.huichuan_adv_id" placeholder="如：211571796" />
-                </el-form-item>
-                <el-row :gutter="20">
-                    <el-col :span="12">
-                        <el-form-item label="调起数">
-                            <el-input-number v-model="mediaForm.redirect_num" :min="0" :controls="false" style="width: 100%;" />
-                        </el-form-item>
-                    </el-col>
-                    <el-col :span="12">
-                        <el-form-item label="付费数">
-                            <el-input-number v-model="mediaForm.pay_num" :min="0" :controls="false" style="width: 100%;" />
-                        </el-form-item>
-                    </el-col>
-                </el-row>
-            </el-form>
-            <template #footer>
-                <el-button @click="addMediaDialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="submitMediaAccount">确定</el-button>
-            </template>
-        </el-dialog>
-
-        <!-- 返点配置对话框 -->
-        <el-dialog 
-            v-model="rebateDialogVisible" 
-            :title="rebateDialogMode === 'create' ? '新建返点配置' : '编辑返点配置'"
-            width="600px"
-        >
-            <el-form :model="rebateForm" label-width="100px">
-                <el-form-item label="主体" required>
-                    <el-input v-model="rebateForm.subject" placeholder="如：新杰、晴川、美数" />
-                </el-form-item>
-                <el-form-item label="端口" required>
-                    <el-input v-model="rebateForm.port" placeholder="如：优居、至也、各界" />
-                </el-form-item>
-                <el-form-item label="返点率" required>
-                    <el-input-number v-model="rebateForm.rebate_rate" :min="0" :max="1" :step="0.001" :precision="4" />
-                    <span style="margin-left: 10px; color: #909399;">{{ (rebateForm.rebate_rate * 100).toFixed(2) }}%</span>
-                </el-form-item>
-                <el-form-item label="主体类型" required>
-                    <el-radio-group v-model="rebateForm.subject_type">
-                        <el-radio :label="1">京东主体</el-radio>
-                        <el-radio :label="2">三方主体</el-radio>
-                    </el-radio-group>
-                </el-form-item>
-                <el-form-item label="备注">
-                    <el-input v-model="rebateForm.remark" type="textarea" :rows="3" />
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <el-button @click="rebateDialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="submitRebate">确定</el-button>
-            </template>
-        </el-dialog>
-
-        <!-- 服务费配置对话框 -->
-        <el-dialog 
-            v-model="serviceFeeDialogVisible" 
-            :title="serviceFeeDialogMode === 'create' ? '新建服务费配置' : '编辑服务费配置'"
-            width="600px"
-        >
-            <el-form :model="serviceFeeForm" label-width="100px">
-                <el-form-item label="服务商" required>
-                    <el-input v-model="serviceFeeForm.service_provider" placeholder="如：通途、蚁行、创效" />
-                </el-form-item>
-                <el-form-item label="服务费率" required>
-                    <el-input-number v-model="serviceFeeForm.fee_rate" :min="0" :max="1" :step="0.001" :precision="4" />
-                    <span style="margin-left: 10px; color: #909399;">{{ (serviceFeeForm.fee_rate * 100).toFixed(2) }}%</span>
-                </el-form-item>
-                <el-form-item label="备注">
-                    <el-input v-model="serviceFeeForm.remark" type="textarea" :rows="3" />
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <el-button @click="serviceFeeDialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="submitServiceFee">确定</el-button>
-            </template>
-        </el-dialog>
-
-        <!-- 任务类型配置对话框 -->
-        <el-dialog 
-            v-model="taskTypeDialogVisible" 
-            :title="taskTypeDialogMode === 'create' ? '新建任务类型' : '编辑任务类型'"
-            width="600px"
-        >
-            <el-form :model="taskTypeForm" label-width="100px">
-                <el-form-item label="任务名称" required>
-                    <el-input v-model="taskTypeForm.name" placeholder="如：激活任务" />
-                </el-form-item>
-                <el-form-item label="任务代码" required>
-                    <el-input v-model="taskTypeForm.code" placeholder="如：ACTIVATION" />
-                </el-form-item>
-                <el-form-item label="媒体平台" required>
-                    <el-input v-model="taskTypeForm.media" placeholder="如：快手、抖音" />
-                </el-form-item>
-                <el-form-item label="结算单价" required>
-                    <el-input-number v-model="taskTypeForm.settlement_price" :min="0" :step="0.01" :precision="2" />
-                    <span style="margin-left: 10px; color: #909399;">元</span>
-                </el-form-item>
-                <el-form-item label="状态" required>
-                    <el-radio-group v-model="taskTypeForm.status">
-                        <el-radio :label="1">启用</el-radio>
-                        <el-radio :label="0">停用</el-radio>
-                    </el-radio-group>
-                </el-form-item>
-            </el-form>
-            <template #footer>
-                <el-button @click="taskTypeDialogVisible = false">取消</el-button>
-                <el-button type="primary" @click="submitTaskType">确定</el-button>
-            </template>
-        </el-dialog>
     </div>
 
     <!-- Vue 3 -->
-    <script src="https://unpkg.com/vue@3.3.11/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
     <!-- Element Plus -->
     <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
-    <!-- Element Plus Icons -->
-    <script src="https://unpkg.com/@element-plus/icons-vue@2.1.0/dist/index.iife.min.js"></script>
-    <!-- Axios -->
-    <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
 
     <script>
-        const { createApp, ref, computed, onMounted } = Vue;
+        const { createApp } = Vue;
         const { ElMessage, ElMessageBox } = ElementPlus;
 
         createApp({
-            setup() {
-                // API Base URL - 根据实际情况修改
-                //const API_BASE_URL = 'http://127.0.0.1:8888';
-                const API_BASE_URL = 'https://rta.zhltech.net/guangyixinmedia';
-
-                // 当前激活的标签页
-                const activeTab = ref('rebate');
-
-                // 时间格式化函数
-                const formatTime = (timeStr) => {
-                    if (!timeStr) return '-';
-                    // 处理 ISO 8601 格式: 2026-01-27T16:38:30+08:00
-                    const date = new Date(timeStr);
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    const hours = String(date.getHours()).padStart(2, '0');
-                    const minutes = String(date.getMinutes()).padStart(2, '0');
-                    const seconds = String(date.getSeconds()).padStart(2, '0');
-                    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
-                };
-
-                // ========== 返点配置 ==========
-                const rebateList = ref([]);
-                const rebateDialogVisible = ref(false);
-                const rebateDialogMode = ref('create');
-                const rebateForm = ref({
-                    id: null,
-                    subject: '',
-                    port: '',
-                    rebate_rate: 0.025,
-                    subject_type: 1,
-                    remark: ''
-                });
-
-                // 加载返点配置列表
-                const loadRebateList = async () => {
-                    try {
-                        const response = await axios.get(`${API_BASE_URL}/config/rebate/list`);
-                        if (response.data.code === 200) {
-                            rebateList.value = response.data.data || [];
-                        } else {
-                            ElMessage.error(response.data.message || '加载返点配置失败');
-                        }
-                    } catch (error) {
-                        ElMessage.error('网络错误：' + error.message);
-                    }
-                };
-
-                // 显示返点配置对话框
-                const showRebateDialog = (mode, row = null) => {
-                    rebateDialogMode.value = mode;
-                    if (mode === 'create') {
-                        rebateForm.value = {
-                            id: null,
-                            subject: '',
-                            port: '',
-                            rebate_rate: 0.025,
-                            subject_type: 1,
-                            remark: ''
-                        };
-                    } else {
-                        rebateForm.value = { ...row };
-                    }
-                    rebateDialogVisible.value = true;
-                };
-
-                // 提交返点配置
-                const submitRebate = async () => {
-                    const url = rebateDialogMode.value === 'create' 
-                        ? `${API_BASE_URL}/config/rebate/create`
-                        : `${API_BASE_URL}/config/rebate/update`;
-                    
-                    try {
-                        const response = await axios.post(url, rebateForm.value);
-                        if (response.data.code === 200) {
-                            ElMessage.success(rebateDialogMode.value === 'create' ? '创建成功' : '更新成功');
-                            rebateDialogVisible.value = false;
-                            loadRebateList();
-                        } else {
-                            ElMessage.error(response.data.message || '操作失败');
-                        }
-                    } catch (error) {
-                        ElMessage.error('网络错误：' + error.message);
-                    }
-                };
-
-                // 删除返点配置
-                const deleteRebate = async (row) => {
-                    try {
-                        await ElMessageBox.confirm('确定要删除该返点配置吗？', '提示', {
-                            confirmButtonText: '确定',
-                            cancelButtonText: '取消',
-                            type: 'warning'
-                        });
-                        
-                        const response = await axios.post(`${API_BASE_URL}/config/rebate/delete`, {
-                            id: row.id
-                        });
-                        
-                        if (response.data.code === 200) {
-                            ElMessage.success('删除成功');
-                            loadRebateList();
-                        } else {
-                            ElMessage.error(response.data.message || '删除失败');
-                        }
-                    } catch (error) {
-                        if (error !== 'cancel') {
-                            ElMessage.error('网络错误：' + error.message);
-                        }
-                    }
-                };
-
-                // ========== 服务费配置 ==========
-                const serviceFeeList = ref([]);
-                const serviceFeeDialogVisible = ref(false);
-                const serviceFeeDialogMode = ref('create');
-                const serviceFeeForm = ref({
-                    id: null,
-                    service_provider: '',
-                    fee_rate: 0.01,
-                    remark: ''
-                });
-
-                // 加载服务费配置列表
-                const loadServiceFeeList = async () => {
-                    try {
-                        const response = await axios.get(`${API_BASE_URL}/config/servicefee/list`);
-                        if (response.data.code === 200) {
-                            serviceFeeList.value = response.data.data || [];
-                        } else {
-                            ElMessage.error(response.data.message || '加载服务费配置失败');
-                        }
-                    } catch (error) {
-                        ElMessage.error('网络错误：' + error.message);
-                    }
-                };
-
-                // 显示服务费配置对话框
-                const showServiceFeeDialog = (mode, row = null) => {
-                    serviceFeeDialogMode.value = mode;
-                    if (mode === 'create') {
-                        serviceFeeForm.value = {
-                            id: null,
-                            service_provider: '',
-                            fee_rate: 0.01,
-                            remark: ''
-                        };
-                    } else {
-                        serviceFeeForm.value = { ...row };
-                    }
-                    serviceFeeDialogVisible.value = true;
-                };
-
-                // 提交服务费配置
-                const submitServiceFee = async () => {
-                    const url = serviceFeeDialogMode.value === 'create' 
-                        ? `${API_BASE_URL}/config/servicefee/create`
-                        : `${API_BASE_URL}/config/servicefee/update`;
-                    
-                    try {
-                        const response = await axios.post(url, serviceFeeForm.value);
-                        if (response.data.code === 200) {
-                            ElMessage.success(serviceFeeDialogMode.value === 'create' ? '创建成功' : '更新成功');
-                            serviceFeeDialogVisible.value = false;
-                            loadServiceFeeList();
-                        } else {
-                            ElMessage.error(response.data.message || '操作失败');
-                        }
-                    } catch (error) {
-                        ElMessage.error('网络错误：' + error.message);
-                    }
-                };
-
-                // 删除服务费配置
-                const deleteServiceFee = async (row) => {
-                    try {
-                        await ElMessageBox.confirm('确定要删除该服务费配置吗？', '提示', {
-                            confirmButtonText: '确定',
-                            cancelButtonText: '取消',
-                            type: 'warning'
-                        });
-                        
-                        const response = await axios.post(`${API_BASE_URL}/config/servicefee/delete`, {
-                            id: row.id
-                        });
-                        
-                        if (response.data.code === 200) {
-                            ElMessage.success('删除成功');
-                            loadServiceFeeList();
-                        } else {
-                            ElMessage.error(response.data.message || '删除失败');
-                        }
-                    } catch (error) {
-                        if (error !== 'cancel') {
-                            ElMessage.error('网络错误：' + error.message);
-                        }
-                    }
-                };
-
-                // ========== 任务类型配置 ==========
-                const taskTypeList = ref([]);
-                const taskTypeDialogVisible = ref(false);
-                const taskTypeDialogMode = ref('create');
-                const taskTypeForm = ref({
-                    id: null,
-                    name: '',
-                    code: '',
-                    media: '',
-                    settlement_price: 0,
-                    status: 1
-                });
-
-                // 加载任务类型配置列表
-                const loadTaskTypeList = async () => {
-                    try {
-                        const response = await axios.get(`${API_BASE_URL}/config/tasktype/list`);
-                        if (response.data.code === 200) {
-                            taskTypeList.value = response.data.data || [];
-                        } else {
-                            ElMessage.error(response.data.message || '加载任务类型失败');
-                        }
-                    } catch (error) {
-                        ElMessage.error('网络错误：' + error.message);
-                    }
-                };
-
-                // 显示任务类型配置对话框
-                const showTaskTypeDialog = (mode, row = null) => {
-                    taskTypeDialogMode.value = mode;
-                    if (mode === 'create') {
-                        taskTypeForm.value = {
-                            id: null,
-                            name: '',
-                            code: '',
-                            media: '',
-                            settlement_price: 0,
-                            status: 1
-                        };
-                    } else {
-                        taskTypeForm.value = { ...row };
-                    }
-                    taskTypeDialogVisible.value = true;
-                };
-
-                // 提交任务类型配置
-                const submitTaskType = async () => {
-                    const url = taskTypeDialogMode.value === 'create' 
-                        ? `${API_BASE_URL}/config/tasktype/create`
-                        : `${API_BASE_URL}/config/tasktype/update`;
-                    
-                    try {
-                        const response = await axios.post(url, taskTypeForm.value);
-                        if (response.data.code === 200) {
-                            ElMessage.success(taskTypeDialogMode.value === 'create' ? '创建成功' : '更新成功');
-                            taskTypeDialogVisible.value = false;
-                            loadTaskTypeList();
-                        } else {
-                            ElMessage.error(response.data.message || '操作失败');
-                        }
-                    } catch (error) {
-                        ElMessage.error('网络错误：' + error.message);
-                    }
-                };
-
-                // 删除任务类型配置
-                const deleteTaskType = async (row) => {
-                    try {
-                        await ElMessageBox.confirm('确定要删除该任务类型吗？', '提示', {
-                            confirmButtonText: '确定',
-                            cancelButtonText: '取消',
-                            type: 'warning'
-                        });
-                        
-                        const response = await axios.post(`${API_BASE_URL}/config/tasktype/delete`, {
-                            id: row.id
-                        });
-                        
-                        if (response.data.code === 200) {
-                            ElMessage.success('删除成功');
-                            loadTaskTypeList();
-                        } else {
-                            ElMessage.error(response.data.message || '删除失败');
-                        }
-                    } catch (error) {
-                        if (error !== 'cancel') {
-                            ElMessage.error('网络错误：' + error.message);
-                        }
-                    }
-                };
-
-                // 计算启用的任务数量
-                const activeTaskCount = computed(() => {
-                    return taskTypeList.value.filter(task => task.status === 1).length;
-                });
-
-                // ========== 汇川饿了么数据报表 ==========
-                const elmHcReportList = ref([]);
-                const elmHcMediaList = ref([]); // 账户列表
-                const elmHcLoading = ref(false);
-                const elmHcReportDialogVisible = ref(false);
-                const elmHcReportDialogMode = ref('create');
-                const elmHcReportForm = ref({
-                    id: null,
-                    customer_name: '',
-                    customer_short: '',
-                    agent_name: '',
-                    agent_short: '',
-                    media_platform_name: ''
-                });
-
-                // 添加账户对话框
-                const addMediaDialogVisible = ref(false);
-                const mediaDialogMode = ref('create'); // 'create' or 'edit'
-                const currentPerformanceId = ref(null);
-                const mediaForm = ref({
-                    media_platform_name: '',
-                    media_adv_id: '',
-                    media_adv_name: '',
-                    huichuan_adv_id: 0,
-                    redirect_num: 0,
-                    pay_num: 0
-                });
-
-                // 加载汇川饿了么数据报表列表
-                const loadElmHcReportList = async () => {
-                    elmHcLoading.value = true;
-                    try {
-                        const response = await axios.get(`${API_BASE_URL}/config/elmhc/list`);
-                        if (response.data.code === 0) {
-                            elmHcReportList.value = response.data.data || [];
-                            // 同时加载账户数据
-                            await loadElmHcMediaList();
-                        } else {
-                            ElMessage.error(response.data.message || '加载汇川饿了么数据报表失败');
-                        }
-                    } catch (error) {
-                        ElMessage.error('网络错误：' + error.message);
-                    } finally {
-                        elmHcLoading.value = false;
-                    }
-                };
-
-                // 加载账户列表
-                const loadElmHcMediaList = async () => {
-                    try {
-                        const response = await axios.get(`${API_BASE_URL}/config/elmhc/media/list`);
-                        if (response.data.code === 0) {
-                            elmHcMediaList.value = response.data.data || [];
-                        }
-                    } catch (error) {
-                        console.error('加载账户列表失败:', error);
-                    }
-                };
-
-                // 获取指定客户的账户列表
-                const getMediaAccounts = (performanceId) => {
-                    return elmHcMediaList.value.filter(media => media.performance_id === performanceId);
-                };
-
-                // 显示添加账户对话框
-                const showAddMediaDialog = (performance) => {
-                    mediaDialogMode.value = 'create';
-                    currentPerformanceId.value = performance.id;
-                    mediaForm.value = {
-                        media_adv_id: '',
-                        media_adv_name: '',
-                        huichuan_adv_id: '',
-                        redirect_num: 0,
-                        pay_num: 0
-                    };
-                    addMediaDialogVisible.value = true;
-                };
-
-                // 显示编辑账户对话框
-                const showEditMediaDialog = (media) => {
-                    mediaDialogMode.value = 'edit';
-                    currentPerformanceId.value = media.performance_id;
-                    mediaForm.value = {
-                        id: media.id,
-                        media_adv_id: media.media_adv_id,
-                        media_adv_name: media.media_adv_name,
-                        huichuan_adv_id: media.huichuan_adv_id,
-                        redirect_num: media.redirect_num,
-                        pay_num: media.pay_num
-                    };
-                    addMediaDialogVisible.value = true;
-                };
-
-                // 提交账户数据
-                const submitMediaAccount = async () => {
-                    if (!mediaForm.value.media_adv_id || !mediaForm.value.media_adv_name || !mediaForm.value.huichuan_adv_id) {
-                        ElMessage.warning('请填写所有必填字段');
-                        return;
-                    }
-
-                    try {
-                        const url = mediaDialogMode.value === 'create' 
-                            ? `${API_BASE_URL}/config/elmhc/media/create`
-                            : `${API_BASE_URL}/config/elmhc/media/update`;
-                        
-                        const data = {
-                            performance_id: currentPerformanceId.value,
-                            media_adv_id: mediaForm.value.media_adv_id,
-                            media_adv_name: mediaForm.value.media_adv_name,
-                            huichuan_adv_id: parseInt(mediaForm.value.huichuan_adv_id) || 0,
-                            redirect_num: parseInt(mediaForm.value.redirect_num) || 0,
-                            pay_num: parseInt(mediaForm.value.pay_num) || 0
-                        };
-                        
-                        if (mediaDialogMode.value === 'edit') {
-                            data.id = mediaForm.value.id;
-                        }
-                        
-                        const response = await axios.post(url, data);
-                        
-                        if (response.data.code === 0) {
-                            ElMessage.success(mediaDialogMode.value === 'create' ? '添加账户成功' : '更新账户成功');
-                            addMediaDialogVisible.value = false;
-                            loadElmHcMediaList();
-                        } else {
-                            ElMessage.error(response.data.message || '操作失败');
-                        }
-                    } catch (error) {
-                        ElMessage.error('网络错误：' + error.message);
-                    }
-                };
-
-                // 删除账户
-                const deleteMediaAccount = async (media) => {
-                    try {
-                        await ElMessageBox.confirm('确定要删除该账户吗？', '提示', {
-                            confirmButtonText: '确定',
-                            cancelButtonText: '取消',
-                            type: 'warning'
-                        });
-                        
-                        const response = await axios.post(`${API_BASE_URL}/config/elmhc/media/delete`, {
-                            id: media.id
-                        });
-                        
-                        if (response.data.code === 0) {
-                            ElMessage.success('删除成功');
-                            loadElmHcMediaList();
-                        } else {
-                            ElMessage.error(response.data.message || '删除失败');
-                        }
-                    } catch (error) {
-                        if (error !== 'cancel') {
-                            ElMessage.error('网络错误：' + error.message);
-                        }
-                    }
-                };
-
-
-
-                // 显示汇川饿了么数据报表对话框
-                const showElmHcReportDialog = (mode, row = null) => {
-                    elmHcReportDialogMode.value = mode;
-                    if (mode === 'create') {
-                        elmHcReportForm.value = {
-                            id: null,
-                            customer_name: '',
-                            customer_short: '',
-                            agent_name: '',
-                            agent_short: '',
-                            media_platform_name: ''
-                        };
-                    } else {
-                        elmHcReportForm.value = { ...row };
-                    }
-                    elmHcReportDialogVisible.value = true;
-                };
-
-                // 提交汇川饿了么数据报表
-                const submitElmHcReport = async () => {
-                    // 验证必填字段
-                    if (!elmHcReportForm.value.customer_name || !elmHcReportForm.value.customer_short ||
-                        !elmHcReportForm.value.agent_name || !elmHcReportForm.value.agent_short ||
-                        !elmHcReportForm.value.media_platform_name) {
-                        ElMessage.warning('请填写所有必填字段');
-                        return;
-                    }
-
-                    const url = elmHcReportDialogMode.value === 'create' 
-                        ? `${API_BASE_URL}/config/elmhc/create`
-                        : `${API_BASE_URL}/config/elmhc/update`;
-                    
-                    try {
-                        const response = await axios.post(url, elmHcReportForm.value);
-                        if (response.data.code === 0) {
-                            ElMessage.success(elmHcReportDialogMode.value === 'create' ? '创建成功' : '更新成功');
-                            elmHcReportDialogVisible.value = false;
-                            loadElmHcReportList();
-                        } else {
-                            ElMessage.error(response.data.message || '操作失败');
-                        }
-                    } catch (error) {
-                        ElMessage.error('网络错误：' + error.message);
-                    }
-                };
-
-                // 删除汇川饿了么数据报表
-                const deleteElmHcReport = async (row) => {
-                    try {
-                        await ElMessageBox.confirm('确定要删除该客户吗？删除后该客户下的所有账户也会被删除。', '提示', {
-                            confirmButtonText: '确定',
-                            cancelButtonText: '取消',
-                            type: 'warning'
-                        });
-                        
-                        const response = await axios.post(`${API_BASE_URL}/config/elmhc/delete`, {
-                            id: row.id
-                        });
-                        
-                        if (response.data.code === 0) {
-                            ElMessage.success('删除成功');
-                            loadElmHcReportList();
-                        } else {
-                            ElMessage.error(response.data.message || '删除失败');
-                        }
-                    } catch (error) {
-                        if (error !== 'cancel') {
-                            ElMessage.error('网络错误：' + error.message);
-                        }
-                    }
-                };
-
-                // 组件挂载时加载数据
-                onMounted(() => {
-                    loadRebateList();
-                    loadServiceFeeList();
-                    loadTaskTypeList();
-                    loadElmHcReportList();
-                });
-
-                // 跳转到京东归因页面
-                const goToJDAttribution = () => {
-                    window.location.href = '/guangyixinmedia/web/jd_attribution.html';
-                };
-
+            data() {
                 return {
-                    activeTab,
-                    formatTime,
-                    goToJDAttribution,
-                    // 返点配置
-                    rebateList,
-                    rebateDialogVisible,
-                    rebateDialogMode,
-                    rebateForm,
-                    loadRebateList,
-                    showRebateDialog,
-                    submitRebate,
-                    deleteRebate,
-                    // 服务费配置
-                    serviceFeeList,
-                    serviceFeeDialogVisible,
-                    serviceFeeDialogMode,
-                    serviceFeeForm,
-                    loadServiceFeeList,
-                    showServiceFeeDialog,
-                    submitServiceFee,
-                    deleteServiceFee,
-                    // 任务类型配置
-                    taskTypeList,
-                    taskTypeDialogVisible,
-                    taskTypeDialogMode,
-                    taskTypeForm,
-                    loadTaskTypeList,
-                    showTaskTypeDialog,
-                    submitTaskType,
-                    deleteTaskType,
-                    activeTaskCount,
-                    // 汇川饿了么数据报表
-                    elmHcReportList,
-                    elmHcMediaList,
-                    elmHcLoading,
-                    elmHcReportDialogVisible,
-                    elmHcReportDialogMode,
-                    elmHcReportForm,
-                    loadElmHcReportList,
-                    showElmHcReportDialog,
-                    submitElmHcReport,
-                    deleteElmHcReport,
-                    getMediaAccounts,
-                    showAddMediaDialog,
-                    showEditMediaDialog,
-                    addMediaDialogVisible,
-                    mediaDialogMode,
-                    mediaForm,
-                    submitMediaAccount,
-                    deleteMediaAccount,
-                    currentPerformanceId
-                };
+                    currentMenu: '',
+                    currentPage: '',
+                    pageTitle: '欢迎',
+                    pageSubtitle: '请选择左侧菜单开始使用',
+                    expandedMenus: ['juliang'], // 默认展开巨量报表
+                    currentPageUrl: ''
+                }
+            },
+            methods: {
+                toggleMenu(menuName) {
+                    if (this.expandedMenus.includes(menuName)) {
+                        this.expandedMenus = this.expandedMenus.filter(m => m !== menuName);
+                    } else {
+                        this.expandedMenus.push(menuName);
+                    }
+                },
+                navigateTo(page, title) {
+                    this.currentPage = page;
+                    this.currentMenu = ''; // 清除父菜单的选中状态
+                    this.pageTitle = title;
+                    
+                    // 动态判断路径前缀：根据URL路径判断是否在 guangyixinmedia 下
+                    const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+                    const pathPrefix = isProduction ? '/guangyixinmedia' : '';
+                    
+                    // 设置页面 URL 和副标题
+                    const pageConfig = {
+                        'rebate': {
+                            url: `${pathPrefix}/web/config_rebate.html`,
+                            subtitle: '管理返点配置信息'
+                        },
+                        'servicefee': {
+                            url: `${pathPrefix}/web/config_servicefee.html`,
+                            subtitle: '管理服务费配置信息'
+                        },
+                        'tasktype': {
+                            url: `${pathPrefix}/web/config_tasktype.html`,
+                            subtitle: '管理任务类型配置信息'
+                        },
+                        'elm_hc': {
+                            url: `${pathPrefix}/web/elm_hc_report.html`,
+                            subtitle: '查看汇川饿了么报表数据'
+                        },
+                        'jd_attribution': {
+                            url: `${pathPrefix}/web/jd_attribution.html`,
+                            subtitle: '查看京东广义转化过滤数据统计'
+                        }
+                    };
+                    
+                    const config = pageConfig[page];
+                    if (config) {
+                        this.currentPageUrl = config.url;
+                        this.pageSubtitle = config.subtitle;
+                    }
+                }
+            },
+            mounted() {
+                console.log('媒体报表系统已加载');
             }
         }).use(ElementPlus).mount('#app');
     </script>
-</body>
-</html>
-                </div>
-            </a>
-        </div>
-
-        <div class="footer">
-            <p>© 2026 媒体报表系统 | Powered by Go-Zero</p>
-        </div>
-    </div>
 </body>
 </html>

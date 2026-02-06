@@ -29,25 +29,20 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 	})
 
-	// 添加 web 目录下所有 HTML 文件的路由
+	// 添加 web 目录下所有文件的静态文件服务
 	server.AddRoute(rest.Route{
 		Method: http.MethodGet,
-		Path:   "/web/:filename",
+		Path:   "/web/:path",
 		Handler: func(w http.ResponseWriter, r *http.Request) {
-			filename := r.URL.Query().Get(":filename")
-			if filename == "" {
-				// 从路径参数中获取
-				pathParts := filepath.SplitList(r.URL.Path)
-				if len(pathParts) > 0 {
-					filename = filepath.Base(r.URL.Path)
-				}
-			}
-			if filename == "" {
+			// 直接使用原始 URL 路径，去掉 /web/ 前缀
+			requestPath := r.URL.Path
+			if len(requestPath) > 5 { // 长度大于 "/web/"
+				filename := requestPath[5:] // 去掉 "/web/" 前缀
+				filePath := filepath.Join(webDir, filename)
+				http.ServeFile(w, r, filePath)
+			} else {
 				http.NotFound(w, r)
-				return
 			}
-			filePath := filepath.Join(webDir, filename)
-			http.ServeFile(w, r, filePath)
 		},
 	})
 

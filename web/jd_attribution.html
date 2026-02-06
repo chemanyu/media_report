@@ -301,6 +301,16 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
+        // 动态判断 API 路径前缀
+        // 如果当前页面 URL 包含 guangyixinmedia，说明是生产环境，否则是本地环境
+        const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+        const API_PATH_PREFIX = isProduction ? '/guangyixinmedia' : '';
+        
+        console.log('当前环境:', isProduction ? '生产环境' : '本地环境');
+        console.log('API路径前缀:', API_PATH_PREFIX);
+        console.log('当前路径:', window.location.pathname);
+        console.log('当前域名:', window.location.hostname);
+        
         // 页面加载时设置默认日期
         document.addEventListener('DOMContentLoaded', function() {
             const dateInput = document.getElementById('queryDate');
@@ -325,7 +335,7 @@
             queryBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>查询中...';
             
             try {
-                const response = await fetch(`/guangyixinmedia/api/jd/attribution/data?date=${queryDate}`);
+                const response = await fetch(`${API_PATH_PREFIX}/api/jd/attribution/data?date=${queryDate}`);
                 const result = await response.json();
                 console.info(result)
                 if (response.ok && result.date) {
@@ -811,7 +821,7 @@
                 exportBtn.disabled = true;
                 exportBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>导出中...';
                 
-                const response = await fetch('/guangyixinmedia/api/jd/attribution/export');
+                const response = await fetch(`${API_PATH_PREFIX}/api/jd/attribution/export`);
                 
                 if (!response.ok) {
                     const errorData = await response.json();
