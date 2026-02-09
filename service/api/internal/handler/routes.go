@@ -41,10 +41,9 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	// 添加 web 目录下所有文件的静态文件服务（匹配所有子路径）
 	server.AddRoute(rest.Route{
 		Method: http.MethodGet,
-		Path:   "/web/",
+		Path:   "/",
 		Handler: func(w http.ResponseWriter, r *http.Request) {
-			// 使用 http.StripPrefix 去掉 /web/ 前缀，然后提供静态文件服务
-			http.StripPrefix("/web/", http.FileServer(http.Dir(webDir))).ServeHTTP(w, r)
+			http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
 		},
 	})
 
