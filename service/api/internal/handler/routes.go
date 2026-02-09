@@ -4,6 +4,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 
@@ -21,7 +22,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	// 添加静态文件服务
 	webDir := filepath.Join("..", "..", "web")
 
-	// 根路径重定向到主页
+	// 静态文件服务（使用通配符路由）
 	server.AddRoute(rest.Route{
 		Method: http.MethodGet,
 		Path:   "/web/:path",
@@ -31,6 +32,15 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			if len(requestPath) > 5 { // 长度大于 "/web/"
 				filename := requestPath[5:] // 去掉 "/web/" 前缀
 				filePath := filepath.Join(webDir, filename)
+
+				// 添加日志记录
+				fmt.Printf("[Static File] Serving: %s -> %s\n", requestPath, filePath)
+
+				// 设置正确的Content-Type
+				if filepath.Ext(filename) == ".html" {
+					w.Header().Set("Content-Type", "text/html; charset=utf-8")
+				}
+
 				http.ServeFile(w, r, filePath)
 			} else {
 				http.NotFound(w, r)

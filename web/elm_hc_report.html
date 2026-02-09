@@ -178,6 +178,11 @@
         // API 路径前缀：使用相对路径，由反向代理处理
         const isProduction = window.location.pathname.includes('/guangyixinmedia/');
         const API_BASE_URL = isProduction ? '/guangyixinmedia' : '';
+        
+        // 调试日志
+        console.log('[ELM HC] 当前路径:', window.location.pathname);
+        console.log('[ELM HC] 是否生产环境:', isProduction);
+        console.log('[ELM HC] API_BASE_URL:', API_BASE_URL);
 
         createApp({
             setup() {
