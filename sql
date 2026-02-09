@@ -110,3 +110,22 @@ INSERT INTO `release_atd`.`media_token` (`id`, `media`, `token`, `refresh_token`
 INSERT INTO `release_atd`.`media_token` (`id`, `media`, `token`, `refresh_token`, `agent_id`, `advertiser_id`, `del_flag`, `create_time`, `update_time`) VALUES (5, 'juliang_kh', 'ec681917499b575393d1c3b4a8f1ef5451fdd036', 'c6926dfe89bfb4edf7ab4845c6f9efa7aacec6c0', '', '', 0, 0, 1770175342);
 
 
+
+
+CREATE TABLE `cainiao_advertiser` (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '主键ID',
+  `media_adv_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '媒体账户ID（如：巨量引擎平台账户ID）',
+  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_unique_record` (`media_adv_id`) COMMENT '唯一约束：防止重复数据'
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='菜鸟账户表';
+
+
+INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_time`, `update_time`) VALUES (1, '95790767', '2026-02-06 16:21:08', '2026-02-06 16:21:08');
+INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_time`, `update_time`) VALUES (2, '95790768', '2026-02-06 16:22:52', '2026-02-06 16:22:52');
+INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_time`, `update_time`) VALUES (3, '95790769', '2026-02-06 16:22:57', '2026-02-06 16:22:57');
+INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_time`, `update_time`) VALUES (4, '95790770', '2026-02-06 16:23:01', '2026-02-06 16:23:01');
+INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_time`, `update_time`) VALUES (5, '95790765', '2026-02-06 16:23:05', '2026-02-06 16:23:05');
+INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_time`, `update_time`) VALUES (6, '95790766', '2026-02-06 16:23:09', '2026-02-06 16:23:09');
+INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_time`, `update_time`) VALUES (7, '95790764', '2026-02-06 16:23:13', '2026-02-06 16:23:13');
