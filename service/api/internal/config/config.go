@@ -3,7 +3,9 @@
 
 package config
 
-import "github.com/zeromicro/go-zero/rest"
+import (
+	"github.com/zeromicro/go-zero/rest"
+)
 
 type Config struct {
 	rest.RestConf
@@ -16,6 +18,7 @@ type Config struct {
 	Schedule    ScheduleConfig   // 定时任务配置
 	DingTalk    DingTalkConfig   // 钉钉配置
 	FileServer  FileServerConfig // 文件服务器配置
+	Tanx        TanxConfig       // 淘宝联盟配置
 }
 
 type KuaishouConfig struct {
@@ -64,6 +67,7 @@ type ScheduleConfig struct {
 	//JuliangReportCron     string // 巨量报表任务 cron 表达式
 	HuichuanElmDailyCron  string // 汇川饿了么日报表任务 cron 表达式
 	HuichuanElmHourlyCron string // 汇川饿了么小时报表任务 cron 表达式
+	TanxCron              string // Tanx 数据抓取任务 cron 表达式
 }
 
 type DingTalkConfig struct {
@@ -75,4 +79,19 @@ type DingTalkConfig struct {
 type FileServerConfig struct {
 	BaseURL string // 文件服务器基础URL，例如：http://localhost:8888
 	Path    string // 文件存储路径，例如：./reports
+}
+
+// TanxConfig 淘宝联盟配置
+type TanxConfig struct {
+	AdSlots    []string   // 广告位列表
+	Recipients []string   // 邮件接收人列表
+	SMTP       SMTPConfig // 邮件服务器配置
+}
+
+// SMTPConfig 邮件服务器配置
+type SMTPConfig struct {
+	Host     string // SMTP 服务器地址
+	Port     int    // SMTP 端口
+	User     string // SMTP 用户名
+	Password string // SMTP 密码
 }

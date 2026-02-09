@@ -11,6 +11,7 @@ import (
 	config "media_report/service/api/internal/handler/config"
 	download "media_report/service/api/internal/handler/download"
 	report "media_report/service/api/internal/handler/report"
+	tanx "media_report/service/api/internal/handler/tanx"
 	update "media_report/service/api/internal/handler/update"
 	zfb "media_report/service/api/internal/handler/zfb"
 	"media_report/service/api/internal/svc"
@@ -320,5 +321,29 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/zfb"),
+	)
+
+	// =============== Tanx 淘宝联盟相关接口 ===============
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 抓取淘宝联盟数据
+				Method:  http.MethodPost,
+				Path:    "/tanx/fetch_data",
+				Handler: tanx.FetchDataHandler(serverCtx),
+			},
+			{
+				// 导出数据并发送邮件
+				Method:  http.MethodPost,
+				Path:    "/tanx/export_data",
+				Handler: tanx.ExportDataHandler(serverCtx),
+			},
+			{
+				// 更新Cookie
+				Method:  http.MethodPost,
+				Path:    "/tanx/update_cookie",
+				Handler: tanx.UpdateCookieHandler(serverCtx),
+			},
+		},
 	)
 }

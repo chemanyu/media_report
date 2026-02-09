@@ -13,6 +13,7 @@ import (
 
 	"media_report/common/httpclient"
 	"media_report/service/api/internal/config"
+	"media_report/service/api/internal/logic/tanx"
 	"media_report/service/api/internal/model"
 	"media_report/service/api/internal/types"
 )
@@ -23,6 +24,9 @@ func Cron(config config.Config, db *gorm.DB) {
 		logx.Info("未配置定时任务，跳过启动")
 		return
 	}
+
+	// 初始化 Tanx 配置
+	tanx.InitTanxConfig(config.Tanx)
 
 	// 创建 cron 调度器
 	cronScheduler := cron.New()
@@ -81,6 +85,18 @@ func Cron(config config.Config, db *gorm.DB) {
 			log.Fatalf("添加汇川饿了么小时报表定时任务失败: %v", err)
 		}
 		logx.Infof("汇川饿了么小时报表定时任务已启动，Cron 表达式: %s", config.Schedule.HuichuanElmHourlyCron)
+	}
+
+	// 添加 Tanx（淘宝联盟）数据抓取任务
+	if config.Schedule.TanxCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.TanxCron, func() {
+			ExecuteTanxFetchDataJob(db)
+			ExecuteTanxExportDataJob(db)
+		})
+		if err != nil {
+			log.Fatalf("添加 Tanx 数据抓取定时任务失败: %v", err)
+		}
+		logx.Infof("Tanx 数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.TanxCron)
 	}
 
 	// 启动调度器
