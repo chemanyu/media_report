@@ -129,3 +129,20 @@ INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_ti
 INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_time`, `update_time`) VALUES (5, '95790765', '2026-02-06 16:23:05', '2026-02-06 16:23:05');
 INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_time`, `update_time`) VALUES (6, '95790766', '2026-02-06 16:23:09', '2026-02-06 16:23:09');
 INSERT INTO `release_atd`.`cainiao_advertiser` (`id`, `media_adv_id`, `create_time`, `update_time`) VALUES (7, '95790764', '2026-02-06 16:23:13', '2026-02-06 16:23:13');
+
+
+
+INSERT INTO `release_atd`.`media_token` (`id`, `media`, `token`, `refresh_token`, `agent_id`, `advertiser_id`, `del_flag`, `create_time`, `update_time`) VALUES (6, 'zfb_pachong', '', '', '', '', 0, 0, 1770620402);
+
+
+
+CREATE TABLE `cainiao_cardinality` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `cardinality` decimal(3,1) NOT NULL COMMENT '菜鸟基数：如1.4、4.1、1.0等，小数点后一位',
+  `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_cardinality` (`cardinality`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜鸟基数配置表';
+
+INSERT INTO `release_atd`.`cainiao_cardinality` (`id`, `cardinality`, `update_time`, `create_time`) VALUES (1, 1.0, '2026-02-09 15:28:50', '2026-02-09 15:17:24');

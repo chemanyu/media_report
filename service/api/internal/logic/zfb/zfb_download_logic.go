@@ -40,18 +40,28 @@ func (l *ZfbDownloadLogic) ZfbDownload(req *types.ZfbDownloadReq) (filePath stri
 	logx.Infof("[ZFB Download] 收到下载请求 - Uid: %s, StartDate: %s, EndDate: %s", req.Uid, req.StartDate, req.EndDate)
 
 	// 1. 参数验证
-	if req.Uid == "" || req.StartDate == "" || req.EndDate == "" {
-		return "", "", fmt.Errorf("参数不完整，需要 uid, start_date, end_date")
+	if req.Uid == "" {
+		return "", "", fmt.Errorf("参数不完整，需要 uid")
 	}
 
-	// 2. 调用支付宝接口获取数据
+	// 2. 时间参数校验和处理
+	startDate, endDate, err := l.validateAndFormatDates(req.StartDate, req.EndDate)
+	if err != nil {
+		return "", "", err
+	}
+	req.StartDate = startDate
+	req.EndDate = endDate
+
+	logx.Infof("[ZFB Download] 处理后的时间参数 - StartDate: %s, EndDate: %s", req.StartDate, req.EndDate)
+
+	// 3. 调用支付宝接口获取数据
 	alipayData, err := l.fetchAlipayData(req.Uid, req.StartDate, req.EndDate)
 	if err != nil {
 		l.Logger.Errorf("调用支付宝接口失败: %v", err)
 		return "", "", fmt.Errorf("获取数据失败: %v", err)
 	}
 
-	// 3. 匹配 UID 并生成 Excel
+	// 4. 匹配 UID 并生成 Excel
 	filePath, filename, err = l.generateExcel(alipayData, req.Uid, req.StartDate, req.EndDate)
 	if err != nil {
 		l.Logger.Errorf("生成Excel失败: %v", err)
@@ -59,6 +69,50 @@ func (l *ZfbDownloadLogic) ZfbDownload(req *types.ZfbDownloadReq) (filePath stri
 	}
 
 	return filePath, filename, nil
+}
+
+// validateAndFormatDates 校验和格式化日期参数
+func (l *ZfbDownloadLogic) validateAndFormatDates(startDate, endDate string) (string, string, error) {
+	const dateFormat = "2006-01-02"
+	today := time.Now().Format(dateFormat)
+
+	// 解析开始日期
+	var start time.Time
+	var err error
+	if startDate == "" {
+		start, _ = time.Parse(dateFormat, today)
+	} else {
+		start, err = time.Parse(dateFormat, startDate)
+		if err != nil {
+			l.Logger.Errorf("开始日期格式错误: %s, 使用当天日期", startDate)
+			start, _ = time.Parse(dateFormat, today)
+		}
+	}
+
+	// 解析结束日期
+	var end time.Time
+	if endDate == "" {
+		end, _ = time.Parse(dateFormat, today)
+	} else {
+		end, err = time.Parse(dateFormat, endDate)
+		if err != nil {
+			l.Logger.Errorf("结束日期格式错误: %s, 使用当天日期", endDate)
+			end, _ = time.Parse(dateFormat, today)
+		}
+	}
+
+	// 确保开始日期不大于结束日期
+	if start.After(end) {
+		start, end = end, start
+	}
+
+	// 校验时间范围，最多7天
+	duration := end.Sub(start)
+	if duration > 7*24*time.Hour {
+		return "", "", fmt.Errorf("时间范围不能超过7天，当前范围: %.0f天", duration.Hours()/24)
+	}
+
+	return start.Format(dateFormat), end.Format(dateFormat), nil
 }
 
 // fetchAlipayData 调用支付宝接口获取数据
