@@ -66,7 +66,7 @@ Schedule:
   #JuliangReportCron: "2 * * * *"
   HuichuanElmDailyCron: "2 11 * * *"        # 汇川饿了么日报表任务
   HuichuanElmHourlyCron: "3 * * * *"       # 汇川饿了么小时报表任务 & 巨量报表数据
-  TanxCron: "44 19 * * *"         # Tanx 数据抓取任务，每天12:15执行
+  TanxCron: "47 19 * * *"         # Tanx 数据抓取任务，每天12:15执行
 
 # 钉钉机器人配置
 DingTalk:
