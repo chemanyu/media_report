@@ -11,6 +11,7 @@ import (
 	download "media_report/service/api/internal/handler/download"
 	report "media_report/service/api/internal/handler/report"
 	update "media_report/service/api/internal/handler/update"
+	zfb "media_report/service/api/internal/handler/zfb"
 	"media_report/service/api/internal/svc"
 
 	"github.com/zeromicro/go-zero/rest"
@@ -274,5 +275,18 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: download.DownloadReportHandler(serverCtx),
 			},
 		},
+	)
+
+	// =============== ZFB 独立下载接口（无需密码验证，通过 /zfb 反向代理访问）===============
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// ZFB 下载接口
+				Method:  http.MethodGet,
+				Path:    "/download",
+				Handler: zfb.ZfbDownloadHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/zfb"),
 	)
 }
