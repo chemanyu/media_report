@@ -273,6 +273,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/update/jingcheng/cookie",
 				Handler: update.UpdateJingchengCookieHandler(serverCtx),
 			},
+			{
+				// 更新支付宝Cookie
+				Method:  http.MethodPost,
+				Path:    "/update/zfb/cookie",
+				Handler: update.UpdateZfbCookieHandler(serverCtx),
+			},
 		},
 	)
 

@@ -34,3 +34,15 @@ type AlipayApiResponse struct {
 	} `json:"data"`
 	ErrorDesc string `json:"errorDesc"`
 }
+
+// 更新支付宝Cookie请求
+type UpdateZfbCookieReq struct {
+	Token        string `json:"cookie"`
+	RefreshToken string `json:"csrfToken"`
+}
+
+// 更新支付宝Cookie响应
+type UpdateZfbCookieResp struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
