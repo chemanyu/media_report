@@ -292,7 +292,8 @@
     
     <script>
         // API 路径前缀：使用相对路径，由反向代理处理
-        const API_PATH_PREFIX = '/guangyixinmedia';
+        const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+        const API_PATH_PREFIX = isProduction ? '/guangyixinmedia' : '';
         
         console.log('API路径前缀:', API_PATH_PREFIX);
         console.log('当前路径:', window.location.pathname);

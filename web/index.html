@@ -319,7 +319,8 @@
                     this.pageTitle = title;
                     
                     // 路径前缀：使用相对路径，由反向代理处理
-                    const pathPrefix = '/guangyixinmedia';
+                    const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+                    const pathPrefix = isProduction ? '/guangyixinmedia' : '';
                     
                     // 设置页面 URL 和副标题
                     const pageConfig = {
