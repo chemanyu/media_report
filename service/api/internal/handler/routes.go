@@ -30,20 +30,13 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 	})
 
-	// 添加 web 目录下所有文件的静态文件服务
+	// 添加 web 目录下所有文件的静态文件服务（匹配所有子路径）
 	server.AddRoute(rest.Route{
 		Method: http.MethodGet,
-		Path:   "/web/:path",
+		Path:   "/web/",
 		Handler: func(w http.ResponseWriter, r *http.Request) {
-			// 直接使用原始 URL 路径，去掉 /web/ 前缀
-			requestPath := r.URL.Path
-			if len(requestPath) > 5 { // 长度大于 "/web/"
-				filename := requestPath[5:] // 去掉 "/web/" 前缀
-				filePath := filepath.Join(webDir, filename)
-				http.ServeFile(w, r, filePath)
-			} else {
-				http.NotFound(w, r)
-			}
+			// 使用 http.StripPrefix 去掉 /web/ 前缀，然后提供静态文件服务
+			http.StripPrefix("/web/", http.FileServer(http.Dir(webDir))).ServeHTTP(w, r)
 		},
 	})
 
