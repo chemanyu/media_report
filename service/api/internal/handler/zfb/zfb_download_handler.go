@@ -22,11 +22,18 @@ func ZfbDownloadHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 
 		l := zfb.NewZfbDownloadLogic(r.Context(), svcCtx)
-		resp, err := l.ZfbDownload(&req)
+		filePath, filename, err := l.ZfbDownload(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
+			return
 		}
+
+		// 设置响应头，让浏览器下载文件
+		w.Header().Set("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+		w.Header().Set("Content-Disposition", "attachment; filename=\""+filename+"\"")
+		w.Header().Set("Content-Transfer-Encoding", "binary")
+
+		// 直接发送文件
+		http.ServeFile(w, r, filePath)
 	}
 }

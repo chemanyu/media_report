@@ -2,9 +2,9 @@ package types
 
 // ZfbDownloadReq ZFB 下载请求参数
 type ZfbDownloadReq struct {
-	FileType string `form:"file_type"` // 文件类型：如 report, data 等
-	Date     string `form:"date"`      // 日期参数
-	// 其他需要的参数，根据你的业务需求添加
+	Uid       string `form:"uid"`        // 用户ID (2088开头的uid)
+	StartDate string `form:"start_date"` // 开始日期 YYYY-MM-DD
+	EndDate   string `form:"end_date"`   // 结束日期 YYYY-MM-DD
 }
 
 // ZfbDownloadResp ZFB 下载响应
@@ -12,5 +12,25 @@ type ZfbDownloadResp struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 	FileUrl string `json:"file_url,omitempty"` // 文件下载URL
-	// 或者直接返回文件流，根据你的需求决定
+}
+
+// 支付宝接口相关数据结构
+type AlipayDataMeta struct {
+	ColumnID    string `json:"columnId"`
+	ColumnName  string `json:"columnName"`
+	DisplayName string `json:"displayName"`
+	DataType    string `json:"dataType"`
+}
+
+type AlipaySyncResult struct {
+	DataMetaMap map[string]AlipayDataMeta `json:"dataMetaMap"`
+	DataValue   []map[string]interface{}  `json:"dataValue"`
+}
+
+type AlipayApiResponse struct {
+	Success bool `json:"success"`
+	Data    struct {
+		SyncResult []AlipaySyncResult `json:"syncResult"`
+	} `json:"data"`
+	ErrorDesc string `json:"errorDesc"`
 }
