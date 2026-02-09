@@ -26,6 +26,7 @@ func NewUpdateZfbCookieLogic(ctx context.Context, svcCtx *svc.ServiceContext) *U
 
 func (l *UpdateZfbCookieLogic) UpdateZfbCookie(req *types.UpdateZfbCookieReq) (resp *types.UpdateZfbCookieResp, err error) {
 	// 更新 media_token 表中 media = 'zfb_pachong' 的记录
+	//l.Logger.Infof("zfb: ", req.Token)
 	result := l.svcCtx.DB.Model(&model.MediaToken{}).
 		Where("media = ? AND del_flag = ?", "zfb_pachong", 0).
 		Updates(map[string]interface{}{

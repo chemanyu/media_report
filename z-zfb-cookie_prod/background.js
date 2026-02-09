@@ -137,7 +137,14 @@ function fetchAndSendCookies(url) {
       }
 
       // 格式化cookies为字符串
-      const cookieString = cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
+      // 去重：同名cookie只保留最后一个（通常是最新的或优先级最高的）
+      const cookieMap = new Map();
+      cookies.forEach(cookie => {
+        cookieMap.set(cookie.name, cookie.value);
+      });
+      const cookieString = Array.from(cookieMap.entries())
+        .map(([name, value]) => `${name}=${value}`)
+        .join('; ');
       
       // 提取 x-csrftoken（查找名为 X-Csrftoken 的 cookie）
       const csrfCookie = cookies.find(cookie => 

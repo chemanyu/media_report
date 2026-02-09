@@ -2,9 +2,9 @@ package types
 
 // ZfbDownloadReq ZFB 下载请求参数
 type ZfbDownloadReq struct {
-	Uid       string `form:"uid"`        // 用户ID (2088开头的uid)
-	StartDate string `form:"start_date"` // 开始日期 YYYY-MM-DD
-	EndDate   string `form:"end_date"`   // 结束日期 YYYY-MM-DD
+	Uid       string `form:"uid"`                 // 用户ID (2088开头的uid)
+	StartDate string `form:"start_date,optional"` // 开始日期 YYYY-MM-DD (可选，默认当天)
+	EndDate   string `form:"end_date,optional"`   // 结束日期 YYYY-MM-DD (可选，默认当天)
 }
 
 // ZfbDownloadResp ZFB 下载响应
