@@ -136,7 +136,7 @@ func (l *FetchDataLogic) fetchDataForPid(url, cookie, queryDate, pid string) err
 		ds := item.Ds
 		if len(ds) == 8 {
 			// 格式化为 YYYY-MM-DD
-			ds = fmt.Sprintf("%s-%s-%s", ds[0:4], ds[4:6], ds[6:8])
+			ds = fmt.Sprintf("%s%s%s", ds[0:4], ds[4:6], ds[6:8])
 		}
 
 		// 转换 activeRatioDf 为百分比格式
