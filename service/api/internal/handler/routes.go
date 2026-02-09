@@ -24,9 +24,17 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	// 根路径重定向到主页
 	server.AddRoute(rest.Route{
 		Method: http.MethodGet,
-		Path:   "/",
+		Path:   "/web/:path",
 		Handler: func(w http.ResponseWriter, r *http.Request) {
-			http.ServeFile(w, r, filepath.Join(webDir, "index.html"))
+			// 直接使用原始 URL 路径，去掉 /web/ 前缀
+			requestPath := r.URL.Path
+			if len(requestPath) > 5 { // 长度大于 "/web/"
+				filename := requestPath[5:] // 去掉 "/web/" 前缀
+				filePath := filepath.Join(webDir, filename)
+				http.ServeFile(w, r, filePath)
+			} else {
+				http.NotFound(w, r)
+			}
 		},
 	})
 
