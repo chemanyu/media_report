@@ -173,3 +173,23 @@ type CommonResp struct {
 	Code    int    `json:"code"`
 	Message string `json:"message"`
 }
+
+// =============== 菜鸟基数配置 ===============
+
+// 菜鸟基数数据
+type CardinalityData struct {
+	ID          uint    `json:"id"`
+	Cardinality float64 `json:"cardinality"`
+}
+
+// 获取菜鸟基数响应
+type CainiaoCardinalityResp struct {
+	Code    int              `json:"code"`
+	Message string           `json:"message"`
+	Data    *CardinalityData `json:"data,omitempty"`
+}
+
+// 更新菜鸟基数请求
+type CainiaoCardinalityUpdateReq struct {
+	Cardinality float64 `json:"cardinality"` // 基数值
+}

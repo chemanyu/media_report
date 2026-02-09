@@ -31,6 +31,36 @@
     <div id="app" v-cloak>
         <h2>菜鸟账户管理</h2>
         
+        <!-- 基数配置区域 -->
+        <el-card style="margin-bottom: 20px;" shadow="hover">
+            <template #header>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: bold;">菜鸟基数配置</span>
+                    <el-tag v-if="cardinalityData" type="success" size="large">
+                        当前基数: {{ cardinalityData.cardinality }}
+                    </el-tag>
+                </div>
+            </template>
+            <el-form :inline="true" @submit.prevent>
+                <el-form-item label="基数值">
+                    <el-input-number 
+                        v-model="newCardinality" 
+                        :min="0.1" 
+                        :max="99.9" 
+                        :precision="1"
+                        :step="0.1"
+                        placeholder="如: 1.4"
+                        style="width: 200px;">
+                    </el-input-number>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="updateCardinality" :loading="cardinalityLoading">
+                        更新基数
+                    </el-button>
+                </el-form-item>
+            </el-form>
+        </el-card>
+        
         <!-- 添加表单 -->
         <el-form :inline="true" @submit.prevent style="margin-bottom: 20px;">
             <el-form-item label="广告主ID">
@@ -92,10 +122,53 @@
                     advertisers: [],
                     newAdvertiserId: '',
                     loading: false,
-                    deleteLoadingId: null
+                    deleteLoadingId: null,
+                    // 基数配置相关
+                    cardinalityData: null,
+                    newCardinality: null,
+                    cardinalityLoading: false
                 }
             },
             methods: {
+                // 加载基数配置
+                async loadCardinality() {
+                    try {
+                        const response = await axios.get(`${API_BASE_URL}/api/cainiao_cardinality/get`);
+                        if (response.data.code === 0 && response.data.data) {
+                            this.cardinalityData = response.data.data;
+                            this.newCardinality = response.data.data.cardinality;
+                        }
+                    } catch (error) {
+                        console.error('加载基数配置失败:', error);
+                    }
+                },
+
+                // 更新基数配置
+                async updateCardinality() {
+                    if (!this.newCardinality || this.newCardinality < 0.1 || this.newCardinality > 99.9) {
+                        ElMessage.warning('基数值必须在0.1到99.9之间');
+                        return;
+                    }
+
+                    this.cardinalityLoading = true;
+                    try {
+                        const response = await axios.post(`${API_BASE_URL}/api/cainiao_cardinality/update`, {
+                            cardinality: this.newCardinality
+                        });
+                        
+                        if (response.data.code === 0) {
+                            ElMessage.success('基数更新成功');
+                            await this.loadCardinality();
+                        } else {
+                            ElMessage.error(response.data.message || '更新失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('更新失败: ' + (error.response?.data?.message || error.message));
+                    } finally {
+                        this.cardinalityLoading = false;
+                    }
+                },
+
                 // 加载账户列表
                 async loadAdvertisers() {
                     this.loading = true;
@@ -182,6 +255,7 @@
                 }
             },
             mounted() {
+                this.loadCardinality();
                 this.loadAdvertisers();
             }
         }).use(ElementPlus).mount('#app');

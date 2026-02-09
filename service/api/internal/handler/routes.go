@@ -78,6 +78,22 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 	)
 
+	// 菜鸟基数配置路由
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/api/cainiao_cardinality/get",
+				Handler: config.CainiaoCardinalityGetHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/cainiao_cardinality/update",
+				Handler: config.CainiaoCardinalityUpdateHandler(serverCtx),
+			},
+		},
+	)
+
 	server.AddRoutes(
 		[]rest.Route{
 			{

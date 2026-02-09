@@ -228,7 +228,12 @@ func executeReportJob(db *gorm.DB, ksConfig config.KuaishouConfig, dingTalk conf
 	}
 
 	// 计算平均转化率 和 转化成本
-	totalDetail.Charge = totalDetail.Charge * 1
+	config, err := model.GetCardinality(db)
+	if err != nil {
+		logx.Info("菜鸟报表：基数获取错误")
+		return
+	}
+	totalDetail.Charge = totalDetail.Charge * config.Cardinality
 	totalDetail.ConversionRatio = float64(totalDetail.Activation) / float64(totalDetail.Bclick)
 	totalDetail.ConversionCost = totalDetail.Charge / float64(totalDetail.Activation)
 
