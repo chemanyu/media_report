@@ -44,8 +44,8 @@ func NewExportDataLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Export
 // ExportData 查询数据库并导出Excel，发送邮件
 func (l *ExportDataLogic) ExportData(req *types.TanxExportDataReq) (resp *types.TanxExportDataResp, err error) {
 	// 计算30天前的日期
-	startDate := time.Now().AddDate(0, 0, -30).Format("2006-01-02")
-	endDate := time.Now().Format("2006-01-02")
+	startDate := time.Now().AddDate(0, 0, -30).Format("20060102")
+	endDate := time.Now().Format("20060102")
 
 	// 使用模型方法查询数据
 	monitors, err := model.GetTanxMonitorsByDateRange(l.svcCtx.DB, startDate, endDate)
