@@ -175,9 +175,8 @@
     <script>
         const { createApp, ref, onMounted } = Vue;
         const { ElMessage, ElMessageBox } = ElementPlus;
-        // 动态判断 API 路径前缀：根据URL路径判断
-        const isProduction = window.location.pathname.includes('/guangyixinmedia/');
-        const API_BASE_URL = isProduction ? '/guangyixinmedia' : '';
+        // API 路径前缀：使用相对路径，由反向代理处理
+        const API_BASE_URL = '';
 
         createApp({
             setup() {

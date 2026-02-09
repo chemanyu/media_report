@@ -318,9 +318,8 @@
                     this.currentMenu = ''; // 清除父菜单的选中状态
                     this.pageTitle = title;
                     
-                    // 动态判断路径前缀：根据URL路径判断是否在 guangyixinmedia 下
-                    const isProduction = window.location.pathname.includes('/guangyixinmedia/');
-                    const pathPrefix = isProduction ? '/guangyixinmedia' : '';
+                    // 路径前缀：使用相对路径，由反向代理处理
+                    const pathPrefix = '';
                     
                     // 设置页面 URL 和副标题
                     const pageConfig = {
