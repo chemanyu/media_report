@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"media_report/service/api/internal/model"
+	"media_report/service/api/internal/script"
 	"media_report/service/api/internal/svc"
 	"media_report/service/api/internal/types"
 
@@ -194,5 +195,34 @@ func (l *DeleteElmHcReportLogic) DeleteElmHcReport(req *types.DeleteElmHcReportR
 	return &types.ElmHcReportCommonResp{
 		Code:    0,
 		Message: "删除成功",
+	}, nil
+}
+
+// TriggerElmHcDailyReportLogic 手动触发汇川饿了么日报
+type TriggerElmHcDailyReportLogic struct {
+	logx.Logger
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+}
+
+func NewTriggerElmHcDailyReportLogic(ctx context.Context, svcCtx *svc.ServiceContext) *TriggerElmHcDailyReportLogic {
+	return &TriggerElmHcDailyReportLogic{
+		Logger: logx.WithContext(ctx),
+		ctx:    ctx,
+		svcCtx: svcCtx,
+	}
+}
+
+func (l *TriggerElmHcDailyReportLogic) TriggerElmHcDailyReport() (*types.ElmHcReportCommonResp, error) {
+	l.Logger.Info("手动触发汇川饿了么日报任务")
+
+	// 异步执行，避免阻塞请求
+	go func() {
+		script.FetchHuichuanElmReports(l.svcCtx.DB, l.svcCtx.Config.JuliangDLS, l.svcCtx.Config.ADX)
+	}()
+
+	return &types.ElmHcReportCommonResp{
+		Code:    0,
+		Message: "日报任务已触发，正在后台执行",
 	}, nil
 }

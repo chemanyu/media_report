@@ -27,6 +27,7 @@
     <div id="app" v-cloak>
         <div class="action-bar">
             <el-button type="primary" @click="showReportDialog('create')" icon="Plus">新建客户</el-button>
+            <el-button type="success" @click="triggerDailyReport" icon="Position">手动回传日报</el-button>
             <el-button @click="loadList" icon="Refresh">刷新</el-button>
         </div>
 
@@ -319,9 +320,30 @@
                     }
                 };
 
+                const triggerDailyReport = async () => {
+                    try {
+                        await ElMessageBox.confirm('确定要手动触发汇川饿了么日报任务吗？该操作会立即执行数据回传。', '确认操作', { 
+                            type: 'info',
+                            confirmButtonText: '确定触发',
+                            cancelButtonText: '取消'
+                        });
+                        
+                        const response = await axios.post(`${API_BASE_URL}/config/elmhc/trigger_daily_report`);
+                        if (response.data.code === 0) {
+                            ElMessage.success(response.data.message || '日报任务已触发，正在后台执行');
+                        } else {
+                            ElMessage.error(response.data.message || '触发失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') {
+                            ElMessage.error('网络错误：' + error.message);
+                        }
+                    }
+                };
+
                 onMounted(() => loadList());
 
-                return { list, mediaList, reportDialogVisible, reportDialogMode, reportForm, mediaDialogVisible, mediaDialogMode, mediaForm, currentPerformanceId, loadList, getMediaAccounts, showReportDialog, submitReport, deleteReport, showMediaDialog, submitMedia, deleteMedia };
+                return { list, mediaList, reportDialogVisible, reportDialogMode, reportForm, mediaDialogVisible, mediaDialogMode, mediaForm, currentPerformanceId, loadList, getMediaAccounts, showReportDialog, submitReport, deleteReport, showMediaDialog, submitMedia, deleteMedia, triggerDailyReport };
             }
         }).use(ElementPlus).mount('#app');
     </script>

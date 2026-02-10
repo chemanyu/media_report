@@ -61,6 +61,19 @@ func UpdateElmHcReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	}
 }
 
+// TriggerElmHcDailyReportHandler 手动触发汇川饿了么日报
+func TriggerElmHcDailyReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := config.NewTriggerElmHcDailyReportLogic(r.Context(), svcCtx)
+		resp, err := l.TriggerElmHcDailyReport()
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, resp)
+		}
+	}
+}
+
 // DeleteElmHcReportHandler 删除汇川饿了么数据报表
 func DeleteElmHcReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
