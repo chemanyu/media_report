@@ -53,7 +53,15 @@ function updateCookieAutomatically() {
         
         if (matchingTab) {
           console.log('找到匹配的标签页:', matchingTab.title);
-          fetchAndSendCookies(matchingTab.url);
+          // 先刷新页面，然后再获取cookie
+          console.log('正在刷新页面...');
+          chrome.tabs.reload(matchingTab.id, {}, function() {
+            // 等待页面刷新完成后再获取cookie（延迟3秒）
+            setTimeout(function() {
+              console.log('页面刷新完成，开始获取Cookie');
+              fetchAndSendCookies(matchingTab.url);
+            }, 3000);
+          });
         } else {
           console.log('未找到匹配域名的标签页:', result.savedDomain);
           console.log('请打开', result.savedUrl, '或手动选择标签页');
@@ -69,7 +77,15 @@ function updateCookieAutomatically() {
         );
         
         if (relevantTab) {
-          fetchAndSendCookies(relevantTab.url);
+          // 先刷新页面，然后再获取cookie
+          console.log('正在刷新页面...');
+          chrome.tabs.reload(relevantTab.id, {}, function() {
+            // 等待页面刷新完成后再获取cookie（延迟3秒）
+            setTimeout(function() {
+              console.log('页面刷新完成，开始获取Cookie');
+              fetchAndSendCookies(relevantTab.url);
+            }, 3000);
+          });
         } else {
           console.log('未找到京东联盟相关页面，跳过本次更新');
         }
