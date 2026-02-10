@@ -30,12 +30,12 @@ type (
 		Message string              `json:"message"`
 		Data    []*KsReportDataItem `json:"data"`
 	}
-	// 更新聚量Cookie请求
+	// 更新巨量Cookie请求
 	UpdateJuliangCookieReq {
 		Cookie    string `json:"cookie"`
 		CsrfToken string `json:"csrfToken"`
 	}
-	// 更新聚量Cookie响应
+	// 更新巨量Cookie响应
 	UpdateJuliangCookieResp {
 		Code    int    `json:"code"`
 		Message string `json:"message"`

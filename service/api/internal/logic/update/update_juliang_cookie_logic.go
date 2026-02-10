@@ -34,7 +34,7 @@ func (l *UpdateJuliangCookieLogic) UpdateJuliangCookie(req *types.UpdateJuliangC
 		})
 
 	if result.Error != nil {
-		l.Logger.Errorf("更新聚量Cookie失败: %v", result.Error)
+		l.Logger.Errorf("更新巨量Cookie失败: %v", result.Error)
 		return &types.UpdateJuliangCookieResp{
 			Code:    500,
 			Message: "更新失败: " + result.Error.Error(),

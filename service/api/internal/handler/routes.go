@@ -279,7 +279,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
-				// 更新聚量Cookie
+				// 更新巨量Cookie
 				Method:  http.MethodPost,
 				Path:    "/update/juliang/cookie",
 				Handler: update.UpdateJuliangCookieHandler(serverCtx),
