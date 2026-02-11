@@ -255,6 +255,23 @@
                         <span class="menu-item-text">京东广义数据统计</span>
                     </div>
                 </div>
+
+                <!-- 飞猪报表 -->
+                <div>
+                    <div class="menu-item" :class="{active: currentMenu === 'feizhu'}" @click="toggleMenu('feizhu')">
+                        <span class="menu-item-icon">✈️</span>
+                        <span class="menu-item-text">飞猪报表</span>
+                        <span class="menu-item-arrow" :class="{expanded: expandedMenus.includes('feizhu')}">▶</span>
+                    </div>
+                    <div class="submenu" :class="{expanded: expandedMenus.includes('feizhu')}">
+                        <div class="submenu-item" :class="{active: currentPage === 'fz_advertiser'}" @click="navigateTo('fz_advertiser', '飞猪账户管理')">
+                            账户管理
+                        </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'fz_hourly_report'}" @click="navigateTo('fz_hourly_report', '飞猪数据报表')">
+                            数据报表
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- 内容区域 -->
@@ -347,6 +364,14 @@
                         'jd_attribution': {
                             url: `${pathPrefix}/web/jd_attribution.html`,
                             subtitle: '查看京东广义转化过滤数据统计'
+                        },
+                        'fz_advertiser': {
+                            url: `${pathPrefix}/web/config_fz_advertiser.html`,
+                            subtitle: '管理飞猪媒体账户（OPPO/小米/ADN）'
+                        },
+                        'fz_hourly_report': {
+                            url: `${pathPrefix}/web/fz_hourly_report.html`,
+                            subtitle: '查看飞猪媒体小时报数据'
                         }
                     };
                     

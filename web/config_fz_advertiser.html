@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>飞猪媒体账户管理</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        #app {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 4px;
+        }
+        h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+        [v-cloak] {
+            display: none;
+        }
+        .media-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .media-oppo {
+            background: #E7F5FF;
+            color: #0066CC;
+        }
+        .media-xiaomi {
+            background: #FFF3E0;
+            color: #FF6F00;
+        }
+        .media-adn {
+            background: #F3E5F5;
+            color: #7B1FA2;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <h2>飞猪媒体账户管理</h2>
+        
+        <!-- 添加表单 -->
+        <el-card style="margin-bottom: 20px;" shadow="hover">
+            <template #header>
+                <span style="font-weight: bold;">添加账户</span>
+            </template>
+            <el-form :inline="true" @submit.prevent>
+                <el-form-item label="媒体类型">
+                    <el-select 
+                        v-model="newAccount.media" 
+                        placeholder="请选择媒体"
+                        style="width: 150px;">
+                        <el-option label="OPPO" value="oppo"></el-option>
+                        <el-option label="小米" value="xiaomi"></el-option>
+                        <el-option label="ADN" value="adn"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="账户ID">
+                    <el-input 
+                        v-model="newAccount.media_adv_id" 
+                        placeholder="请输入媒体账户ID"
+                        style="width: 250px;"
+                        @keyup.enter="addAccount">
+                    </el-input>
+                </el-form-item>
+                <el-form-item label="账户名称">
+                    <el-input 
+                        v-model="newAccount.media_adv_name" 
+                        placeholder="请输入账户名称"
+                        style="width: 250px;"
+                        @keyup.enter="addAccount">
+                    </el-input>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="addAccount" :loading="loading" icon="Plus">
+                        添加
+                    </el-button>
+                    <el-button @click="loadAccounts" :loading="loading" icon="Refresh">
+                        刷新
+                    </el-button>
+                </el-form-item>
+            </el-form>
+        </el-card>
+
+        <!-- 筛选和搜索 -->
+        <el-card style="margin-bottom: 20px;" shadow="never">
+            <el-form :inline="true">
+                <el-form-item label="媒体类型">
+                    <el-select v-model="filterMedia" placeholder="全部" style="width: 120px;" @change="loadAccounts">
+                        <el-option label="全部" value=""></el-option>
+                        <el-option label="OPPO" value="oppo"></el-option>
+                        <el-option label="小米" value="xiaomi"></el-option>
+                        <el-option label="ADN" value="adn"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="搜索">
+                    <el-input 
+                        v-model="searchKeyword" 
+                        placeholder="账户ID或名称"
+                        clearable
+                        style="width: 250px;">
+                        <template #prefix>
+                            <span>🔍</span>
+                        </template>
+                    </el-input>
+                </el-form-item>
+            </el-form>
+        </el-card>
+
+        <!-- 账户列表表格 -->
+        <el-table :data="filteredAccounts" border stripe v-loading="loading">
+            <el-table-column prop="id" label="ID" width="80"></el-table-column>
+            <el-table-column prop="media" label="媒体类型" width="120">
+                <template #default="scope">
+                    <span :class="'media-badge media-' + scope.row.media">
+                        {{ getMediaName(scope.row.media) }}
+                    </span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="media_adv_id" label="账户ID" width="180"></el-table-column>
+            <el-table-column prop="media_adv_name" label="账户名称" min-width="200"></el-table-column>
+            <el-table-column prop="create_time" label="创建时间" width="180">
+                <template #default="scope">
+                    {{ formatTime(scope.row.create_time) }}
+                </template>
+            </el-table-column>
+            <el-table-column prop="update_time" label="更新时间" width="180">
+                <template #default="scope">
+                    {{ formatTime(scope.row.update_time) }}
+                </template>
+            </el-table-column>
+            <el-table-column label="操作" width="180" fixed="right">
+                <template #default="scope">
+                    <el-button 
+                        type="primary" 
+                        size="small" 
+                        @click="editAccount(scope.row)"
+                        icon="Edit">
+                        编辑
+                    </el-button>
+                    <el-button 
+                        type="danger" 
+                        size="small" 
+                        @click="deleteAccount(scope.row)"
+                        :loading="deleteLoadingId === scope.row.id"
+                        icon="Delete">
+                        删除
+                    </el-button>
+                </template>
+            </el-table-column>
+        </el-table>
+
+        <!-- 编辑对话框 -->
+        <el-dialog v-model="editDialogVisible" title="编辑账户" width="500px">
+            <el-form :model="editForm" label-width="100px">
+                <el-form-item label="媒体类型">
+                    <el-select v-model="editForm.media" disabled style="width: 100%;">
+                        <el-option label="OPPO" value="oppo"></el-option>
+                        <el-option label="小米" value="xiaomi"></el-option>
+                        <el-option label="ADN" value="adn"></el-option>
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="账户ID">
+                    <el-input v-model="editForm.media_adv_id" disabled></el-input>
+                </el-form-item>
+                <el-form-item label="账户名称">
+                    <el-input v-model="editForm.media_adv_name" placeholder="请输入账户名称"></el-input>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="editDialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="updateAccount" :loading="updateLoading">确定</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+
+        // API 路径前缀：使用相对路径，由反向代理处理
+        const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+        const API_BASE_URL = isProduction ? '/guangyixinmedia' : '';
+
+        createApp({
+            data() {
+                return {
+                    accounts: [],
+                    newAccount: {
+                        media: 'oppo',
+                        media_adv_id: '',
+                        media_adv_name: ''
+                    },
+                    editForm: {
+                        id: null,
+                        media: '',
+                        media_adv_id: '',
+                        media_adv_name: ''
+                    },
+                    loading: false,
+                    deleteLoadingId: null,
+                    updateLoading: false,
+                    editDialogVisible: false,
+                    filterMedia: '',
+                    searchKeyword: ''
+                }
+            },
+            computed: {
+                filteredAccounts() {
+                    let result = this.accounts;
+                    
+                    // 按媒体类型筛选
+                    if (this.filterMedia) {
+                        result = result.filter(acc => acc.media === this.filterMedia);
+                    }
+                    
+                    // 按关键词搜索
+                    if (this.searchKeyword) {
+                        const keyword = this.searchKeyword.toLowerCase();
+                        result = result.filter(acc => 
+                            acc.media_adv_id.toLowerCase().includes(keyword) ||
+                            acc.media_adv_name.toLowerCase().includes(keyword)
+                        );
+                    }
+                    
+                    return result;
+                }
+            },
+            methods: {
+                // 加载账户列表
+                async loadAccounts() {
+                    this.loading = true;
+                    try {
+                        const response = await axios.get(`${API_BASE_URL}/api/fz_advertiser/list`);
+                        this.accounts = response.data || [];
+                    } catch (error) {
+                        ElMessage.error('加载账户列表失败: ' + (error.response?.data?.message || error.message));
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // 添加账户
+                async addAccount() {
+                    if (!this.newAccount.media) {
+                        ElMessage.warning('请选择媒体类型');
+                        return;
+                    }
+                    if (!this.newAccount.media_adv_id.trim()) {
+                        ElMessage.warning('请输入账户ID');
+                        return;
+                    }
+                    if (!this.newAccount.media_adv_name.trim()) {
+                        ElMessage.warning('请输入账户名称');
+                        return;
+                    }
+
+                    this.loading = true;
+                    try {
+                        const response = await axios.post(`${API_BASE_URL}/api/fz_advertiser/add`, {
+                            media: this.newAccount.media,
+                            media_adv_id: this.newAccount.media_adv_id.trim(),
+                            media_adv_name: this.newAccount.media_adv_name.trim()
+                        });
+                        
+                        if (response.data.code === 0) {
+                            ElMessage.success('添加成功');
+                            this.newAccount = {
+                                media: 'oppo',
+                                media_adv_id: '',
+                                media_adv_name: ''
+                            };
+                            await this.loadAccounts();
+                        } else {
+                            ElMessage.error(response.data.message || '添加失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('添加失败: ' + (error.response?.data?.message || error.message));
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+
+                // 编辑账户
+                editAccount(account) {
+                    this.editForm = {
+                        id: account.id,
+                        media: account.media,
+                        media_adv_id: account.media_adv_id,
+                        media_adv_name: account.media_adv_name
+                    };
+                    this.editDialogVisible = true;
+                },
+
+                // 更新账户
+                async updateAccount() {
+                    if (!this.editForm.media_adv_name.trim()) {
+                        ElMessage.warning('请输入账户名称');
+                        return;
+                    }
+
+                    this.updateLoading = true;
+                    try {
+                        const response = await axios.post(`${API_BASE_URL}/api/fz_advertiser/update`, {
+                            id: this.editForm.id,
+                            media_adv_name: this.editForm.media_adv_name.trim()
+                        });
+                        
+                        if (response.data.code === 0) {
+                            ElMessage.success('更新成功');
+                            this.editDialogVisible = false;
+                            await this.loadAccounts();
+                        } else {
+                            ElMessage.error(response.data.message || '更新失败');
+                        }
+                    } catch (error) {
+                        ElMessage.error('更新失败: ' + (error.response?.data?.message || error.message));
+                    } finally {
+                        this.updateLoading = false;
+                    }
+                },
+
+                // 删除账户
+                async deleteAccount(account) {
+                    try {
+                        await ElMessageBox.confirm(
+                            `确定要删除账户 "${account.media_adv_name}" (${account.media_adv_id}) 吗？`,
+                            '删除确认',
+                            {
+                                confirmButtonText: '确定',
+                                cancelButtonText: '取消',
+                                type: 'warning'
+                            }
+                        );
+
+                        this.deleteLoadingId = account.id;
+                        const response = await axios.post(`${API_BASE_URL}/api/fz_advertiser/delete`, {
+                            id: account.id
+                        });
+                        
+                        if (response.data.code === 0) {
+                            ElMessage.success('删除成功');
+                            await this.loadAccounts();
+                        } else {
+                            ElMessage.error(response.data.message || '删除失败');
+                        }
+                    } catch (error) {
+                        if (error !== 'cancel') {
+                            ElMessage.error('删除失败: ' + (error.response?.data?.message || error.message));
+                        }
+                    } finally {
+                        this.deleteLoadingId = null;
+                    }
+                },
+
+                // 获取媒体名称
+                getMediaName(media) {
+                    const names = {
+                        'oppo': 'OPPO',
+                        'xiaomi': '小米',
+                        'adn': 'ADN'
+                    };
+                    return names[media] || media;
+                },
+
+                // 格式化时间
+                formatTime(timeStr) {
+                    if (!timeStr) return '-';
+                    const date = new Date(timeStr);
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hour = String(date.getHours()).padStart(2, '0');
+                    const minute = String(date.getMinutes()).padStart(2, '0');
+                    return `${year}-${month}-${day} ${hour}:${minute}`;
+                }
+            },
+            mounted() {
+                this.loadAccounts();
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

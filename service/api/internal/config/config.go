@@ -19,6 +19,7 @@ type Config struct {
 	DingTalk    DingTalkConfig   // 钉钉配置
 	FileServer  FileServerConfig // 文件服务器配置
 	Tanx        TanxConfig       // 淘宝联盟配置
+	OppoAPI     OppoAPIConfig    // OPPO广告API配置
 }
 
 type KuaishouConfig struct {
@@ -94,4 +95,11 @@ type SMTPConfig struct {
 	Port     int    // SMTP 端口
 	User     string // SMTP 用户名
 	Password string // SMTP 密码
+}
+
+// OppoAPIConfig OPPO广告API配置
+type OppoAPIConfig struct {
+	OwnerId int    // 代理商ID
+	ApiId   string // API ID
+	ApiKey  string // API Key
 }

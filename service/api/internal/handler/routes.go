@@ -10,6 +10,7 @@ import (
 
 	config "media_report/service/api/internal/handler/config"
 	download "media_report/service/api/internal/handler/download"
+	fz "media_report/service/api/internal/handler/fz"
 	report "media_report/service/api/internal/handler/report"
 	tanx "media_report/service/api/internal/handler/tanx"
 	update "media_report/service/api/internal/handler/update"
@@ -75,6 +76,43 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/api/cainiao_advertiser/delete",
 				Handler: config.CainiaoAdvertiserDeleteHandler(serverCtx),
+			},
+		},
+	)
+
+	// 飞猪媒体账户路由
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/api/fz_advertiser/list",
+				Handler: fz.FzAdvertiserListHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/fz_advertiser/add",
+				Handler: fz.FzAdvertiserAddHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/fz_advertiser/update",
+				Handler: fz.FzAdvertiserUpdateHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/fz_advertiser/delete",
+				Handler: fz.FzAdvertiserDeleteHandler(serverCtx),
+			},
+		},
+	)
+
+	// 飞猪小时报路由
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/api/fz_hourly_report/list",
+				Handler: fz.FzHourlyReportListHandler(serverCtx),
 			},
 		},
 	)
@@ -349,6 +387,18 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/tanx/update_cookie",
 				Handler: tanx.UpdateCookieHandler(serverCtx),
+			},
+		},
+	)
+
+	// =============== 飞猪时报相关接口 ===============
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 同步OPPO媒体数据
+				Method:  http.MethodGet,
+				Path:    "/api/fz/sync_oppo_data",
+				Handler: fz.FzSyncOppoDataHandler(serverCtx),
 			},
 		},
 	)

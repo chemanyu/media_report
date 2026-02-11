@@ -55,7 +55,7 @@ func TestHeytapAPICallWithDebug(t *testing.T) {
 		"page":           1,
 		"pageCount":      10,
 		"beginTime":      "20260210", // 使用更近的日期
-		"endTime":        "2026021-",
+		"endTime":        "20260210",
 		"timeLevel":      "DAY",
 		"orderByColumns": "dt",
 		"ascDesc":        "ASC",
@@ -87,7 +87,7 @@ func TestHeytapAPICallWithDebug(t *testing.T) {
 	fmt.Printf("URL: %s\n", url)
 	fmt.Printf("Method: POST\n")
 	fmt.Printf("Content-Type: application/json\n")
-	fmt.Printf("Authorization: %s\n", token)
+	fmt.Printf("Authorization: %s\n", "Bearer "+token)
 	fmt.Printf("==============================\n\n")
 
 	// 发送请求
