@@ -6,7 +6,6 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 
 	fz "media_report/service/api/internal/logic/fz"
-	script "media_report/service/api/internal/script"
 	"media_report/service/api/internal/svc"
 )
 
@@ -72,7 +71,7 @@ func FzSyncAllDataHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		httpx.OkJsonCtx(r.Context(), w, result)
 
 		// 实际调用（请确保顶部已import script包）
-		script.SendFzDingTalkNotification(r.Context(), svcCtx.DB, svcCtx.Config.DingTalk)
-		script.SendFzDailyReport(r.Context(), svcCtx.DB, svcCtx.Config.DingTalk)
+		//script.SendFzDingTalkNotification(r.Context(), svcCtx.DB, svcCtx.Config.DingTalk)
+		//script.SendFzDailyReport(r.Context(), svcCtx.DB, svcCtx.Config.DingTalk)
 	}
 }
