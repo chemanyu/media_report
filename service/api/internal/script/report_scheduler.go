@@ -100,14 +100,24 @@ func Cron(config config.Config, db *gorm.DB) {
 	}
 
 	// 添加 飞猪时报 数据抓取任务
-	if config.Schedule.FzCron != "" {
-		_, err := cronScheduler.AddFunc(config.Schedule.FzCron, func() {
+	if config.Schedule.FzHourCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.FzHourCron, func() {
 			ExecuteFzDataSyncJob(db, config)
 		})
 		if err != nil {
 			log.Fatalf("添加飞猪时报数据抓取定时任务失败: %v", err)
 		}
-		logx.Infof("飞猪时报数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.FzCron)
+		logx.Infof("飞猪时报数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.FzHourCron)
+	}
+	// 添加 飞猪日报 数据抓取任务
+	if config.Schedule.FzDayCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.FzDayCron, func() {
+			SendFzDailyReport(context.Background(), db, config.DingTalk)
+		})
+		if err != nil {
+			log.Fatalf("添加飞猪日报数据抓取定时任务失败: %v", err)
+		}
+		logx.Infof("飞猪日报数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.FzDayCron)
 	}
 
 	cronScheduler.Start()
