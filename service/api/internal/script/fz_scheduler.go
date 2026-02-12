@@ -136,12 +136,12 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	var markdownText string
 
 	// 添加标头
-	markdownText += "### 飞猪活动时报\n\n"
+	markdownText += "**飞猪活动时报**\n\n"
 
 	// 常规活动数据
 	if regularCount > 0 {
 		markdownText += fmt.Sprintf(
-			"#### 常规活动-海纳【飞猪常规活动 %s简报】\n"+
+			"**常规活动-海纳【飞猪常规活动 %s简报】**\n"+
 				"**唤起量**：%d  \n"+
 				"**现金消耗**：%.2f（日预算 6000）  \n"+
 				"**唤起成本**：%.2f（考核 0.5）  \n"+
@@ -156,8 +156,12 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 
 	// 集能量活动数据
 	if energyCount > 0 {
+		sectionPrefix := ""
+		if regularCount > 0 {
+			sectionPrefix = "\n"
+		}
 		markdownText += fmt.Sprintf(
-			"#### 集能量-海纳【飞猪集能量 %s简报】\n"+
+			sectionPrefix+"**集能量-海纳【飞猪集能量 %s简报】**\n"+
 				"**唤起量**：%d  \n"+
 				"**现金消耗**：%.2f（日预算 500）  \n"+
 				"**唤起成本**：%.2f（考核 0.2）  \n",
