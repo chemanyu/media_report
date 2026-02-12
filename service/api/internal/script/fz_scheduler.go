@@ -132,11 +132,41 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 		energyConvertDpPrice = energyCashCost / energyConvertDp
 	}
 
+	// 汇总数据（常规 + 集能量）
+	totalConvertDp := regularConvertDp + energyConvertDp
+	totalDpAppOrderNums := regularDpAppOrderNums + energyDpAppOrderNums
+	totalCostYuan := (regularCost + energyCost) / 100
+	totalCashCost := totalCostYuan * 1.2 * 0.85
+	totalConvertDpPrice := 0.0
+	if totalConvertDp > 0 {
+		totalConvertDpPrice = totalCashCost / totalConvertDp
+	}
+	totalDpOrderPrice := 0.0
+	if totalDpAppOrderNums > 0 {
+		totalDpOrderPrice = totalCashCost / totalDpAppOrderNums
+	}
+
 	// 构建钉钉消息
 	var markdownText string
 
 	// 添加标头
 	markdownText += "#### 飞猪活动时报  \n---\n"
+
+	// 汇总数据
+	if regularCount+energyCount > 0 {
+		markdownText += fmt.Sprintf(
+			"**汇总-海纳【飞猪app拉活 %s简报】**  \n"+
+				"**唤起量**：%d  \n"+
+				"**现金消耗**：%.2f（日预算 6500）  \n"+
+				"**唤起成本**：%.2f（考核 0.5）  \n"+
+				"**下单 pv 成本**：%.2f（考核 35）  \n\n",
+			displayDate,
+			int64(totalConvertDp),
+			totalCashCost,
+			totalConvertDpPrice,
+			totalDpOrderPrice,
+		)
+	}
 
 	// 常规活动数据
 	if regularCount > 0 {
