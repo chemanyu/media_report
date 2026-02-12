@@ -213,12 +213,16 @@ func NewTriggerElmHcDailyReportLogic(ctx context.Context, svcCtx *svc.ServiceCon
 	}
 }
 
-func (l *TriggerElmHcDailyReportLogic) TriggerElmHcDailyReport() (*types.ElmHcReportCommonResp, error) {
-	l.Logger.Info("手动触发汇川饿了么日报任务")
+func (l *TriggerElmHcDailyReportLogic) TriggerElmHcDailyReport(reportDate string) (*types.ElmHcReportCommonResp, error) {
+	if reportDate != "" {
+		l.Logger.Infof("手动触发汇川饿了么日报任务，日期: %s", reportDate)
+	} else {
+		l.Logger.Info("手动触发汇川饿了么日报任务（昨日数据）")
+	}
 
 	// 异步执行，避免阻塞请求
 	go func() {
-		script.FetchHuichuanElmReports(l.svcCtx.DB, l.svcCtx.Config.JuliangDLS, l.svcCtx.Config.ADX)
+		script.FetchHuichuanElmReports(l.svcCtx.DB, l.svcCtx.Config.JuliangDLS, l.svcCtx.Config.ADX, reportDate)
 	}()
 
 	return &types.ElmHcReportCommonResp{

@@ -120,14 +120,28 @@ func refreshJuliangKHAccessToken(db *gorm.DB, juliangConfig config.JuliangConfig
 }
 
 // FetchHuichuanElmReports 获取回传饿了么所有账户的报表数据并发送到ADX
-func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, adxConfig config.ADXConfig) {
+// reportDate: 可选参数，格式为 20060102，如果为空则使用昨天的日期
+func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, adxConfig config.ADXConfig, reportDate string) {
 	logx.Infof("开始获取回传饿了么报表数据 - %s", time.Now().Format("2006-01-02 15:04:05"))
 
-	// 获取昨天的日期（因为数据录入时间要求：每日7点前完成数据录入）
-	yesterday := time.Now().AddDate(0, 0, -1)
-	dt := yesterday.Format("20060102")
-	startTime := yesterday.Format("2006-01-02") + " 00:00:00"
-	endTime := yesterday.Format("2006-01-02") + " 23:59:59"
+	// 获取目标日期
+	var targetDate time.Time
+	if reportDate != "" {
+		// 使用指定日期
+		var err error
+		targetDate, err = time.Parse("20060102", reportDate)
+		if err != nil {
+			logx.Errorf("日期格式错误: %v，使用昨天的日期", err)
+			targetDate = time.Now().AddDate(0, 0, -1)
+		}
+	} else {
+		// 默认使用昨天的日期（因为数据录入时间要求：每日7点前完成数据录入）
+		targetDate = time.Now().AddDate(0, 0, -1)
+	}
+
+	dt := targetDate.Format("20060102")
+	startTime := targetDate.Format("2006-01-02") + " 00:00:00"
+	endTime := targetDate.Format("2006-01-02") + " 23:59:59"
 
 	logx.Infof("查询日期: %s, 时间范围: %s ~ %s", dt, startTime, endTime)
 

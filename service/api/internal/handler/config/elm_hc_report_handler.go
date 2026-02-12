@@ -64,8 +64,11 @@ func UpdateElmHcReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 // TriggerElmHcDailyReportHandler 手动触发汇川饿了么日报
 func TriggerElmHcDailyReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		// 获取日期参数（可选，格式: 20260211）
+		reportDate := r.URL.Query().Get("date")
+
 		l := config.NewTriggerElmHcDailyReportLogic(r.Context(), svcCtx)
-		resp, err := l.TriggerElmHcDailyReport()
+		resp, err := l.TriggerElmHcDailyReport(reportDate)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

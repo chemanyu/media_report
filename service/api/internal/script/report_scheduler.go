@@ -67,7 +67,7 @@ func Cron(config config.Config, db *gorm.DB) {
 	// 添加汇川饿了么日报表任务
 	if config.Schedule.HuichuanElmDailyCron != "" {
 		_, err := cronScheduler.AddFunc(config.Schedule.HuichuanElmDailyCron, func() {
-			FetchHuichuanElmReports(db, config.JuliangDLS, config.ADX)
+			FetchHuichuanElmReports(db, config.JuliangDLS, config.ADX, "")
 		})
 		if err != nil {
 			log.Fatalf("添加汇川饿了么日报表定时任务失败: %v", err)
