@@ -166,6 +166,9 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 			totalConvertDpPrice,
 			totalDpOrderPrice,
 		)
+		if regularCount > 0 || energyCount > 0 {
+			markdownText += "---\n"
+		}
 	}
 
 	// 常规活动数据
@@ -182,16 +185,15 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 			regularConvertDpPrice,
 			regularDpOrderPrice,
 		)
+		if energyCount > 0 {
+			markdownText += "---\n"
+		}
 	}
 
 	// 集能量活动数据
 	if energyCount > 0 {
-		sectionPrefix := ""
-		if regularCount > 0 {
-			sectionPrefix = "\n\n\n"
-		}
 		markdownText += fmt.Sprintf(
-			sectionPrefix+"**集能量-海纳【飞猪集能量 %s简报】**  \n"+
+			"**集能量-海纳【飞猪集能量 %s简报】**  \n"+
 				"**唤起量**：%d  \n"+
 				"**现金消耗**：%.2f（日预算 500）  \n"+
 				"**唤起成本**：%.2f（考核 0.2）  \n",
