@@ -400,6 +400,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/api/fz/sync_all_data",
 				Handler: fz.FzSyncAllDataHandler(serverCtx),
 			},
+			{
+				// 同步ADN媒体数据
+				Method:  http.MethodPost,
+				Path:    "/api/fz/sync_adn_data",
+				Handler: fz.FzSyncAdnDataHandler(serverCtx),
+			},
 		},
 	)
 }

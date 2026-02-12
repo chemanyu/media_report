@@ -249,6 +249,41 @@ func (l *FzHourlyReportLogic) SyncYesterdayXiaomiData() (int, error) {
 	return l.SyncXiaomiData(yesterday)
 }
 
+// SaveAdnData 保存ADN媒体数据
+func (l *FzHourlyReportLogic) SaveAdnData(req *types.FzSyncAdnDataReq) error {
+	// 将日期字符串转换为int（例如: "20260211" -> 20260211）
+	reportDateInt, err := strconv.Atoi(req.ReportDate)
+	if err != nil {
+		return fmt.Errorf("报表日期格式错误: %w", err)
+	}
+
+	// 构建报表数据
+	report := &model.FzHourlyReport{
+		Media:           "adn",
+		MediaAdvId:      req.MediaAdvId,
+		MediaAdvName:    req.MediaAdvName,
+		ReportDate:      reportDateInt,
+		Cost:            req.Cost * 100,
+		ConvertDp:       req.ConvertDp,
+		DpAppOrderNums:  req.DpAppOrderNums,
+		Click:           req.Click,
+		Expose:          req.Expose,
+		ConvertDpPrice:  req.ConvertDpPrice * 100,
+		DpAppOrderPrice: req.DpAppOrderPrice * 100,
+	}
+
+	// 保存到数据库（插入或更新）
+	reportModel := model.NewFzHourlyReportModel(l.svcCtx.DB)
+	if err := reportModel.InsertOrUpdate(report); err != nil {
+		return fmt.Errorf("保存数据失败: %w", err)
+	}
+
+	fmt.Printf("成功保存ADN账户 %s(%s) 数据: 消耗=%.2f, 拉活=%d, 订单=%d, 点击=%d, 曝光=%d\n",
+		req.MediaAdvName, req.MediaAdvId, req.Cost, req.ConvertDp, req.DpAppOrderNums, req.Click, req.Expose)
+
+	return nil
+}
+
 // GetReportList 获取报表列表
 func (l *FzHourlyReportLogic) GetReportList(req *types.FzHourlyReportListReq) ([]*model.FzHourlyReport, error) {
 	reportModel := model.NewFzHourlyReportModel(l.svcCtx.DB)
