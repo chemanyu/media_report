@@ -61,9 +61,16 @@ func (m *defaultFzHourlyReportModel) InsertOrUpdate(report *FzHourlyReport) erro
 	// 使用Clauses实现ON DUPLICATE KEY UPDATE
 	err := m.db.Clauses(clause.OnConflict{
 		Columns: []clause.Column{{Name: "media"}, {Name: "media_adv_id"}, {Name: "report_date"}},
-		DoUpdates: clause.AssignmentColumns([]string{
-			"media_adv_name", "cost", "convert_dp", "dp_app_order_nums",
-			"click", "expose", "convert_dp_price", "dp_app_order_price",
+		DoUpdates: clause.Assignments(map[string]interface{}{
+			"media_adv_name":     report.MediaAdvName,
+			"cost":               report.Cost,
+			"convert_dp":         report.ConvertDp,
+			"dp_app_order_nums":  report.DpAppOrderNums,
+			"click":              report.Click,
+			"expose":             report.Expose,
+			"convert_dp_price":   report.ConvertDpPrice,
+			"dp_app_order_price": report.DpAppOrderPrice,
+			"update_time":        gorm.Expr("CURRENT_TIMESTAMP"),
 		}),
 	}).Create(report).Error
 
