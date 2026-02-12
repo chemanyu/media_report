@@ -395,10 +395,10 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
-				// 同步OPPO媒体数据
+				// 同步所有媒体数据（OPPO + 小米）
 				Method:  http.MethodGet,
-				Path:    "/api/fz/sync_oppo_data",
-				Handler: fz.FzSyncOppoDataHandler(serverCtx),
+				Path:    "/api/fz/sync_all_data",
+				Handler: fz.FzSyncAllDataHandler(serverCtx),
 			},
 		},
 	)

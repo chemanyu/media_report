@@ -147,7 +147,9 @@
                         查询
                     </el-button>
                     <el-button @click="resetQuery" icon="Refresh">重置</el-button>
-                    <el-button type="success" @click="syncData" :loading="syncLoading" icon="Download">
+                    <el-button type="success" @click="syncAllData" :loading="syncLoading" icon="Download">
+                        同步数据
+                    </el-button>
                         同步今日数据
                     </el-button>
                 </el-form-item>
@@ -291,14 +293,18 @@
                     const totalClick = data.reduce((sum, item) => sum + item.click, 0);
                     const totalExpose = data.reduce((sum, item) => sum + item.expose, 0);
                     
+                    // 计算平均拉活成本和平均订单成本（从数据库字段获取后求平均）
+                    const totalConvertDpPrice = data.reduce((sum, item) => sum + item.convert_dp_price, 0);
+                    const totalDpAppOrderPrice = data.reduce((sum, item) => sum + item.dp_app_order_price, 0);
+                    
                     return {
                         cost: totalCost,
                         convertDp: totalConvertDp,
                         dpAppOrderNums: totalDpAppOrderNums,
                         click: totalClick,
                         expose: totalExpose,
-                        avgConvertDpPrice: totalConvertDp > 0 ? totalCost / totalConvertDp : 0,
-                        avgDpAppOrderPrice: totalDpAppOrderNums > 0 ? totalCost / totalDpAppOrderNums : 0
+                        avgConvertDpPrice: totalConvertDpPrice / data.length,
+                        avgDpAppOrderPrice: totalDpAppOrderPrice / data.length
                     };
                 }
             },
@@ -327,11 +333,11 @@
                     }
                 },
 
-                // 同步今日数据
-                async syncData() {
+                // 同步所有媒体数据
+                async syncAllData() {
                     try {
                         await ElMessageBox.confirm(
-                            '确定要同步今日的OPPO数据吗？',
+                            '确定要同步今日的数据吗？将依次同步OPPO和小米的数据。',
                             '同步确认',
                             {
                                 confirmButtonText: '确定',
@@ -341,11 +347,30 @@
                         );
 
                         this.syncLoading = true;
-                        const response = await axios.get(`${API_BASE_URL}/api/fz/sync_oppo_data`);
+                        const response = await axios.get(`${API_BASE_URL}/api/fz/sync_all_data`);
                         
                         if (response.data.success) {
-                            ElMessage.success(`同步成功，共同步 ${response.data.count} 个账户的数据`);
-                            await this.loadReportList();
+                            const oppo = response.data.data.oppo;
+                            const xiaomi = response.data.data.xiaomi;
+                            
+                            let message = '同步结果：';
+                            if (oppo.success) {
+                                message += `OPPO成功(${oppo.count}个账户) `;
+                            } else {
+                                message += `OPPO失败(${oppo.error}) `;
+                            }
+                            if (xiaomi.success) {
+                                message += `小米成功(${xiaomi.count}个账户)`;
+                            } else {
+                                message += `小米失败(${xiaomi.error})`;
+                            }
+                            
+                            if (oppo.success || xiaomi.success) {
+                                ElMessage.success(message);
+                                await this.loadReportList();
+                            } else {
+                                ElMessage.error(message);
+                            }
                         } else {
                             ElMessage.error(response.data.message || '同步失败');
                         }

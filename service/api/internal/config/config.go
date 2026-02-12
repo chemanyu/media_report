@@ -20,6 +20,7 @@ type Config struct {
 	FileServer  FileServerConfig // 文件服务器配置
 	Tanx        TanxConfig       // 淘宝联盟配置
 	OppoAPI     OppoAPIConfig    // OPPO广告API配置
+	XiaomiAPI   XiaomiAPIConfig  // 小米广告API配置
 }
 
 type KuaishouConfig struct {
@@ -102,4 +103,10 @@ type OppoAPIConfig struct {
 	OwnerId int    // 代理商ID
 	ApiId   string // API ID
 	ApiKey  string // API Key
+}
+
+// XiaomiAPIConfig 小米广告API配置
+type XiaomiAPIConfig struct {
+	SignId    string // 签名ID
+	SecretKey string // 密钥
 }

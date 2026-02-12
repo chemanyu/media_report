@@ -137,3 +137,7 @@ OppoAPI:
   OwnerId: 1000350051
   ApiId: "940ccf6f3b134d388681f16cf6e00234"
   ApiKey: "3eb9c90101ec4a4a97dc228d9842c827"
+
+XiaomiAPI:
+  SignId: "229d841af7a5fc79b66ee6a47e11eee3"
+  SecretKey: "xtLqxGLlsNMhhKLr"
