@@ -78,7 +78,7 @@
         </el-form>
 
         <!-- 账户列表表格 -->
-        <el-table :data="advertisers" border stripe>
+        <el-table :data="paginatedAdvertisers" border stripe>
             <el-table-column prop="media_adv_id" label="广告主ID" width="180"></el-table-column>
             <el-table-column prop="create_time" label="创建时间" width="180">
                 <template #default="scope">
@@ -102,6 +102,18 @@
                 </template>
             </el-table-column>
         </el-table>
+
+        <!-- 分页 -->
+        <el-pagination
+            v-model:current-page="pagination.currentPage"
+            v-model:page-size="pagination.pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="pagination.total"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            style="margin-top: 20px; justify-content: flex-end;">
+        </el-pagination>
     </div>
 
     <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
@@ -120,6 +132,11 @@
             data() {
                 return {
                     advertisers: [],
+                    pagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 0
+                    },
                     newAdvertiserId: '',
                     loading: false,
                     deleteLoadingId: null,
@@ -127,6 +144,13 @@
                     cardinalityData: null,
                     newCardinality: null,
                     cardinalityLoading: false
+                }
+            },
+            computed: {
+                paginatedAdvertisers() {
+                    const start = (this.pagination.currentPage - 1) * this.pagination.pageSize;
+                    const end = start + this.pagination.pageSize;
+                    return this.advertisers.slice(start, end);
                 }
             },
             methods: {

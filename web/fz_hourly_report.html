@@ -229,6 +229,18 @@
             </el-table-column>
         </el-table>
 
+        <!-- 分页 -->
+        <el-pagination
+            v-model:current-page="pagination.currentPage"
+            v-model:page-size="pagination.pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            :total="pagination.total"
+            layout="total, sizes, prev, pager, next, jumper"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            style="margin-top: 20px; justify-content: flex-end;">
+        </el-pagination>
+
         <!-- 空状态 -->
         <el-empty v-if="!loading && reportList.length === 0" description="暂无数据"></el-empty>
     </div>
@@ -255,7 +267,12 @@
                         keyword: ''
                     },
                     loading: false,
-                    syncLoading: false
+                    syncLoading: false,
+                    pagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 0
+                    }
                 }
             },
             computed: {
@@ -271,7 +288,13 @@
                         );
                     }
                     
-                    return result;
+                    // 更新总记录数
+                    this.pagination.total = result.length;
+                    
+                    // 分页
+                    const start = (this.pagination.currentPage - 1) * this.pagination.pageSize;
+                    const end = start + this.pagination.pageSize;
+                    return result.slice(start, end);
                 },
                 totalStats() {
                     const data = this.filteredReportList;
@@ -392,7 +415,13 @@
                     };
                     this.loadReportList();
                 },
-
+                handleSizeChange(val) {
+                    this.pagination.pageSize = val;
+                    this.pagination.currentPage = 1;
+                },
+                handleCurrentChange(val) {
+                    this.pagination.currentPage = val;
+                },
                 // 表格合计行
                 getSummaries(param) {
                     const { columns, data } = param;

@@ -118,47 +118,62 @@
         </el-card>
 
         <!-- 账户列表表格 -->
-        <el-table :data="filteredAccounts" border stripe v-loading="loading">
-            <el-table-column prop="id" label="ID" width="80"></el-table-column>
-            <el-table-column prop="media" label="媒体类型" width="120">
-                <template #default="scope">
-                    <span :class="'media-badge media-' + scope.row.media">
-                        {{ getMediaName(scope.row.media) }}
-                    </span>
-                </template>
-            </el-table-column>
-            <el-table-column prop="media_adv_id" label="账户ID" width="180"></el-table-column>
-            <el-table-column prop="media_adv_name" label="账户名称" min-width="200"></el-table-column>
-            <el-table-column prop="create_time" label="创建时间" width="180">
-                <template #default="scope">
-                    {{ formatTime(scope.row.create_time) }}
-                </template>
-            </el-table-column>
-            <el-table-column prop="update_time" label="更新时间" width="180">
-                <template #default="scope">
-                    {{ formatTime(scope.row.update_time) }}
-                </template>
-            </el-table-column>
-            <el-table-column label="操作" width="180" fixed="right">
-                <template #default="scope">
-                    <el-button 
-                        type="primary" 
-                        size="small" 
-                        @click="editAccount(scope.row)"
-                        icon="Edit">
-                        编辑
-                    </el-button>
-                    <el-button 
-                        type="danger" 
-                        size="small" 
-                        @click="deleteAccount(scope.row)"
-                        :loading="deleteLoadingId === scope.row.id"
-                        icon="Delete">
-                        删除
-                    </el-button>
-                </template>
-            </el-table-column>
-        </el-table>
+        <el-card shadow="never">
+            <el-table :data="filteredAccounts" border stripe v-loading="loading">
+                <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                <el-table-column prop="media" label="媒体类型" width="120">
+                    <template #default="scope">
+                        <span :class="'media-badge media-' + scope.row.media">
+                            {{ getMediaName(scope.row.media) }}
+                        </span>
+                    </template>
+                </el-table-column>
+                <el-table-column prop="media_adv_id" label="账户ID" width="180"></el-table-column>
+                <el-table-column prop="media_adv_name" label="账户名称" min-width="200"></el-table-column>
+                <el-table-column prop="create_time" label="创建时间" width="180">
+                    <template #default="scope">
+                        {{ formatTime(scope.row.create_time) }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="update_time" label="更新时间" width="180">
+                    <template #default="scope">
+                        {{ formatTime(scope.row.update_time) }}
+                    </template>
+                </el-table-column>
+                <el-table-column label="操作" width="180" fixed="right">
+                    <template #default="scope">
+                        <el-button 
+                            type="primary" 
+                            size="small" 
+                            @click="editAccount(scope.row)"
+                            icon="Edit">
+                            编辑
+                        </el-button>
+                        <el-button 
+                            type="danger" 
+                            size="small" 
+                            @click="deleteAccount(scope.row)"
+                            :loading="deleteLoadingId === scope.row.id"
+                            icon="Delete">
+                            删除
+                        </el-button>
+                    </template>
+                </el-table-column>
+            </el-table>
+
+            <!-- 分页 -->
+            <div style="margin-top: 20px; display: flex; justify-content: flex-end;">
+                <el-pagination
+                    v-model:current-page="pagination.currentPage"
+                    v-model:page-size="pagination.pageSize"
+                    :page-sizes="[10, 20, 50, 100]"
+                    :total="pagination.total"
+                    layout="total, sizes, prev, pager, next, jumper"
+                    @size-change="handleSizeChange"
+                    @current-change="handleCurrentChange">
+                </el-pagination>
+            </div>
+        </el-card>
 
         <!-- 编辑对话框 -->
         <el-dialog v-model="editDialogVisible" title="编辑账户" width="500px">
@@ -200,6 +215,11 @@
             data() {
                 return {
                     accounts: [],
+                    pagination: {
+                        currentPage: 1,
+                        pageSize: 10,
+                        total: 0
+                    },
                     newAccount: {
                         media: 'oppo',
                         media_adv_id: '',
@@ -237,7 +257,13 @@
                         );
                     }
                     
-                    return result;
+                    // 更新总数
+                    this.pagination.total = result.length;
+                    
+                    // 分页
+                    const start = (this.pagination.currentPage - 1) * this.pagination.pageSize;
+                    const end = start + this.pagination.pageSize;
+                    return result.slice(start, end);
                 }
             },
             methods: {
@@ -387,6 +413,15 @@
                     const hour = String(date.getHours()).padStart(2, '0');
                     const minute = String(date.getMinutes()).padStart(2, '0');
                     return `${year}-${month}-${day} ${hour}:${minute}`;
+                },
+
+                handleSizeChange(val) {
+                    this.pagination.pageSize = val;
+                    this.pagination.currentPage = 1;
+                },
+
+                handleCurrentChange(val) {
+                    this.pagination.currentPage = val;
                 }
             },
             mounted() {
