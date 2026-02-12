@@ -99,7 +99,17 @@ func Cron(config config.Config, db *gorm.DB) {
 		logx.Infof("Tanx 数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.TanxCron)
 	}
 
-	// 启动调度器
+	// 添加 飞猪时报 数据抓取任务
+	if config.Schedule.FzCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.FzCron, func() {
+			ExecuteFzDataSyncJob(db, config)
+		})
+		if err != nil {
+			log.Fatalf("添加飞猪时报数据抓取定时任务失败: %v", err)
+		}
+		logx.Infof("飞猪时报数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.FzCron)
+	}
+
 	cronScheduler.Start()
 
 	// 立即刷新一次 token（可选）

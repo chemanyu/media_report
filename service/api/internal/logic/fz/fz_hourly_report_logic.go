@@ -208,7 +208,7 @@ func (l *FzHourlyReportLogic) SyncXiaomiData(reportDate string) (int, error) {
 			MediaAdvId:      advertiser.MediaAdvId,
 			MediaAdvName:    advertiser.MediaAdvName,
 			ReportDate:      reportDateInt,
-			Cost:            totalCost,
+			Cost:            totalCost * 100,
 			ConvertDp:       convertDp,
 			DpAppOrderNums:  dpAppOrderNums,
 			Click:           totalData.ClickNum,

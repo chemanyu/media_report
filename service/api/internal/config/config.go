@@ -70,11 +70,13 @@ type ScheduleConfig struct {
 	HuichuanElmDailyCron  string // 汇川饿了么日报表任务 cron 表达式
 	HuichuanElmHourlyCron string // 汇川饿了么小时报表任务 cron 表达式
 	TanxCron              string // Tanx 数据抓取任务 cron 表达式
+	FzCron                string // 飞猪更新外投媒体的数据
 }
 
 type DingTalkConfig struct {
 	WebhookURL         string // 钉钉机器人 webhook 地址
 	JDReportWebhookURL string // 京东广义巨量数据 webhook 地址
+	FzWebhookURL       string // 飞猪外投数据 webhook 地址
 	Enabled            bool   // 是否启用钉钉通知
 }
 
