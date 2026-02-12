@@ -70,6 +70,7 @@ type ScheduleConfig struct {
 	HuichuanElmDailyCron  string // 汇川饿了么日报表任务 cron 表达式
 	HuichuanElmHourlyCron string // 汇川饿了么小时报表任务 cron 表达式
 	TanxCron              string // Tanx 数据抓取任务 cron 表达式
+	FzReportCron          string
 	FzHourCron            string // 飞猪时报更新外投媒体的数据
 	FzDayCron             string
 }

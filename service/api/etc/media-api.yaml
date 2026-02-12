@@ -67,7 +67,8 @@ Schedule:
   HuichuanElmDailyCron: "2 11 * * *"        # 汇川饿了么日报表任务
   HuichuanElmHourlyCron: "3 * * * *"       # 汇川饿了么小时报表任务 & 巨量报表数据
   TanxCron: "15 12 * * *"         # Tanx 数据抓取任务，每天12:15执行
-  FzHourCron: "1 18 * * *"
+  FzReportCron: "1 * * * *"
+  FzHourCron: "2 18 * * *"
   FzDayCron: "20 10 * * *"
 
 # 钉钉机器人配置

@@ -99,17 +99,27 @@ func Cron(config config.Config, db *gorm.DB) {
 		logx.Infof("Tanx 数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.TanxCron)
 	}
 
-	// 添加 飞猪时报 数据抓取任务
+	//飞猪定时拉外部数据
+	if config.Schedule.FzReportCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.FzReportCron, func() {
+			ExecuteFzDataSyncJob(db, config)
+		})
+		if err != nil {
+			log.Fatalf("添加飞猪更新数据抓取定时任务失败: %v", err)
+		}
+		logx.Infof("飞猪更新数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.FzReportCron)
+	}
+	//飞猪时报
 	if config.Schedule.FzHourCron != "" {
 		_, err := cronScheduler.AddFunc(config.Schedule.FzHourCron, func() {
-			ExecuteFzDataSyncJob(db, config)
+			SendFzDingTalkNotification(context.Background(), db, config.DingTalk)
 		})
 		if err != nil {
 			log.Fatalf("添加飞猪时报数据抓取定时任务失败: %v", err)
 		}
 		logx.Infof("飞猪时报数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.FzHourCron)
 	}
-	// 添加 飞猪日报 数据抓取任务
+	//飞猪日报
 	if config.Schedule.FzDayCron != "" {
 		_, err := cronScheduler.AddFunc(config.Schedule.FzDayCron, func() {
 			SendFzDailyReport(context.Background(), db, config.DingTalk)

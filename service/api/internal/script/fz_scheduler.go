@@ -59,9 +59,6 @@ func ExecuteFzDataSyncJob(db *gorm.DB, config config.Config) {
 		logx.Infof("飞猪外投数据同步任务部分完成 - OPPO: %d个账户, 小米: %d个账户 - %s",
 			oppoCount, xiaomiCount, time.Now().Format("2006-01-02 15:04:05"))
 	}
-
-	// 发送钉钉通知
-	SendFzDingTalkNotification(ctx, db, config.DingTalk)
 }
 
 // sendFzDingTalkNotification 发送飞猪数据钉钉通知
