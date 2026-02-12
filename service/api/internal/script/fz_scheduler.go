@@ -61,11 +61,11 @@ func ExecuteFzDataSyncJob(db *gorm.DB, config config.Config) {
 	}
 
 	// 发送钉钉通知
-	sendFzDingTalkNotification(ctx, db, config.DingTalk)
+	SendFzDingTalkNotification(ctx, db, config.DingTalk)
 }
 
 // sendFzDingTalkNotification 发送飞猪数据钉钉通知
-func sendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig config.DingTalkConfig) {
+func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig config.DingTalkConfig) {
 	// 获取今天的日期（格式：20260212）
 	loc, _ := time.LoadLocation("Asia/Shanghai")
 	now := time.Now().In(loc)
@@ -134,6 +134,9 @@ func sendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 
 	// 构建钉钉消息
 	var markdownText string
+
+	// 添加标头
+	markdownText += "### 飞猪活动时报\n\n"
 
 	// 常规活动数据
 	if regularCount > 0 {

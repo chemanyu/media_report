@@ -240,15 +240,6 @@ func (l *FzHourlyReportLogic) SyncTodayXiaomiData() (int, error) {
 	return l.SyncXiaomiData(today)
 }
 
-// SyncYesterdayXiaomiData 同步昨天的小米数据
-func (l *FzHourlyReportLogic) SyncYesterdayXiaomiData() (int, error) {
-	// 使用北京时间
-	loc, _ := time.LoadLocation("Asia/Shanghai")
-	yesterday := time.Now().In(loc).AddDate(0, 0, -1).Format("20060102")
-
-	return l.SyncXiaomiData(yesterday)
-}
-
 // SaveAdnData 保存ADN媒体数据
 func (l *FzHourlyReportLogic) SaveAdnData(req *types.FzSyncAdnDataReq) error {
 	// 将日期字符串转换为int（例如: "20260211" -> 20260211）
