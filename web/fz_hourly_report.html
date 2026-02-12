@@ -147,10 +147,19 @@
                         查询
                     </el-button>
                     <el-button @click="resetQuery" icon="Refresh">重置</el-button>
+                </el-form-item>
+                <el-form-item label="同步日期">
+                    <el-date-picker
+                        v-model="syncDate"
+                        type="date"
+                        placeholder="选择日期"
+                        value-format="YYYYMMDD"
+                        style="width: 140px;">
+                    </el-date-picker>
+                </el-form-item>
+                <el-form-item>
                     <el-button type="success" @click="syncAllData" :loading="syncLoading" icon="Download">
                         同步数据
-                    </el-button>
-                        同步今日数据
                     </el-button>
                 </el-form-item>
             </el-form>
@@ -266,6 +275,7 @@
                         dateRange: null,
                         keyword: ''
                     },
+                    syncDate: null,
                     loading: false,
                     syncLoading: false,
                     pagination: {
@@ -359,8 +369,9 @@
                 // 同步所有媒体数据
                 async syncAllData() {
                     try {
+                        const syncDateText = this.syncDate ? `（${this.syncDate}）` : '（今日）';
                         await ElMessageBox.confirm(
-                            '确定要同步今日的数据吗？将依次同步OPPO和小米的数据。',
+                            `确定要同步${syncDateText}的数据吗？将依次同步OPPO和小米的数据。`,
                             '同步确认',
                             {
                                 confirmButtonText: '确定',
@@ -370,7 +381,11 @@
                         );
 
                         this.syncLoading = true;
-                        const response = await axios.get(`${API_BASE_URL}/api/fz/sync_all_data`);
+                        const params = {};
+                        if (this.syncDate) {
+                            params.date = this.syncDate;
+                        }
+                        const response = await axios.get(`${API_BASE_URL}/api/fz/sync_all_data`, { params });
                         
                         if (response.data.success) {
                             const oppo = response.data.data.oppo;
@@ -538,7 +553,9 @@
                     return `${year}${month}${day}`;
                 };
                 
-                this.queryParams.dateRange = [formatDate(sevenDaysAgo), formatDate(today)];
+                const todayStr = formatDate(today);
+                this.queryParams.dateRange = [formatDate(sevenDaysAgo), todayStr];
+                this.syncDate = todayStr;
                 this.loadReportList();
             }
         }).use(ElementPlus).mount('#app');
