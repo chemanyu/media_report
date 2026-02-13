@@ -62,7 +62,7 @@ MySQL:
 Schedule:
   ReportCron: "0 10,12,14,16,18,22 * * *"  # 每天10点、12点、14点、16点、18点、22点执行报表任务
   TokenRefreshCron: "1 0 * * *"            # 每天0点1分刷新 token
-  HuichuanElmDailyCron: "2 11 * * *"        # 汇川饿了么日报表任务
+  HuichuanElmDailyCron: "59 15 * * *"        # 汇川饿了么日报表任务
   HuichuanElmHourlyCron: "2 * * * *"       # 汇川饿了么小时报表任务 & 巨量报表数据
   JuliangReportCron: "3 10,12,14,16,18,22 * * *" 
   TanxCron: "15 12 * * *"         # Tanx 数据抓取任务，每天12:15执行
