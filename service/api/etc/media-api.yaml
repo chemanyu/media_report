@@ -73,7 +73,7 @@ Schedule:
 DingTalk:
   WebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=a23550fd08efa781099eb1ebbbd4b34a5ea035a7bd72653fd2c7d02938eb7fd3"
   JDReportWebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=1591f64c542a7c4142a6656e3fcd9a68373a4a64fdd4dbb6f256ddb428a0d34f"
-  FzWebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=7dd7567864d39ce6e169ce0c40caa42194d7b77b546ecd6c325f91151699d172"
+  FzWebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=2b27e38ebaeacec39dce406a7ca13d44d1fd1d7d0aace2d4cb6c7dae0c613ba5"
   Enabled: true  # 是否启用钉钉通知
 
 # 文件服务器配置
