@@ -67,6 +67,7 @@ Schedule:
   JuliangReportCron: "3 10,12,14,16,18,22 * * *" 
   TanxCron: "15 12 * * *"         # Tanx 数据抓取任务，每天12:15执行
   FzHourCron: "1 18 * * *"
+  FzDayReportCron: "58 23 * * *"
   FzDayCron: "20 10 * * *"
 
 # 钉钉机器人配置
