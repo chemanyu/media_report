@@ -78,8 +78,9 @@ type ScheduleConfig struct {
 type DingTalkConfig struct {
 	WebhookURL         string // 钉钉机器人 webhook 地址
 	JDReportWebhookURL string // 京东广义巨量数据 webhook 地址
-	FzWebhookURL       string // 飞猪外投数据 webhook 地址
-	Enabled            bool   // 是否启用钉钉通知
+	FzWebhookHourURL   string // 飞猪外投数据 webhook 地址
+	FzWebhookDayURL    string
+	Enabled            bool // 是否启用钉钉通知
 }
 
 type FileServerConfig struct {

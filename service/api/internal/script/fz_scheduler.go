@@ -207,7 +207,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	}
 
 	// 检查钉钉配置
-	if !dingConfig.Enabled || dingConfig.FzWebhookURL == "" {
+	if !dingConfig.Enabled || dingConfig.FzWebhookHourURL == "" {
 		logx.Info("飞猪钉钉通知未启用或未配置webhook，跳过发送")
 		return
 	}
@@ -223,7 +223,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 
 	client := httpclient.NewClient("", 30)
 	var result map[string]interface{}
-	err = client.Post(ctx, dingConfig.FzWebhookURL, msg, &result)
+	err = client.Post(ctx, dingConfig.FzWebhookHourURL, msg, &result)
 	if err != nil {
 		logx.Errorf("发送飞猪钉钉消息失败: %v", err)
 		return
@@ -379,7 +379,7 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 	}
 
 	// 检查钉钉配置
-	if !dingConfig.Enabled || dingConfig.FzWebhookURL == "" {
+	if !dingConfig.Enabled || dingConfig.FzWebhookDayURL == "" {
 		logx.Info("飞猪钉钉日报未启用或未配置webhook，跳过发送")
 		return
 	}
@@ -395,7 +395,7 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 
 	client := httpclient.NewClient("", 30)
 	var result map[string]interface{}
-	err = client.Post(ctx, dingConfig.FzWebhookURL, msg, &result)
+	err = client.Post(ctx, dingConfig.FzWebhookDayURL, msg, &result)
 	if err != nil {
 		logx.Errorf("发送飞猪钉钉日报失败: %v", err)
 		return
