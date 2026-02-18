@@ -65,6 +65,7 @@ func UpdateElmHcMediaReport(db *gorm.DB, report *ElmHcMediaReport) error {
 		"huichuan_adv_id": report.HuichuanAdvId,
 		"redirect_num":    report.RedirectNum,
 		"pay_num":         report.PayNum,
+		"update_time":     gorm.Expr("CURRENT_TIMESTAMP"),
 	}).Error
 }
 

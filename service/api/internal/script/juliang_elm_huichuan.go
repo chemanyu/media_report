@@ -197,6 +197,17 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 
 			// 处理报表数据并转换为ADX格式
 			if len(resp.Data.Rows) > 0 {
+				// 检查 update_time 是否为今天，如果不是今天则 RedirectNum 和 PayNum 设置为 0
+				redirectNum := media.RedirectNum
+				payNum := media.PayNum
+				today := time.Now().Format("2006-01-02")
+				updateDate := media.UpdateTime.Format("2006-01-02")
+				if updateDate != today {
+					redirectNum = 0
+					payNum = 0
+					logx.Infof("  账户 %s 的 update_time (%s) 不是今天，RedirectNum 和 PayNum 设置为 0", media.MediaAdvName, updateDate)
+				}
+
 				for _, row := range resp.Data.Rows {
 					// 从 map 中提取数据（巨量接口返回的是字符串类型）
 					var cost float64
@@ -247,8 +258,8 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 						DeepConvertNum:    media.PayNum,
 						ConvertType:       "调起",
 						DeepConvertType:   "付费",
-						RedirectNum:       media.RedirectNum,
-						PayNum:            media.PayNum,
+						RedirectNum:       redirectNum,
+						PayNum:            payNum,
 						Dt:                dt,
 					}
 					allReportData = append(allReportData, reportData)
@@ -460,8 +471,8 @@ func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConf
 						DeepConvertNum:    media.PayNum,
 						ConvertType:       "调起",
 						DeepConvertType:   "付费",
-						RedirectNum:       media.RedirectNum,
-						PayNum:            media.PayNum,
+						RedirectNum:       0,
+						PayNum:            0,
 						Dt:                dt,
 						Hh:                hh,
 					}
