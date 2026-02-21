@@ -32,15 +32,15 @@ func Cron(config config.Config, db *gorm.DB) {
 	cronScheduler := cron.New()
 
 	// 添加报表任务
-	if config.Schedule.ReportCron != "" {
-		_, err := cronScheduler.AddFunc(config.Schedule.ReportCron, func() {
-			executeReportJob(db, config.Kuaishou, config.DingTalk)
-		})
-		if err != nil {
-			log.Fatalf("添加报表定时任务失败: %v", err)
-		}
-		logx.Infof("快手报表定时任务已启动，Cron 表达式: %s", config.Schedule.ReportCron)
-	}
+	// if config.Schedule.ReportCron != "" {
+	// 	_, err := cronScheduler.AddFunc(config.Schedule.ReportCron, func() {
+	// 		executeReportJob(db, config.Kuaishou, config.DingTalk)
+	// 	})
+	// 	if err != nil {
+	// 		log.Fatalf("添加报表定时任务失败: %v", err)
+	// 	}
+	// 	logx.Infof("快手报表定时任务已启动，Cron 表达式: %s", config.Schedule.ReportCron)
+	// }
 
 	// 添加 token 刷新任务
 	if config.Schedule.TokenRefreshCron != "" {
