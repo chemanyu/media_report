@@ -15,6 +15,8 @@
         .form-label { font-size: 13px; color: #606266; font-weight: 500; }
         .tip-text { color: #909399; font-size: 12px; margin-bottom: 16px; }
         [v-cloak] { display: none; }
+        .compact-upload .el-upload-dragger { height: 80px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 20px; }
+        .compact-upload .el-upload-dragger .upload-inner { display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
@@ -30,7 +32,7 @@
             <div class="form-row">
                 <div class="form-item" style="flex: 1; min-width: 260px;">
                     <div class="form-label">活动素材ID</div>
-                    <el-input v-model="activityMaterialId" placeholder="20150318020010092" clearable />
+                    <el-input v-model="activityMaterialId" placeholder="20150318020010092" clearable></el-input>
                 </div>
             </div>
 
@@ -42,14 +44,19 @@
                 :on-change="onActivityFileChange"
                 :on-remove="onActivityFileRemove"
                 drag
+                class="compact-upload"
                 style="margin-bottom: 16px;"
             >
-                <el-icon style="font-size: 40px; color: #c0c4cc;"><Upload /></el-icon>
-                <div style="margin-top: 10px; color: #606266;">点击或拖拽 sub_pid 列表文件到此处</div>
-                <div style="font-size: 12px; color: #909399; margin-top: 4px;">txt 格式，每行一个 sub_pid</div>
+                <div class="upload-inner">
+                    <span style="font-size: 22px; color: #c0c4cc;">📁</span>
+                    <div>
+                        <div style="color: #606266; font-size: 13px;">点击或拖拽 sub_pid 列表文件到此处</div>
+                        <div style="font-size: 12px; color: #909399; margin-top: 2px;">txt 格式，每行一个 sub_pid</div>
+                    </div>
+                </div>
             </el-upload>
 
-            <el-button type="primary" size="large" :loading="activityBatchLoading" :disabled="!activityFile" @click="getActivityBatch" icon="Download">
+            <el-button type="primary" size="large" :loading="activityBatchLoading" :disabled="!activityFile" @click="getActivityBatch">
                 上传并提取短链
             </el-button>
             <div v-if="activityBatchMsg" style="margin-top: 12px; color: #909399; font-size: 13px;">{{ activityBatchMsg }}</div>
@@ -74,7 +81,7 @@
                 </div>
                 <div class="form-item">
                     <div class="form-label">统计日期</div>
-                    <el-input v-model="reportBizDate" placeholder="yyyyMMdd（如 20260228）" style="width: 200px;" clearable />
+                    <el-input v-model="reportBizDate" placeholder="yyyyMMdd（如 20260228）" style="width: 200px;" clearable></el-input>
                 </div>
                 <div class="form-item">
                     <div class="form-label">查询类型</div>
@@ -93,14 +100,19 @@
                 :on-change="onReportFileChange"
                 :on-remove="onReportFileRemove"
                 drag
+                class="compact-upload"
                 style="margin-bottom: 16px;"
             >
-                <el-icon style="font-size: 40px; color: #c0c4cc;"><Upload /></el-icon>
-                <div style="margin-top: 10px; color: #606266;">点击或拖拽 Excel 文件到此处</div>
-                <div style="font-size: 12px; color: #909399; margin-top: 4px;">必须包含 pid 列</div>
+                <div class="upload-inner">
+                    <span style="font-size: 22px; color: #c0c4cc;">📁</span>
+                    <div>
+                        <div style="color: #606266; font-size: 13px;">点击或拖拽 Excel 文件到此处</div>
+                        <div style="font-size: 12px; color: #909399; margin-top: 2px;">必须包含 pid 列</div>
+                    </div>
+                </div>
             </el-upload>
 
-            <el-button type="success" size="large" :loading="reportLoading" :disabled="!reportFile" @click="queryActivityReport" icon="DataAnalysis">
+            <el-button type="success" size="large" :loading="reportLoading" :disabled="!reportFile" @click="queryActivityReport">
                 批量查询报表
             </el-button>
         </div>

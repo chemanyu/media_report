@@ -4,8 +4,8 @@ package types
 
 // TaobaoExtractReq 淘宝单链提取请求
 type TaobaoExtractReq struct {
-	ShortUrl string `json:"short_url" form:"short_url"` // 淘宝短链
-	Platform string `json:"platform" form:"platform"`   // 平台: ios / android（默认 ios）
+	ShortUrl string `json:"short_url"` // 淘宝短链
+	Platform string `json:"platform"`  // 平台: ios / android（默认 ios）
 }
 
 // TaobaoExtractResp 淘宝单链提取响应
@@ -20,8 +20,8 @@ type TaobaoExtractResp struct {
 
 // XianyuExtractReq 闲鱼单链提取请求
 type XianyuExtractReq struct {
-	ShortUrl string `json:"short_url" form:"short_url"` // 闲鱼短链
-	Platform string `json:"platform" form:"platform"`   // 平台: android / ios（默认 android）
+	ShortUrl string `json:"short_url"` // 闲鱼短链
+	Platform string `json:"platform"`  // 平台: android / ios（默认 android）
 }
 
 // XianyuExtractResp 闲鱼单链提取响应

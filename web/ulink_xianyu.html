@@ -14,6 +14,8 @@
         .result-value { font-size: 13px; color: #303133; word-break: break-all; font-family: monospace; background: white; padding: 8px 12px; border-radius: 4px; border: 1px solid #e4e7ed; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
         .result-text { flex: 1; word-break: break-all; }
         [v-cloak] { display: none; }
+        .compact-upload .el-upload-dragger { height: 80px; display: flex; align-items: center; justify-content: center; gap: 10px; padding: 0 20px; }
+        .compact-upload .el-upload-dragger .upload-inner { display: flex; align-items: center; gap: 10px; }
     </style>
 </head>
 <body>
@@ -23,8 +25,8 @@
         <div class="section-card">
             <div class="section-title">🔧 平台选择</div>
             <el-radio-group v-model="platform" size="large">
-                <el-radio-button value="android">Android</el-radio-button>
-                <el-radio-button value="ios">iOS</el-radio-button>
+                <el-radio-button label="android">Android</el-radio-button>
+                <el-radio-button label="ios">iOS</el-radio-button>
             </el-radio-group>
             <div style="margin-top: 10px; color: #909399; font-size: 12px;">
                 Android 平台返回 fleamarket:// 深链；iOS 平台返回 pages.goofish.com 链接
@@ -40,8 +42,8 @@
                 clearable
                 size="large"
                 style="margin-bottom: 12px;"
-            />
-            <el-button type="primary" size="large" :loading="singleLoading" @click="extractSingle" icon="Search">
+            ></el-input>
+            <el-button type="primary" size="large" :loading="singleLoading" @click="extractSingle">
                 转换链接
             </el-button>
 
@@ -71,13 +73,18 @@
                 :on-change="onBatchFileChange"
                 :on-remove="onBatchFileRemove"
                 drag
+                class="compact-upload"
                 style="margin-bottom: 12px;"
             >
-                <el-icon style="font-size: 40px; color: #c0c4cc;"><Upload /></el-icon>
-                <div style="margin-top: 10px; color: #606266;">点击或拖拽 txt 文件到此处</div>
-                <div style="font-size: 12px; color: #909399; margin-top: 4px;">每行一个闲鱼短链</div>
+                <div class="upload-inner">
+                    <span style="font-size: 22px; color: #c0c4cc;">📁</span>
+                    <div>
+                        <div style="color: #606266; font-size: 13px;">点击或拖拽 txt 文件到此处</div>
+                        <div style="font-size: 12px; color: #909399; margin-top: 2px;">每行一个闲鱼短链</div>
+                    </div>
+                </div>
             </el-upload>
-            <el-button type="primary" size="large" :loading="batchLoading" :disabled="!batchFile" @click="extractBatch" icon="Download">
+            <el-button type="primary" size="large" :loading="batchLoading" :disabled="!batchFile" @click="extractBatch">
                 上传并批量转换
             </el-button>
         </div>
@@ -114,12 +121,10 @@
                     this.singleLoading = true;
                     this.singleResult = null;
                     try {
-                        const formData = new FormData();
-                        formData.append('short_url', this.singleUrl.trim());
-                        formData.append('platform', this.platform);
                         const resp = await fetch(`${this.apiBase()}/api/ulink/xianyu/extract`, {
                             method: 'POST',
-                            body: formData,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ short_url: this.singleUrl.trim(), platform: this.platform }),
                         });
                         this.singleResult = await resp.json();
                     } catch (e) {

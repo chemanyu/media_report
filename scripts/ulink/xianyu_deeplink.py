@@ -20,11 +20,6 @@ import argparse
 import concurrent.futures
 import queue
 
-# 将 python-automation-project/src 加入 Python 路径
-_SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-_SRC_DIR = os.path.join(_SCRIPT_DIR, '..', '..', 'python-automation-project', 'src')
-sys.path.insert(0, os.path.normpath(_SRC_DIR))
-
 from extract_xianyu_deeplink import get_xianyu_deeplink, CHROME_DRIVER_PATH as _DEFAULT_DRIVER
 
 
