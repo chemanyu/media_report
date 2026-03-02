@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>闲鱼转链</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        .section-card { background: white; border-radius: 8px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .section-title { font-size: 16px; font-weight: 600; color: #303133; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #e4e7ed; display: flex; align-items: center; gap: 8px; }
+        .result-box { background: #f8f9fa; border: 1px solid #e4e7ed; border-radius: 6px; padding: 16px; margin-top: 16px; }
+        .result-label { font-size: 12px; color: #909399; margin-bottom: 6px; }
+        .result-value { font-size: 13px; color: #303133; word-break: break-all; font-family: monospace; background: white; padding: 8px 12px; border-radius: 4px; border: 1px solid #e4e7ed; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .result-text { flex: 1; word-break: break-all; }
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+
+        <!-- 平台选择 -->
+        <div class="section-card">
+            <div class="section-title">🔧 平台选择</div>
+            <el-radio-group v-model="platform" size="large">
+                <el-radio-button value="android">Android</el-radio-button>
+                <el-radio-button value="ios">iOS</el-radio-button>
+            </el-radio-group>
+            <div style="margin-top: 10px; color: #909399; font-size: 12px;">
+                Android 平台返回 fleamarket:// 深链；iOS 平台返回 pages.goofish.com 链接
+            </div>
+        </div>
+
+        <!-- 单链提取 -->
+        <div class="section-card">
+            <div class="section-title">🐟 单个链接转换</div>
+            <el-input
+                v-model="singleUrl"
+                placeholder="请输入闲鱼短链（如 https://m.tb.cn/h.xxx）"
+                clearable
+                size="large"
+                style="margin-bottom: 12px;"
+            />
+            <el-button type="primary" size="large" :loading="singleLoading" @click="extractSingle" icon="Search">
+                转换链接
+            </el-button>
+
+            <div v-if="singleResult" class="result-box">
+                <div v-if="singleResult.code === 200">
+                    <div class="result-label">Deeplink</div>
+                    <div class="result-value">
+                        <span class="result-text">{{ singleResult.deeplink }}</span>
+                        <el-button size="small" @click="copy(singleResult.deeplink)">复制</el-button>
+                    </div>
+                </div>
+                <el-alert v-else :title="singleResult.message" type="error" :closable="false" />
+            </div>
+        </div>
+
+        <!-- 批量提取 -->
+        <div class="section-card">
+            <div class="section-title">📋 批量链接转换</div>
+            <div style="color: #909399; font-size: 13px; margin-bottom: 16px;">
+                上传 txt 文件（每行一个闲鱼短链），处理完成后自动下载 Excel 结果文件
+            </div>
+            <el-upload
+                ref="batchUpload"
+                :auto-upload="false"
+                :limit="1"
+                accept=".txt"
+                :on-change="onBatchFileChange"
+                :on-remove="onBatchFileRemove"
+                drag
+                style="margin-bottom: 12px;"
+            >
+                <el-icon style="font-size: 40px; color: #c0c4cc;"><Upload /></el-icon>
+                <div style="margin-top: 10px; color: #606266;">点击或拖拽 txt 文件到此处</div>
+                <div style="font-size: 12px; color: #909399; margin-top: 4px;">每行一个闲鱼短链</div>
+            </el-upload>
+            <el-button type="primary" size="large" :loading="batchLoading" :disabled="!batchFile" @click="extractBatch" icon="Download">
+                上传并批量转换
+            </el-button>
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage } = ElementPlus;
+
+        createApp({
+            data() {
+                return {
+                    platform: 'android',
+                    singleUrl: '',
+                    singleLoading: false,
+                    singleResult: null,
+                    batchFile: null,
+                    batchLoading: false,
+                }
+            },
+            methods: {
+                apiBase() {
+                    return window.location.pathname.includes('/guangyixinmedia/') ? '/guangyixinmedia' : '';
+                },
+
+                async extractSingle() {
+                    if (!this.singleUrl.trim()) {
+                        ElMessage.warning('请输入闲鱼短链');
+                        return;
+                    }
+                    this.singleLoading = true;
+                    this.singleResult = null;
+                    try {
+                        const formData = new FormData();
+                        formData.append('short_url', this.singleUrl.trim());
+                        formData.append('platform', this.platform);
+                        const resp = await fetch(`${this.apiBase()}/api/ulink/xianyu/extract`, {
+                            method: 'POST',
+                            body: formData,
+                        });
+                        this.singleResult = await resp.json();
+                    } catch (e) {
+                        ElMessage.error('请求失败: ' + e.message);
+                    } finally {
+                        this.singleLoading = false;
+                    }
+                },
+
+                onBatchFileChange(file) { this.batchFile = file.raw; },
+                onBatchFileRemove() { this.batchFile = null; },
+
+                async extractBatch() {
+                    if (!this.batchFile) {
+                        ElMessage.warning('请先选择 txt 文件');
+                        return;
+                    }
+                    this.batchLoading = true;
+                    try {
+                        const formData = new FormData();
+                        formData.append('link_file', this.batchFile);
+                        formData.append('platform', this.platform);
+                        const resp = await fetch(`${this.apiBase()}/api/ulink/xianyu/batch`, {
+                            method: 'POST',
+                            body: formData,
+                        });
+                        if (!resp.ok || resp.headers.get('Content-Type')?.includes('application/json')) {
+                            const err = await resp.json().catch(() => ({ message: '未知错误' }));
+                            ElMessage.error(err.message || '批量转换失败');
+                            return;
+                        }
+                        const blob = await resp.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'xianyu_deeplink_results.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        ElMessage.success('批量转换完成，Excel 已下载');
+                    } catch (e) {
+                        ElMessage.error('请求失败: ' + e.message);
+                    } finally {
+                        this.batchLoading = false;
+                    }
+                },
+
+                copy(text) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        ElMessage.success('已复制到剪贴板');
+                    }).catch(() => {
+                        ElMessage.error('复制失败');
+                    });
+                },
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

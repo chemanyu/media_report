@@ -145,3 +145,14 @@ OppoAPI:
 XiaomiAPI:
   SignId: "229d841af7a5fc79b66ee6a47e11eee3"
   SecretKey: "xtLqxGLlsNMhhKLr"
+
+# 转链模块配置
+Ulink:
+  TaobaoAppKey: "35238422"
+  TaobaoAppSecret: "3e2c5266e7a3689ac909659a203ce301"
+  DefaultMaterialId: "20150318020010092"
+  DefaultEventId: "4169349"
+  PythonPath: "python3"
+  ScriptDir: "../../scripts/ulink"
+  ChromeDriverPath: "/usr/local/bin/chromedriver"
+  TempDir: "/tmp"

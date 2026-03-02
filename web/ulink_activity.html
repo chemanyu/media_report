@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>活动转链</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
+    <style>
+        body { margin: 0; padding: 20px; background: #f0f2f5; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        .section-card { background: white; border-radius: 8px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+        .section-title { font-size: 16px; font-weight: 600; color: #303133; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #e4e7ed; display: flex; align-items: center; gap: 8px; }
+        .divider { border: none; border-top: 2px dashed #e4e7ed; margin: 24px 0; }
+        .form-row { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px; }
+        .form-item { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 13px; color: #606266; font-weight: 500; }
+        .tip-text { color: #909399; font-size: 12px; margin-bottom: 16px; }
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+
+        <!-- 区域一：活动短链批量获取 -->
+        <div class="section-card">
+            <div class="section-title">🎯 活动短链批量获取</div>
+            <div class="tip-text">
+                上传 txt 文件（每行一个 sub_pid，格式: mm_xxx_xxx_xxx），系统将自动获取推广链接并提取 Deeplink
+            </div>
+
+            <div class="form-row">
+                <div class="form-item" style="flex: 1; min-width: 260px;">
+                    <div class="form-label">活动素材ID</div>
+                    <el-input v-model="activityMaterialId" placeholder="20150318020010092" clearable />
+                </div>
+            </div>
+
+            <el-upload
+                ref="activityUpload"
+                :auto-upload="false"
+                :limit="1"
+                accept=".txt"
+                :on-change="onActivityFileChange"
+                :on-remove="onActivityFileRemove"
+                drag
+                style="margin-bottom: 16px;"
+            >
+                <el-icon style="font-size: 40px; color: #c0c4cc;"><Upload /></el-icon>
+                <div style="margin-top: 10px; color: #606266;">点击或拖拽 sub_pid 列表文件到此处</div>
+                <div style="font-size: 12px; color: #909399; margin-top: 4px;">txt 格式，每行一个 sub_pid</div>
+            </el-upload>
+
+            <el-button type="primary" size="large" :loading="activityBatchLoading" :disabled="!activityFile" @click="getActivityBatch" icon="Download">
+                上传并提取短链
+            </el-button>
+            <div v-if="activityBatchMsg" style="margin-top: 12px; color: #909399; font-size: 13px;">{{ activityBatchMsg }}</div>
+        </div>
+
+        <hr class="divider">
+
+        <!-- 区域二：活动报表批量查询 -->
+        <div class="section-card">
+            <div class="section-title">📊 活动报表批量查询</div>
+            <div class="tip-text">
+                上传 Excel 文件（必须包含 <b>pid</b> 列），查询指定日期的活动报表数据，结果将自动下载
+            </div>
+
+            <div class="form-row">
+                <div class="form-item">
+                    <div class="form-label">活动类型</div>
+                    <el-select v-model="reportEventId" style="width: 160px;">
+                        <el-option label="福利购" value="4169349" />
+                        <el-option label="超级红包" value="4042593" />
+                    </el-select>
+                </div>
+                <div class="form-item">
+                    <div class="form-label">统计日期</div>
+                    <el-input v-model="reportBizDate" placeholder="yyyyMMdd（如 20260228）" style="width: 200px;" clearable />
+                </div>
+                <div class="form-item">
+                    <div class="form-label">查询类型</div>
+                    <el-select v-model="reportQueryType" style="width: 130px;">
+                        <el-option label="结算数据" value="2" />
+                        <el-option label="预估数据" value="1" />
+                    </el-select>
+                </div>
+            </div>
+
+            <el-upload
+                ref="reportUpload"
+                :auto-upload="false"
+                :limit="1"
+                accept=".xlsx,.xls"
+                :on-change="onReportFileChange"
+                :on-remove="onReportFileRemove"
+                drag
+                style="margin-bottom: 16px;"
+            >
+                <el-icon style="font-size: 40px; color: #c0c4cc;"><Upload /></el-icon>
+                <div style="margin-top: 10px; color: #606266;">点击或拖拽 Excel 文件到此处</div>
+                <div style="font-size: 12px; color: #909399; margin-top: 4px;">必须包含 pid 列</div>
+            </el-upload>
+
+            <el-button type="success" size="large" :loading="reportLoading" :disabled="!reportFile" @click="queryActivityReport" icon="DataAnalysis">
+                批量查询报表
+            </el-button>
+        </div>
+
+    </div>
+
+    <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+    <script>
+        const { createApp } = Vue;
+        const { ElMessage } = ElementPlus;
+
+        // 获取当天日期（yyyyMMdd 格式）
+        function todayStr() {
+            const d = new Date();
+            return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+        }
+
+        createApp({
+            data() {
+                return {
+                    // 活动短链批量
+                    activityMaterialId: '20150318020010092',
+                    activityFile: null,
+                    activityBatchLoading: false,
+                    activityBatchMsg: '',
+                    // 活动报表查询
+                    reportEventId: '4169349',
+                    reportBizDate: todayStr(),
+                    reportQueryType: '2',
+                    reportFile: null,
+                    reportLoading: false,
+                }
+            },
+            methods: {
+                apiBase() {
+                    return window.location.pathname.includes('/guangyixinmedia/') ? '/guangyixinmedia' : '';
+                },
+
+                onActivityFileChange(file) { this.activityFile = file.raw; },
+                onActivityFileRemove() { this.activityFile = null; },
+
+                async getActivityBatch() {
+                    if (!this.activityFile) {
+                        ElMessage.warning('请先选择 sub_pid 列表文件');
+                        return;
+                    }
+                    this.activityBatchLoading = true;
+                    this.activityBatchMsg = '';
+                    try {
+                        const formData = new FormData();
+                        formData.append('link_file', this.activityFile);
+                        if (this.activityMaterialId.trim()) {
+                            formData.append('activity_material_id', this.activityMaterialId.trim());
+                        }
+                        const resp = await fetch(`${this.apiBase()}/api/ulink/activity/batch`, {
+                            method: 'POST',
+                            body: formData,
+                        });
+                        const contentType = resp.headers.get('Content-Type') || '';
+                        if (!resp.ok || contentType.includes('application/json')) {
+                            const err = await resp.json().catch(() => ({ message: '未知错误' }));
+                            ElMessage.error(err.message || '获取失败');
+                            return;
+                        }
+                        const blob = await resp.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'activity_shortlinks.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        this.activityBatchMsg = '处理完成，Excel 已下载';
+                        ElMessage.success('活动短链批量获取完成');
+                    } catch (e) {
+                        ElMessage.error('请求失败: ' + e.message);
+                    } finally {
+                        this.activityBatchLoading = false;
+                    }
+                },
+
+                onReportFileChange(file) { this.reportFile = file.raw; },
+                onReportFileRemove() { this.reportFile = null; },
+
+                async queryActivityReport() {
+                    if (!this.reportFile) {
+                        ElMessage.warning('请先选择 Excel 文件');
+                        return;
+                    }
+                    if (!this.reportBizDate || !/^\d{8}$/.test(this.reportBizDate)) {
+                        ElMessage.warning('请输入正确的统计日期（yyyyMMdd，如 20260228）');
+                        return;
+                    }
+                    this.reportLoading = true;
+                    try {
+                        const formData = new FormData();
+                        formData.append('link_file', this.reportFile);
+                        formData.append('biz_date', this.reportBizDate);
+                        formData.append('query_type', this.reportQueryType);
+                        formData.append('event_id', this.reportEventId);
+                        const resp = await fetch(`${this.apiBase()}/api/ulink/activity/report`, {
+                            method: 'POST',
+                            body: formData,
+                        });
+                        const contentType = resp.headers.get('Content-Type') || '';
+                        if (!resp.ok || contentType.includes('application/json')) {
+                            const err = await resp.json().catch(() => ({ message: '未知错误' }));
+                            ElMessage.error(err.message || '查询失败');
+                            return;
+                        }
+                        const blob = await resp.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `activity_report_${this.reportBizDate}.xlsx`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        ElMessage.success('报表查询完成，Excel 已下载');
+                    } catch (e) {
+                        ElMessage.error('请求失败: ' + e.message);
+                    } finally {
+                        this.reportLoading = false;
+                    }
+                },
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

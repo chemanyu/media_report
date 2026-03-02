@@ -13,6 +13,7 @@ import (
 	fz "media_report/service/api/internal/handler/fz"
 	report "media_report/service/api/internal/handler/report"
 	tanx "media_report/service/api/internal/handler/tanx"
+	ulink "media_report/service/api/internal/handler/ulink"
 	update "media_report/service/api/internal/handler/update"
 	zfb "media_report/service/api/internal/handler/zfb"
 	"media_report/service/api/internal/svc"
@@ -405,6 +406,48 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/api/fz/sync_adn_data",
 				Handler: fz.FzSyncAdnDataHandler(serverCtx),
+			},
+		},
+	)
+
+	// =============== ulink 转链相关接口 ===============
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 淘宝单链 deeplink 提取
+				Method:  http.MethodPost,
+				Path:    "/api/ulink/taobao/extract",
+				Handler: ulink.TaobaoExtractHandler(serverCtx),
+			},
+			{
+				// 淘宝批量 deeplink 提取（txt 上传 → Excel 下载）
+				Method:  http.MethodPost,
+				Path:    "/api/ulink/taobao/batch",
+				Handler: ulink.TaobaoBatchHandler(serverCtx),
+			},
+			{
+				// 闲鱼单链 deeplink 提取
+				Method:  http.MethodPost,
+				Path:    "/api/ulink/xianyu/extract",
+				Handler: ulink.XianyuExtractHandler(serverCtx),
+			},
+			{
+				// 闲鱼批量 deeplink 提取（txt 上传 → Excel 下载）
+				Method:  http.MethodPost,
+				Path:    "/api/ulink/xianyu/batch",
+				Handler: ulink.XianyuBatchHandler(serverCtx),
+			},
+			{
+				// 淘宝客活动短链批量获取（txt 上传 → Excel 下载）
+				Method:  http.MethodPost,
+				Path:    "/api/ulink/activity/batch",
+				Handler: ulink.ActivityBatchHandler(serverCtx),
+			},
+			{
+				// 淘宝客活动报表批量查询（Excel 上传 → Excel 下载）
+				Method:  http.MethodPost,
+				Path:    "/api/ulink/activity/report",
+				Handler: ulink.ActivityReportHandler(serverCtx),
 			},
 		},
 	)

@@ -272,6 +272,26 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 转链 -->
+                <div>
+                    <div class="menu-item" :class="{active: currentMenu === 'ulink'}" @click="toggleMenu('ulink')">
+                        <span class="menu-item-icon">🔗</span>
+                        <span class="menu-item-text">转链</span>
+                        <span class="menu-item-arrow" :class="{expanded: expandedMenus.includes('ulink')}">▶</span>
+                    </div>
+                    <div class="submenu" :class="{expanded: expandedMenus.includes('ulink')}">
+                        <div class="submenu-item" :class="{active: currentPage === 'ulink_taobao'}" @click="navigateTo('ulink_taobao', '淘宝转链')">
+                            淘宝转链
+                        </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'ulink_xianyu'}" @click="navigateTo('ulink_xianyu', '闲鱼转链')">
+                            闲鱼转链
+                        </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'ulink_activity'}" @click="navigateTo('ulink_activity', '活动转链')">
+                            活动转链
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- 内容区域 -->
@@ -372,6 +392,18 @@
                         'fz_hourly_report': {
                             url: `${pathPrefix}/web/fz_hourly_report.html`,
                             subtitle: '查看飞猪媒体小时报数据'
+                        },
+                        'ulink_taobao': {
+                            url: `${pathPrefix}/web/ulink_taobao.html`,
+                            subtitle: '淘宝短链转 Deeplink（单链/批量）'
+                        },
+                        'ulink_xianyu': {
+                            url: `${pathPrefix}/web/ulink_xianyu.html`,
+                            subtitle: '闲鱼短链转 Deeplink（单链/批量）'
+                        },
+                        'ulink_activity': {
+                            url: `${pathPrefix}/web/ulink_activity.html`,
+                            subtitle: '淘宝客活动短链批量获取与报表查询'
                         }
                     };
                     

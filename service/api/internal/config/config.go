@@ -21,6 +21,7 @@ type Config struct {
 	Tanx        TanxConfig       // 淘宝联盟配置
 	OppoAPI     OppoAPIConfig    // OPPO广告API配置
 	XiaomiAPI   XiaomiAPIConfig  // 小米广告API配置
+	Ulink       UlinkConfig      // 转链模块配置
 }
 
 type KuaishouConfig struct {
@@ -114,4 +115,16 @@ type OppoAPIConfig struct {
 type XiaomiAPIConfig struct {
 	SignId    string // 签名ID
 	SecretKey string // 密钥
+}
+
+// UlinkConfig 转链模块配置
+type UlinkConfig struct {
+	TaobaoAppKey      string // 淘宝客 AppKey
+	TaobaoAppSecret   string // 淘宝客 AppSecret
+	DefaultMaterialId string // 默认活动素材ID
+	DefaultEventId    string // 默认CPA活动ID（4169349=福利购, 4042593=超级红包）
+	PythonPath        string // python3 可执行文件路径（如 "python3"）
+	ScriptDir         string // Python 脚本目录（如 "./scripts/ulink"）
+	ChromeDriverPath  string // ChromeDriver 路径（传给 Python 脚本）
+	TempDir           string // 临时文件目录（如 "/tmp"）
 }
