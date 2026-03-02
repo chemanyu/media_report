@@ -20,7 +20,8 @@ import (
 
 // adzoneGroup 单个广告位ID及其对应的商品列表
 type adzoneGroup struct {
-	adzoneId string
+	rawId    string // Excel 原始行内容（用于写入导出文件）
+	adzoneId string // 分割后的真实 adzone_id（用于 API 调用）
 	items    []map[string]interface{}
 }
 
@@ -71,7 +72,11 @@ func (l *CpsGoodsLogic) GetCpsGoods(w http.ResponseWriter, r *http.Request) {
 	// 对每个 adzone_id 拉取全量商品
 	groups := make([]adzoneGroup, 0, len(adzoneIds))
 
-	for _, adzoneId := range adzoneIds {
+	for _, rawId := range adzoneIds {
+		// 格式如 mm_874030133_3340450211_116227700211，取最后一段作为真实 adzone_id
+		parts := strings.Split(rawId, "_")
+		adzoneId := parts[len(parts)-1]
+
 		var allItems []map[string]interface{}
 		pageNo := 1
 		pageSize := 100
@@ -90,7 +95,7 @@ func (l *CpsGoodsLogic) GetCpsGoods(w http.ResponseWriter, r *http.Request) {
 			}
 			pageNo++
 		}
-		groups = append(groups, adzoneGroup{adzoneId: adzoneId, items: allItems})
+		groups = append(groups, adzoneGroup{rawId: rawId, adzoneId: adzoneId, items: allItems})
 	}
 
 	// 生成分组 Excel
@@ -128,14 +133,8 @@ func readColumnA(filePath string) ([]string, error) {
 	for _, row := range rows {
 		if len(row) > 0 {
 			val := strings.TrimSpace(row[0])
-			if val == "" {
-				continue
-			}
-			// 格式如 mm_874030133_3340450211_116227700211，取 _ 分割后最后一段
-			parts := strings.Split(val, "_")
-			adzoneId := parts[len(parts)-1]
-			if adzoneId != "" {
-				ids = append(ids, adzoneId)
+			if val != "" {
+				ids = append(ids, val)
 			}
 		}
 	}
@@ -264,9 +263,9 @@ func buildCpsGoodsGroupedExcel(outputPath string, groups []adzoneGroup) error {
 
 	currentRow := 2
 	for _, g := range groups {
-		// adzone_id 分组行（仅 A 列）
+		// adzone_id 分组行（仅 A 列），写原始值
 		cell, _ := excelize.CoordinatesToCellName(1, currentRow)
-		f.SetCellValue(sheet, cell, g.adzoneId)
+		f.SetCellValue(sheet, cell, g.rawId)
 		currentRow++
 
 		// 商品数据行（A 列留空，B 列起）
