@@ -290,6 +290,9 @@
                         <div class="submenu-item" :class="{active: currentPage === 'ulink_activity'}" @click="navigateTo('ulink_activity', '活动转链')">
                             活动转链
                         </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'ulink_cps_goods'}" @click="navigateTo('ulink_cps_goods', 'CPS高佣商品库')">
+                            CPS高佣商品库
+                        </div>
                     </div>
                 </div>
             </div>
@@ -404,6 +407,10 @@
                         'ulink_activity': {
                             url: `${pathPrefix}/web/ulink_activity.html`,
                             subtitle: '淘宝客活动短链批量获取与报表查询'
+                        },
+                        'ulink_cps_goods': {
+                            url: `${pathPrefix}/web/ulink_cps_goods.html`,
+                            subtitle: '淘宝CPS高佣商品库批量导出'
                         }
                     };
                     

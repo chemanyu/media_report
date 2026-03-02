@@ -449,6 +449,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/api/ulink/activity/report",
 				Handler: ulink.ActivityReportHandler(serverCtx),
 			},
+			{
+				// CPS高佣商品库批量导出（选择商品库 → Excel 下载）
+				Method:  http.MethodPost,
+				Path:    "/api/ulink/cps/goods",
+				Handler: ulink.CpsGoodsBatchHandler(serverCtx),
+			},
 		},
 	)
 }
