@@ -61,7 +61,7 @@ func (l *ActivityBatchLogic) GetActivityBatch(w http.ResponseWriter, r *http.Req
 		args = append(args, "--driver", cfg.ChromeDriverPath)
 	}
 
-	out, err := runScript(cfg.PythonPath, scriptPath, args...)
+	out, err := runScriptWithContext(r.Context(), cfg.PythonPath, scriptPath, args...)
 	if err != nil {
 		l.Errorf("活动短链批量脚本执行失败: %v, output: %s", err, string(out))
 		writeJSONError(w, 500, "脚本执行失败: "+err.Error())

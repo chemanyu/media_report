@@ -106,7 +106,7 @@ func (l *XianyuExtractLogic) ExtractBatch(w http.ResponseWriter, r *http.Request
 		args = append(args, "--driver", cfg.ChromeDriverPath)
 	}
 
-	out, err := runScript(cfg.PythonPath, scriptPath, args...)
+	out, err := runScriptWithContext(r.Context(), cfg.PythonPath, scriptPath, args...)
 	if err != nil {
 		l.Errorf("闲鱼批量提取脚本执行失败: %v, output: %s", err, string(out))
 		writeJSONError(w, 500, "脚本执行失败: "+err.Error())

@@ -120,7 +120,7 @@ func (l *TaobaoExtractLogic) ExtractBatch(w http.ResponseWriter, r *http.Request
 		args = append(args, "--driver", cfg.ChromeDriverPath)
 	}
 
-	out, err := runScript(cfg.PythonPath, scriptPath, args...)
+	out, err := runScriptWithContext(r.Context(), cfg.PythonPath, scriptPath, args...)
 	if err != nil {
 		l.Errorf("批量提取脚本执行失败: %v, output: %s", err, string(out))
 		writeJSONError(w, 500, "脚本执行失败: "+err.Error())
@@ -142,10 +142,17 @@ func (l *TaobaoExtractLogic) ExtractBatch(w http.ResponseWriter, r *http.Request
 	serveExcelFile(w, outputPath, "taobao_deeplink_results.xlsx")
 }
 
-// runScript 调用 Python 脚本，返回合并的 stdout 输出
+// runScript 调用 Python 脚本，绑定 context（超时/取消时自动终止子进程）
 func runScript(pythonPath, scriptPath string, args ...string) ([]byte, error) {
 	allArgs := append([]string{scriptPath}, args...)
 	cmd := exec.Command(pythonPath, allArgs...)
+	return cmd.Output()
+}
+
+// runScriptWithContext 调用 Python 脚本并绑定 context，超时后自动 kill 子进程
+func runScriptWithContext(ctx context.Context, pythonPath, scriptPath string, args ...string) ([]byte, error) {
+	allArgs := append([]string{scriptPath}, args...)
+	cmd := exec.CommandContext(ctx, pythonPath, allArgs...)
 	return cmd.Output()
 }
 

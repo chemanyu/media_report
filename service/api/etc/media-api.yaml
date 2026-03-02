@@ -3,7 +3,7 @@ Host: 0.0.0.0
 Port: 8888
 
 # 设置超时时间避免nginx超时
-Timeout: 30000  # 30秒
+Timeout: 300000  # 300秒，批量转链需要较长时间
 
 Log:
   ServiceName: media-api
