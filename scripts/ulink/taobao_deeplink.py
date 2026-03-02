@@ -8,7 +8,7 @@
   python3 taobao_deeplink.py --mode single --url "https://m.tb.cn/h.xxx" --platform ios [--driver /path/to/chromedriver]
 
   # 批量模式
-  python3 taobao_deeplink.py --mode batch --input /tmp/input.txt --output /tmp/output.xlsx --platform ios [--driver /path/to/chromedriver]
+  python3 taobao_deeplink.py --mode batch --input ../uploads/input.txt --output ../uploads/output.xlsx --platform ios [--driver /path/to/chromedriver]
 
 输出: 标准 JSON（stdout），错误信息不输出到 stdout
 """

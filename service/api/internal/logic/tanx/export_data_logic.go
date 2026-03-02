@@ -192,7 +192,7 @@ func (l *ExportDataLogic) createExcelFile(dataRows []DataRow) (string, error) {
 	l.adjustAllSheetsColumnWidth(f)
 
 	// 保存文件
-	tmpDir := "/tmp"
+	tmpDir := "../uploads"
 	if _, err := os.Stat(tmpDir); os.IsNotExist(err) {
 		tmpDir = "."
 	}

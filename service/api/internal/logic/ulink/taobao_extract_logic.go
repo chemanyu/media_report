@@ -187,6 +187,10 @@ func saveUploadedFile(r *http.Request, fieldName, tempDir, pattern string) (stri
 	}
 	defer file.Close()
 
+	if err := os.MkdirAll(tempDir, 0755); err != nil {
+		return "", nil, fmt.Errorf("创建上传目录失败: %w", err)
+	}
+
 	tmpFile, err := os.CreateTemp(tempDir, pattern)
 	if err != nil {
 		return "", nil, err

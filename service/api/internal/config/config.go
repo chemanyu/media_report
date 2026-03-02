@@ -126,5 +126,5 @@ type UlinkConfig struct {
 	PythonPath        string // python3 可执行文件路径（如 "python3"）
 	ScriptDir         string // Python 脚本目录（如 "./scripts/ulink"）
 	ChromeDriverPath  string // ChromeDriver 路径（传给 Python 脚本）
-	TempDir           string // 临时文件目录（如 "/tmp"）
+	TempDir           string // 临时文件目录（如 "../uploads"）
 }

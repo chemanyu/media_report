@@ -5,8 +5,8 @@
 
 用法:
   python3 activity_batch.py \
-    --input /tmp/pids.txt \
-    --output /tmp/output.xlsx \
+    --input ../uploads/pids.txt \
+    --output ../uploads/output.xlsx \
     --material_id 20150318020010092 \
     --app_key 35238422 \
     --app_secret 3e2c5266e7a3689ac909659a203ce301 \
