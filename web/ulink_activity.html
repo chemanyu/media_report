@@ -75,8 +75,7 @@
                 <div class="form-item">
                     <div class="form-label">活动类型</div>
                     <el-select v-model="reportEventId" style="width: 160px;">
-                        <el-option key="4439384" label="福利购" value="4439384" />
-                        <el-option key="4297311" label="超级红包" value="4297311" />
+                        <el-option v-for="opt in eventIdOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
                     </el-select>
                 </div>
                 <div class="form-item">
@@ -86,8 +85,7 @@
                 <div class="form-item">
                     <div class="form-label">查询类型</div>
                     <el-select v-model="reportQueryType" style="width: 130px;">
-                        <el-option key="2" label="结算数据" value="2" />
-                        <el-option key="1" label="预估数据" value="1" />
+                        <el-option v-for="opt in queryTypeOptions" :key="opt.value" :label="opt.label" :value="opt.value" />
                     </el-select>
                 </div>
             </div>
@@ -145,6 +143,14 @@
                     reportQueryType: '2',
                     reportFile: null,
                     reportLoading: false,
+                    eventIdOptions: [
+                        { label: '福利购', value: '4439384' },
+                        { label: '超级红包', value: '4297311' },
+                    ],
+                    queryTypeOptions: [
+                        { label: '结算数据', value: '2' },
+                        { label: '预估数据', value: '1' },
+                    ],
                 }
             },
             methods: {
