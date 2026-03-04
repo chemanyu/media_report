@@ -106,6 +106,7 @@ func (l *ActivityReportLogic) GetActivityReport(w http.ResponseWriter, r *http.R
 	queryType, _ := strconv.Atoi(req.QueryType)
 
 	// 并发查询每个 PID
+	ctx := r.Context()
 	results := make([]pidQueryResult, len(pids))
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, 5) // 最大并发 5
@@ -114,11 +115,15 @@ func (l *ActivityReportLogic) GetActivityReport(w http.ResponseWriter, r *http.R
 		wg.Add(1)
 		go func(idx int, p string) {
 			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
+			select {
+			case <-ctx.Done():
+				return
+			case sem <- struct{}{}:
+				defer func() { <-sem }()
+			}
 
-			curData := queryActivityReport(cfg.TaobaoAppKey, cfg.TaobaoAppSecret, req.EventId, req.BizDate, queryType, p)
-			prevData := queryActivityReport(cfg.TaobaoAppKey, cfg.TaobaoAppSecret, req.EventId, prevDate, queryType, p)
+			curData := queryActivityReport(ctx, cfg.TaobaoAppKey, cfg.TaobaoAppSecret, req.EventId, req.BizDate, queryType, p)
+			prevData := queryActivityReport(ctx, cfg.TaobaoAppKey, cfg.TaobaoAppSecret, req.EventId, prevDate, queryType, p)
 
 			results[idx] = pidQueryResult{pid: p, current: curData, prev: prevData}
 		}(i, pid)
@@ -161,7 +166,7 @@ func signTaobaoAPI(params map[string]string, appSecret string) string {
 }
 
 // queryActivityReport 调用淘宝客活动报表 API，返回第一条数据
-func queryActivityReport(appKey, appSecret, eventId, bizDate string, queryType int, pid string) *activityReportItem {
+func queryActivityReport(ctx context.Context, appKey, appSecret, eventId, bizDate string, queryType int, pid string) *activityReportItem {
 	params := map[string]string{
 		"method":      "taobao.tbk.dg.cpa.activity.report",
 		"app_key":     appKey,
@@ -186,8 +191,12 @@ func queryActivityReport(appKey, appSecret, eventId, bizDate string, queryType i
 		queryValues.Set(k, v)
 	}
 
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, taobaoAPIURL+"?"+queryValues.Encode(), nil)
+	if err != nil {
+		return nil
+	}
 	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Get(taobaoAPIURL + "?" + queryValues.Encode())
+	resp, err := client.Do(req)
 	if err != nil {
 		return nil
 	}
