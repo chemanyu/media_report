@@ -271,17 +271,54 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 		}
 	}
 
-	// 发送数据到ADX接口
+	// 发送数据到ADX接口（暂时注释，改为保存到数据库）
+	// if len(allReportData) > 0 {
+	// 	logx.Infof("准备发送 %d 条数据到ADX接口", len(allReportData))
+	// 	err := sendDataToADX(adxConfig, allReportData)
+	// 	if err != nil {
+	// 		logx.Errorf("发送数据到ADX失败: %v", err)
+	// 	} else {
+	// 		logx.Infof("数据发送成功")
+	// 	}
+	// } else {
+	// 	logx.Info("暂无数据需要发送")
+	// }
+
+	// 保存数据到数据库
 	if len(allReportData) > 0 {
-		logx.Infof("准备发送 %d 条数据到ADX接口", len(allReportData))
-		err := sendDataToADX(adxConfig, allReportData)
-		if err != nil {
-			logx.Errorf("发送数据到ADX失败: %v", err)
-		} else {
-			logx.Infof("数据发送成功")
+		logx.Infof("准备保存 %d 条数据到数据库", len(allReportData))
+		successCount := 0
+		for _, data := range allReportData {
+			record := &model.ElmHcReportData{
+				CustomerName:      data.CustomerName,
+				CustomerShort:     data.CustomerShort,
+				AgentName:         data.AgentName,
+				AgentShort:        data.AgentShort,
+				MediaPlatformName: data.MediaPlatformName,
+				MediaAdvId:        data.MediaAdvId,
+				MediaAdvName:      data.MediaAdvName,
+				HuichuanAdvId:     data.HuichuanAdvId,
+				Cost:              data.Cost,
+				ShowNum:           data.ShowNum,
+				ClickNum:          data.ClickNum,
+				ConvertNum:        data.ConvertNum,
+				DeepConvertNum:    data.DeepConvertNum,
+				ConvertType:       data.ConvertType,
+				DeepConvertType:   data.DeepConvertType,
+				RedirectNum:       data.RedirectNum,
+				PayNum:            data.PayNum,
+				Dt:                data.Dt,
+				Hh:                data.Hh,
+			}
+			if err := model.InsertOrUpdateElmHcReportData(db, record); err != nil {
+				logx.Errorf("保存数据失败 (账户:%s, 日期:%s): %v", data.MediaAdvName, data.Dt, err)
+			} else {
+				successCount++
+			}
 		}
+		logx.Infof("数据保存完成，成功 %d/%d 条", successCount, len(allReportData))
 	} else {
-		logx.Info("暂无数据需要发送")
+		logx.Info("暂无数据需要保存")
 	}
 
 	logx.Infof("回传饿了么报表数据获取完成")
