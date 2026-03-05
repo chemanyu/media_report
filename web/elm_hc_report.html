@@ -35,6 +35,7 @@
                 style="width: 140px; margin-left: 10px;">
             </el-date-picker>
             <el-button type="success" @click="triggerDailyReport" icon="Position" style="margin-left: 10px;">手动回传日报</el-button>
+            <el-button type="warning" @click="showDownloadDialog" icon="Download" style="margin-left: 10px;">下载报表</el-button>
             <el-button @click="loadList" icon="Refresh">刷新</el-button>
         </div>
 
@@ -175,6 +176,31 @@
                 <el-button type="primary" @click="submitMedia">确定</el-button>
             </template>
         </el-dialog>
+
+        <!-- 下载报表对话框 -->
+        <el-dialog v-model="downloadDialogVisible" title="下载报表数据" width="480px">
+            <el-form :model="downloadForm" label-width="100px">
+                <el-form-item label="日期范围">
+                    <el-date-picker
+                        v-model="downloadDateRange"
+                        type="daterange"
+                        range-separator="至"
+                        start-placeholder="开始日期"
+                        end-placeholder="结束日期"
+                        value-format="YYYYMMDD"
+                        style="width: 100%;" />
+                </el-form-item>
+                <el-form-item label="客户简称">
+                    <el-select v-model="downloadForm.customer_short" placeholder="全部客户" clearable style="width: 100%;">
+                        <el-option v-for="item in list" :key="item.id" :label="item.customer_short" :value="item.customer_short" />
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="downloadDialogVisible = false">取消</el-button>
+                <el-button type="warning" icon="Download" @click="downloadReport">下载 Excel</el-button>
+            </template>
+        </el-dialog>
     </div>
 
     <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
@@ -204,6 +230,9 @@
                 const mediaDialogMode = ref('create');
                 const currentPerformanceId = ref(null);
                 const mediaForm = ref({ id: null, media_adv_id: '', media_adv_name: '', huichuan_adv_id: '', redirect_num: 0, pay_num: 0 });
+                const downloadDialogVisible = ref(false);
+                const downloadDateRange = ref(null);
+                const downloadForm = ref({ customer_short: '' });
 
                 const loadList = async () => {
                     try {
@@ -328,6 +357,29 @@
                     }
                 };
 
+                const showDownloadDialog = () => {
+                    downloadDialogVisible.value = true;
+                };
+
+                const downloadReport = () => {
+                    const params = new URLSearchParams();
+                    if (downloadDateRange.value && downloadDateRange.value.length === 2) {
+                        params.append('start_date', downloadDateRange.value[0]);
+                        params.append('end_date', downloadDateRange.value[1]);
+                    }
+                    if (downloadForm.value.customer_short) {
+                        params.append('customer_short', downloadForm.value.customer_short);
+                    }
+                    const url = `${API_BASE_URL}/report/elm/download?${params.toString()}`;
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    downloadDialogVisible.value = false;
+                };
+
                 const triggerDailyReport = async () => {
                     try {
                         const dateText = reportDate.value ? `（${reportDate.value}）` : '（昨日）';
@@ -366,7 +418,7 @@
                     loadList();
                 });
 
-                return { list, mediaList, reportDate, reportDialogVisible, reportDialogMode, reportForm, mediaDialogVisible, mediaDialogMode, mediaForm, currentPerformanceId, loadList, getMediaAccounts, showReportDialog, submitReport, deleteReport, showMediaDialog, submitMedia, deleteMedia, triggerDailyReport };
+                return { list, mediaList, reportDate, reportDialogVisible, reportDialogMode, reportForm, mediaDialogVisible, mediaDialogMode, mediaForm, currentPerformanceId, loadList, getMediaAccounts, showReportDialog, submitReport, deleteReport, showMediaDialog, submitMedia, deleteMedia, triggerDailyReport, downloadDialogVisible, downloadDateRange, downloadForm, showDownloadDialog, downloadReport };
             }
         }).use(ElementPlus).mount('#app');
     </script>

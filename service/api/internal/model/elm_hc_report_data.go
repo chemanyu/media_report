@@ -39,6 +39,32 @@ func (ElmHcReportData) TableName() string {
 	return "elm_hc_report_data"
 }
 
+// QueryElmHcReportDataParams 查询参数
+type QueryElmHcReportDataParams struct {
+	StartDate     string // 开始日期，格式：yyyyMMdd
+	EndDate       string // 结束日期，格式：yyyyMMdd
+	CustomerShort string // 客户简称，可选
+}
+
+// QueryElmHcReportData 查询饿了么汇川报表数据
+func QueryElmHcReportData(db *gorm.DB, params QueryElmHcReportDataParams) ([]ElmHcReportData, error) {
+	var records []ElmHcReportData
+	query := db.Model(&ElmHcReportData{})
+
+	if params.StartDate != "" {
+		query = query.Where("dt >= ?", params.StartDate)
+	}
+	if params.EndDate != "" {
+		query = query.Where("dt <= ?", params.EndDate)
+	}
+	if params.CustomerShort != "" {
+		query = query.Where("customer_short = ?", params.CustomerShort)
+	}
+
+	err := query.Order("dt DESC, customer_short ASC, media_adv_id ASC").Find(&records).Error
+	return records, err
+}
+
 // InsertOrUpdateElmHcReportData 插入或更新饿了么汇川报表数据（Upsert）
 func InsertOrUpdateElmHcReportData(db *gorm.DB, record *ElmHcReportData) error {
 	err := db.Clauses(clause.OnConflict{

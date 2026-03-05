@@ -5,6 +5,13 @@ package types
 
 // =============== 汇川饿了么数据报表 ===============
 
+// ElmHcReportDownloadReq 下载饿了么汇川报表数据请求
+type ElmHcReportDownloadReq struct {
+	StartDate     string `form:"start_date,optional"`     // 开始日期，格式：yyyyMMdd
+	EndDate       string `form:"end_date,optional"`       // 结束日期，格式：yyyyMMdd
+	CustomerShort string `form:"customer_short,optional"` // 客户简称，可选
+}
+
 // 创建汇川饿了么数据报表请求
 type CreateElmHcReportReq struct {
 	CustomerName      string `json:"customer_name" binding:"required"`       // 客户名称

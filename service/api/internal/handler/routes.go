@@ -300,6 +300,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/report/jingcheng/cookie",
 				Handler: report.GetJingchengCookieHandler(serverCtx),
 			},
+			{
+				// 下载饿了么汇川报表数据（Excel）
+				Method:  http.MethodGet,
+				Path:    "/report/elm/download",
+				Handler: report.DownloadElmHcReportDataHandler(serverCtx),
+			},
 		},
 	)
 
