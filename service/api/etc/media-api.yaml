@@ -77,7 +77,7 @@ DingTalk:
   JDReportWebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=1591f64c542a7c4142a6656e3fcd9a68373a4a64fdd4dbb6f256ddb428a0d34f"
   FzWebhookHourURL: "https://oapi.dingtalk.com/robot/send?access_token=2b27e38ebaeacec39dce406a7ca13d44d1fd1d7d0aace2d4cb6c7dae0c613ba5"
   FzWebhookDayURL: "https://oapi.dingtalk.com/robot/send?access_token=7dd7567864d39ce6e169ce0c40caa42194d7b77b546ecd6c325f91151699d172"
-  QczjWebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=3c4f056577d7acf19eee2481fcc6933e7c1f77d938be6d5cfdd0dd08e2d887da"    # QCZJ 分时监控钉钉 webhook 地址（请填写实际 token）
+  QczjWebhookURL: "https://oapi.dingtalk.com/robot/send?access_token=48f1fcefa33fe709759092db885395726af12054f2178f6fdad03ecb3c13315a"    # QCZJ 分时监控钉钉 webhook 地址（请填写实际 token）
   Enabled: true  # 是否启用钉钉通知
 
 # 文件服务器配置
