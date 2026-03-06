@@ -39,8 +39,8 @@ func generateSign(mediaId, token, originalUrl string) string {
 func TestGenerateSign(t *testing.T) {
 	// TODO: 替换为实际的 mediaId、token、originalUrl
 	mediaId := "100339"
-	token := "1f8Ti4HvIFPQVxBrJHLqgLAiJt1kAn5h"
-	originalUrl := "http://adn.atd.com/index.php?r=openapi/ocpx/advertiser-control&action=start&advertiserId=adntest&specialType=adntest"
+	token := "4vHy1s6JTs9bYuqD1fHroJJGzaChTOqY"
+	originalUrl := "http://adn.atd.com/index.php?r=openapi/ocpx/advertiser-control&action=start&advertiserId=100382&specialType=467"
 
 	fmt.Printf("\n========== 生成加密 Sign ==========\n")
 	fmt.Printf("mediaId:     %s\n", mediaId)
