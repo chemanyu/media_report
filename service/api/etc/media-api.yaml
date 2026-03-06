@@ -82,7 +82,7 @@ DingTalk:
 
 # 文件服务器配置
 FileServer:
-  BaseURL: "https://rta.zhltech.net/guangyixinmedia/zfb"  # 文件服务器基础URL
+  BaseURL: "https://rta.zhltech.net/zfb"  # 文件服务器基础URL
   Path: "./download_files"                 # 文件存储路径
 
 # 淘宝联盟（Tanx）配置
