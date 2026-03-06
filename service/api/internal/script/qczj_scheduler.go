@@ -62,7 +62,7 @@ func ExecuteQczjReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileServe
 		lastData = d
 	}
 
-	sendQczjDingTalkNotification(ctx, dingTalk, now, lastHour, lastData, downloadURL)
+	sendQczjDingTalkNotification(ctx, dingTalk, now, lastHour, lastData, downloadURL, cfg)
 	logx.Infof("QCZJ 分时监控任务执行完成 - %s", time.Now().Format("2006-01-02 15:04:05"))
 }
 
@@ -272,7 +272,7 @@ func generateQczjExcel(date string, todayData map[string]*model.QczjReportData, 
 
 // sendQczjDingTalkNotification 发送 QCZJ 分时监控钉钉通知
 func sendQczjDingTalkNotification(ctx context.Context, dingTalk config.DingTalkConfig,
-	now time.Time, lastHour string, data *model.QczjReportData, downloadURL string) {
+	now time.Time, lastHour string, data *model.QczjReportData, downloadURL string, cfg *model.QczjConfig) {
 
 	if !dingTalk.Enabled || dingTalk.QczjWebhookURL == "" {
 		logx.Info("QCZJ 钉钉通知未启用，跳过发送")
@@ -285,7 +285,7 @@ func sendQczjDingTalkNotification(ctx context.Context, dingTalk config.DingTalkC
 	if data != nil {
 		view = data.View
 		click = data.Click
-		action = data.Action
+		action = int64(math.Round(float64(data.Action) * cfg.Ratio))
 	}
 
 	markdownText := fmt.Sprintf(
