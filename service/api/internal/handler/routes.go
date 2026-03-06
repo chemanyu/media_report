@@ -356,7 +356,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			{
 				// 下载报表文件
 				Method:  http.MethodGet,
-				Path:    "zfb/download/:filename",
+				Path:    "/zfb/download/:filename",
 				Handler: download.DownloadReportHandler(serverCtx),
 			},
 		},
