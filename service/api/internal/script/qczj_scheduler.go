@@ -153,9 +153,8 @@ func generateQczjExcel(date string, todayData map[string]*model.QczjReportData, 
 
 	f.SetCellStyle(sheetName, fmt.Sprintf("A%d", startRow), fmt.Sprintf("A%d", endRow), centerMiddleStyle)
 	f.SetCellStyle(sheetName, fmt.Sprintf("B%d", startRow), fmt.Sprintf("B%d", endRow), centerMiddleStyle)
-	f.SetCellStyle(sheetName, fmt.Sprintf("J%d", startRow), fmt.Sprintf("K%d", endRow), centerMiddleStyle)
 
-	// 今日预估总UV - 红色加粗居中
+	// 今日预估总UV - 红色加粗居中（先设置，整体边框后会被覆盖，最终在边框区域下方重新应用）
 	uvStyle, err := f.NewStyle(&excelize.Style{
 		Font:      &excelize.Font{Bold: true, Color: "FF0000"},
 		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center"},
@@ -207,6 +206,37 @@ func generateQczjExcel(date string, todayData map[string]*model.QczjReportData, 
 		return "", fmt.Errorf("创建边框样式失败: %w", err)
 	}
 	f.SetCellStyle(sheetName, fmt.Sprintf("A%d", startRow), fmt.Sprintf("K%d", endRow), borderStyle)
+
+	// 今日预估总UV - 红色加粗居中（含边框，覆盖整体边框后重新应用）
+	uvStyleWithBorder, err := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Color: "FF0000"},
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("创建UV样式失败: %w", err)
+	}
+	f.SetCellStyle(sheetName, fmt.Sprintf("H%d", startRow), fmt.Sprintf("H%d", startRow), uvStyleWithBorder)
+
+	// 投放资源及占比 - 居中（含边框）
+	centerBorderStyle, err := f.NewStyle(&excelize.Style{
+		Alignment: &excelize.Alignment{Horizontal: "center", Vertical: "center", WrapText: true},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+		},
+	})
+	if err != nil {
+		return "", fmt.Errorf("创建居中边框样式失败: %w", err)
+	}
+	f.SetCellStyle(sheetName, fmt.Sprintf("J%d", startRow), fmt.Sprintf("J%d", startRow), centerBorderStyle)
 
 	// ---------- 环比行 ----------
 	compRow := endRow + 1
