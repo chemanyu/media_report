@@ -272,17 +272,17 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 	}
 
 	// 发送数据到ADX接口（暂时注释，改为保存到数据库）
-	// if len(allReportData) > 0 {
-	// 	logx.Infof("准备发送 %d 条数据到ADX接口", len(allReportData))
-	// 	err := sendDataToADX(adxConfig, allReportData)
-	// 	if err != nil {
-	// 		logx.Errorf("发送数据到ADX失败: %v", err)
-	// 	} else {
-	// 		logx.Infof("数据发送成功")
-	// 	}
-	// } else {
-	// 	logx.Info("暂无数据需要发送")
-	// }
+	if len(allReportData) > 0 {
+		logx.Infof("准备发送 %d 条数据到ADX接口", len(allReportData))
+		err := sendDataToADX(adxConfig, allReportData)
+		if err != nil {
+			logx.Errorf("发送数据到ADX失败: %v", err)
+		} else {
+			logx.Infof("数据发送成功")
+		}
+	} else {
+		logx.Info("暂无数据需要发送")
+	}
 
 	// 保存数据到数据库
 	if len(allReportData) > 0 {
