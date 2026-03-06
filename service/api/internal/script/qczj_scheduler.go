@@ -289,7 +289,7 @@ func sendQczjDingTalkNotification(ctx context.Context, dingTalk config.DingTalkC
 	}
 
 	markdownText := fmt.Sprintf(
-		"#### 美术-分时监控时报  \n---\n"+
+		"#### 美数-分时监控时报  \n---\n"+
 			"**时间**：%s  \n"+
 			"**曝光(view)**：%d  \n"+
 			"**点击(click)**：%d  \n"+
