@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汽车之家 - 数据报表</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        #app { max-width: 1200px; margin: 0 auto; }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 28px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-top: 14px;
+        }
+        .stat-item { text-align: center; }
+        .stat-label { font-size: 12px; opacity: 0.85; margin-bottom: 6px; }
+        .stat-value { font-size: 28px; font-weight: 700; }
+        .action-bar {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <!-- 汇总卡片 -->
+        <div class="stats-card" v-if="list.length > 0">
+            <div style="font-size: 16px; font-weight: 600;">📊 数据汇总（当前筛选）</div>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-label">总曝光（View）</div>
+                    <div class="stat-value">{{ formatNum(totalView) }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">总点击（Click）</div>
+                    <div class="stat-value">{{ formatNum(totalClick) }}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">总转化（Action）</div>
+                    <div class="stat-value">{{ formatNum(totalAction) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 查询栏 -->
+        <div class="action-bar">
+            <el-form :inline="true" @submit.prevent>
+                <el-form-item label="日期范围">
+                    <el-date-picker
+                        v-model="dateRange"
+                        type="daterange"
+                        range-separator="至"
+                        start-placeholder="开始日期"
+                        end-placeholder="结束日期"
+                        value-format="YYYYMMDD"
+                        style="width: 260px;">
+                    </el-date-picker>
+                </el-form-item>
+                <el-form-item>
+                    <el-button type="primary" @click="applyFilter" icon="Search">查询</el-button>
+                    <el-button @click="resetFilter" icon="Refresh">重置</el-button>
+                    <el-button @click="loadList" icon="Download">刷新</el-button>
+                    <el-button type="warning" @click="triggerReport" icon="VideoPlay" style="margin-left: 10px;">手动生成报表</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+
+        <!-- 数据表格 -->
+        <el-table
+            :data="pagedList"
+            border
+            stripe
+            v-loading="loading"
+            style="width: 100%"
+            :summary-method="getSummaries"
+            show-summary>
+            <el-table-column prop="id" label="ID" width="70"></el-table-column>
+            <el-table-column prop="report_date" label="日期" width="120">
+                <template #default="scope">{{ formatDate(scope.row.report_date) }}</template>
+            </el-table-column>
+            <el-table-column prop="view" label="曝光（View）" align="right" min-width="130">
+                <template #default="scope">
+                    <span style="color:#409EFF; font-weight:600;">{{ formatNum(scope.row.view) }}</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="click" label="点击（Click）" align="right" min-width="130">
+                <template #default="scope">
+                    <span style="color:#67C23A; font-weight:600;">{{ formatNum(scope.row.click) }}</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="action" label="转化（Action）" align="right" min-width="130">
+                <template #default="scope">
+                    <span style="color:#E6A23C; font-weight:600;">{{ formatNum(scope.row.action) }}</span>
+                </template>
+            </el-table-column>
+            <el-table-column prop="update_time" label="更新时间" width="170"></el-table-column>
+        </el-table>
+
+        <!-- 分页 -->
+        <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50]"
+            :total="filteredList.length"
+            layout="total, sizes, prev, pager, next"
+            style="margin-top: 16px; justify-content: flex-end;">
+        </el-pagination>
+
+        <el-empty v-if="!loading && list.length === 0" description="暂无数据"></el-empty>
+    </div>
+
+    <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+        const { ElMessage, ElMessageBox } = ElementPlus;
+
+        const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+        const API_BASE_URL = isProduction ? '/guangyixinmedia' : '';
+
+        createApp({
+            setup() {
+                const loading = ref(false);
+                const list = ref([]);
+                const dateRange = ref(null);
+                const currentPage = ref(1);
+                const pageSize = ref(20);
+
+                // 前端筛选
+                const filteredList = computed(() => {
+                    if (!dateRange.value || dateRange.value.length !== 2) return list.value;
+                    const [start, end] = dateRange.value.map(Number);
+                    return list.value.filter(r => r.report_date >= start && r.report_date <= end);
+                });
+
+                const pagedList = computed(() => {
+                    const s = (currentPage.value - 1) * pageSize.value;
+                    return filteredList.value.slice(s, s + pageSize.value);
+                });
+
+                const totalView   = computed(() => filteredList.value.reduce((s, r) => s + (r.view   || 0), 0));
+                const totalClick  = computed(() => filteredList.value.reduce((s, r) => s + (r.click  || 0), 0));
+                const totalAction = computed(() => filteredList.value.reduce((s, r) => s + (r.action || 0), 0));
+
+                const loadList = async () => {
+                    loading.value = true;
+                    try {
+                        const res = await axios.get(`${API_BASE_URL}/api/qczj/report/list`);
+                        list.value = res.data?.list || [];
+                    } catch (e) {
+                        ElMessage.error('加载失败: ' + e.message);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const applyFilter = () => { currentPage.value = 1; };
+                const resetFilter = () => { dateRange.value = null; currentPage.value = 1; loadList(); };
+
+                const triggerReport = async () => {
+                    try {
+                        await ElMessageBox.confirm(
+                            '确定要手动触发 QCZJ 分时监控报表任务吗？将立即生成当前时段 Excel 并发送钉钉通知。',
+                            '确认操作',
+                            { type: 'warning', confirmButtonText: '确定触发', cancelButtonText: '取消' }
+                        );
+                        const res = await axios.post(`${API_BASE_URL}/api/qczj/trigger_report`);
+                        if (res.data.code === 0) {
+                            ElMessage.success(res.data.message || '报表任务已触发，正在后台执行');
+                        } else {
+                            ElMessage.error(res.data.message || '触发失败');
+                        }
+                    } catch (e) {
+                        if (e !== 'cancel') ElMessage.error('网络错误：' + e.message);
+                    }
+                };
+
+                const formatNum = (n) => Number(n || 0).toLocaleString('zh-CN');
+                const formatDate = (d) => {
+                    const s = String(d);
+                    return s.length === 8 ? `${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}` : s;
+                };
+
+                const getSummaries = ({ columns, data }) => {
+                    return columns.map((col, i) => {
+                        if (i === 0) return '合计';
+                        if (['view', 'click', 'action'].includes(col.property)) {
+                            const sum = data.reduce((s, r) => s + (Number(r[col.property]) || 0), 0);
+                            return formatNum(sum);
+                        }
+                        return '';
+                    });
+                };
+
+                onMounted(loadList);
+
+                return {
+                    loading, list, dateRange, currentPage, pageSize,
+                    filteredList, pagedList, totalView, totalClick, totalAction,
+                    loadList, applyFilter, resetFilter, triggerReport, formatNum, formatDate, getSummaries
+                };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

@@ -130,6 +130,17 @@ func Cron(config config.Config, db *gorm.DB) {
 	// 	logx.Infof("飞猪日报数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.FzDayCron)
 	// }
 
+	// QCZJ 分时监控（09-23 时每小时触发）
+	if config.Schedule.QczjHourCron != "" {
+		_, err := cronScheduler.AddFunc(config.Schedule.QczjHourCron, func() {
+			ExecuteQczjReportJob(db, config.DingTalk, config.FileServer)
+		})
+		if err != nil {
+			log.Fatalf("添加 QCZJ 分时监控定时任务失败: %v", err)
+		}
+		logx.Infof("QCZJ 分时监控定时任务已启动，Cron 表达式: %s", config.Schedule.QczjHourCron)
+	}
+
 	cronScheduler.Start()
 
 	// 立即刷新一次 token（可选）

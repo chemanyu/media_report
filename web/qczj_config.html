@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>汽车之家 - 比例配置</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        #app {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .config-card {
+            background: white;
+            border-radius: 8px;
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .config-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 28px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #e4e7ed;
+        }
+        .config-header-icon {
+            font-size: 28px;
+        }
+        .config-header-text h2 {
+            margin: 0 0 4px;
+            font-size: 20px;
+            color: #303133;
+        }
+        .config-header-text p {
+            margin: 0;
+            font-size: 13px;
+            color: #909399;
+        }
+        .field-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .field-label {
+            width: 120px;
+            font-size: 14px;
+            color: #606266;
+            font-weight: 500;
+        }
+        .field-value {
+            font-size: 22px;
+            font-weight: 700;
+            color: #303133;
+            margin-right: 20px;
+            min-width: 120px;
+        }
+        .field-desc {
+            font-size: 12px;
+            color: #909399;
+        }
+        .update-time {
+            margin-top: 24px;
+            padding-top: 20px;
+            border-top: 1px solid #f0f2f5;
+            font-size: 12px;
+            color: #C0C4CC;
+        }
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body>
+    <div id="app" v-cloak>
+        <div class="config-card" v-loading="loading">
+            <div class="config-header">
+                <span class="config-header-icon">⚙️</span>
+                <div class="config-header-text">
+                    <h2>ADN 数据比例配置</h2>
+                    <p>配置汽车之家 ADN 数据的 UV 总量和比例参数</p>
+                </div>
+            </div>
+
+            <!-- 当前配置展示 -->
+            <div v-if="config">
+                <div class="field-row">
+                    <span class="field-label">UV 总量</span>
+                    <span class="field-value" style="color: #409EFF;">{{ config.total_uv?.toLocaleString() }}</span>
+                    <span class="field-desc">用于计算分发比例的基准 UV 数</span>
+                </div>
+                <div class="field-row">
+                    <span class="field-label">比例（ratio）</span>
+                    <span class="field-value" style="color: #67C23A;">{{ config.ratio }}</span>
+                    <span class="field-desc">ADN 数据占比系数</span>
+                </div>
+                <div class="update-time">最后更新：{{ config.update_time }}</div>
+            </div>
+
+            <!-- 操作按钮 -->
+            <div style="margin-top: 28px;">
+                <el-button type="primary" @click="openDialog" icon="Edit">修改配置</el-button>
+                <el-button @click="loadConfig" icon="Refresh">刷新</el-button>
+            </div>
+        </div>
+
+        <!-- 修改配置对话框 -->
+        <el-dialog v-model="dialogVisible" title="修改比例配置" width="440px" :close-on-click-modal="false">
+            <el-form :model="form" label-width="110px">
+                <el-form-item label="UV 总量">
+                    <el-input-number
+                        v-model="form.total_uv"
+                        :min="1"
+                        :max="99999999"
+                        :step="1000"
+                        controls-position="right"
+                        style="width: 100%">
+                    </el-input-number>
+                </el-form-item>
+                <el-form-item label="比例（ratio）">
+                    <el-input-number
+                        v-model="form.ratio"
+                        :min="0"
+                        :max="1"
+                        :step="0.01"
+                        :precision="4"
+                        controls-position="right"
+                        style="width: 100%">
+                    </el-input-number>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <el-button @click="dialogVisible = false">取消</el-button>
+                <el-button type="primary" @click="submit" :loading="submitting">保存</el-button>
+            </template>
+        </el-dialog>
+    </div>
+
+    <script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+    <script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+    <script>
+        const { createApp, ref, onMounted } = Vue;
+        const { ElMessage } = ElementPlus;
+
+        const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+        const API_BASE_URL = isProduction ? '/guangyixinmedia' : '';
+
+        createApp({
+            setup() {
+                const loading = ref(false);
+                const submitting = ref(false);
+                const dialogVisible = ref(false);
+                const config = ref(null);
+                const form = ref({ total_uv: 110000, ratio: 0.4 });
+
+                const loadConfig = async () => {
+                    loading.value = true;
+                    try {
+                        const res = await axios.get(`${API_BASE_URL}/api/qczj/config`);
+                        config.value = res.data;
+                    } catch (e) {
+                        ElMessage.error('加载配置失败: ' + e.message);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const openDialog = () => {
+                    form.value = {
+                        total_uv: config.value?.total_uv ?? 110000,
+                        ratio: config.value?.ratio ?? 0.4
+                    };
+                    dialogVisible.value = true;
+                };
+
+                const submit = async () => {
+                    submitting.value = true;
+                    try {
+                        const res = await axios.post(`${API_BASE_URL}/api/qczj/config/update`, form.value);
+                        if (res.data.success) {
+                            ElMessage.success('配置更新成功');
+                            dialogVisible.value = false;
+                            loadConfig();
+                        } else {
+                            ElMessage.error(res.data.message || '更新失败');
+                        }
+                    } catch (e) {
+                        ElMessage.error('请求失败: ' + e.message);
+                    } finally {
+                        submitting.value = false;
+                    }
+                };
+
+                onMounted(loadConfig);
+
+                return { loading, submitting, dialogVisible, config, form, loadConfig, openDialog, submit };
+            }
+        }).use(ElementPlus).mount('#app');
+    </script>
+</body>
+</html>

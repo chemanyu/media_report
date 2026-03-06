@@ -74,6 +74,7 @@ type ScheduleConfig struct {
 	FzHourCron            string // 飞猪时报更新外投媒体的数据
 	FzDayReportCron       string
 	FzDayCron             string
+	QczjHourCron          string // QCZJ 分时监控 cron 表达式（每小时触发）
 }
 
 type DingTalkConfig struct {
@@ -81,7 +82,8 @@ type DingTalkConfig struct {
 	JDReportWebhookURL string // 京东广义巨量数据 webhook 地址
 	FzWebhookHourURL   string // 飞猪外投数据 webhook 地址
 	FzWebhookDayURL    string
-	Enabled            bool // 是否启用钉钉通知
+	QczjWebhookURL     string // QCZJ 分时监控钉钉 webhook 地址
+	Enabled            bool   // 是否启用钉钉通知
 }
 
 type FileServerConfig struct {

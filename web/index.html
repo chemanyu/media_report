@@ -273,6 +273,23 @@
                     </div>
                 </div>
 
+                <!-- 汽车之家 -->
+                <div>
+                    <div class="menu-item" :class="{active: currentMenu === 'qczj'}" @click="toggleMenu('qczj')">
+                        <span class="menu-item-icon">🚗</span>
+                        <span class="menu-item-text">汽车之家</span>
+                        <span class="menu-item-arrow" :class="{expanded: expandedMenus.includes('qczj')}">▶</span>
+                    </div>
+                    <div class="submenu" :class="{expanded: expandedMenus.includes('qczj')}">
+                        <div class="submenu-item" :class="{active: currentPage === 'qczj_config'}" @click="navigateTo('qczj_config', '比例配置')">
+                            比例配置
+                        </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'qczj_report'}" @click="navigateTo('qczj_report', '数据报表')">
+                            数据报表
+                        </div>
+                    </div>
+                </div>
+
                 <!-- 转链 -->
                 <div>
                     <div class="menu-item" :class="{active: currentMenu === 'ulink'}" @click="toggleMenu('ulink')">
@@ -395,6 +412,14 @@
                         'fz_hourly_report': {
                             url: `${pathPrefix}/web/fz_hourly_report.html`,
                             subtitle: '查看飞猪媒体小时报数据'
+                        },
+                        'qczj_config': {
+                            url: `${pathPrefix}/web/qczj_config.html`,
+                            subtitle: '管理汽车之家 ADN 数据比例配置'
+                        },
+                        'qczj_report': {
+                            url: `${pathPrefix}/web/qczj_report.html`,
+                            subtitle: '查看汽车之家 ADN 数据报表'
                         },
                         'ulink_taobao': {
                             url: `${pathPrefix}/web/ulink_taobao.html`,

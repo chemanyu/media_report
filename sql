@@ -146,3 +146,33 @@ CREATE TABLE `cainiao_cardinality` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='菜鸟基数配置表';
 
 INSERT INTO `release_atd`.`cainiao_cardinality` (`id`, `cardinality`, `update_time`, `create_time`) VALUES (1, 1.0, '2026-02-09 15:28:50', '2026-02-09 15:17:24');
+
+
+
+CREATE TABLE `qczj_config` (
+  `id`          INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `total_uv`    BIGINT       NOT NULL DEFAULT 110000,
+  `ratio`       DECIMAL(5,4) NOT NULL DEFAULT 0.4000,
+  `update_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `create_time` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 插入初始配置行
+INSERT INTO `qczj_config` (`total_uv`, `ratio`) VALUES (110000, 0.4);
+
+
+CREATE TABLE `qczj_report_data` (
+  `id`          BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `report_date` INT             NOT NULL,
+  `view`        BIGINT          NOT NULL DEFAULT 0,
+  `click`       BIGINT          NOT NULL DEFAULT 0,
+  `action`      BIGINT          NOT NULL DEFAULT 0,
+  `create_time` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` DATETIME        NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uk_report_date` (`report_date`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+

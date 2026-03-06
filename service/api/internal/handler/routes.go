@@ -11,6 +11,7 @@ import (
 	config "media_report/service/api/internal/handler/config"
 	download "media_report/service/api/internal/handler/download"
 	fz "media_report/service/api/internal/handler/fz"
+	qczj "media_report/service/api/internal/handler/qczj"
 	report "media_report/service/api/internal/handler/report"
 	tanx "media_report/service/api/internal/handler/tanx"
 	ulink "media_report/service/api/internal/handler/ulink"
@@ -412,6 +413,41 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/api/fz/sync_adn_data",
 				Handler: fz.FzSyncAdnDataHandler(serverCtx),
+			},
+		},
+	)
+
+	// =============== QCZJ 同步 ADN 数据接口 ===============
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/qczj/sync_adn_data",
+				Handler: qczj.SyncAdnDataHandler(serverCtx),
+			},
+			{
+				// 查询 qczj_config 配置
+				Method:  http.MethodGet,
+				Path:    "/api/qczj/config",
+				Handler: qczj.QczjGetConfigHandler(serverCtx),
+			},
+			{
+				// 修改 qczj_config 配置
+				Method:  http.MethodPost,
+				Path:    "/api/qczj/config/update",
+				Handler: qczj.QczjUpdateConfigHandler(serverCtx),
+			},
+			{
+				// 查询 qczj_report_data 报表数据
+				Method:  http.MethodGet,
+				Path:    "/api/qczj/report/list",
+				Handler: qczj.QczjReportListHandler(serverCtx),
+			},
+			{
+				// 手动触发 QCZJ 分时监控报表任务
+				Method:  http.MethodPost,
+				Path:    "/api/qczj/trigger_report",
+				Handler: qczj.TriggerQczjReportHandler(serverCtx),
 			},
 		},
 	)
