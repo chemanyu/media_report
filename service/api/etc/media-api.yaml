@@ -158,5 +158,5 @@ Ulink:
   PythonPath: "python"
   ScriptDir: "../../scripts/ulink"
   #ChromeDriverPath: "/usr/local/bin/chromedriver"
-  ChromeDriverPath: "D:\\144\\chromedriver-win64\\chromedriver.exe"
+  ChromeDriverPath: "D:\\146\\chromedriver-win64\\chromedriver.exe"
   TempDir: "./uploads"
