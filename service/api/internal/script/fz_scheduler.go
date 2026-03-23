@@ -280,16 +280,16 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 
 	// 计算成本（数据库中是分，需要除以100）
 	// 实际消耗（元）
-	regularCostYuan := regularCost / 100
+	//regularCostYuan := regularCost / 100
 	// 现金消耗 = 实际消耗 * 1.2 * 0.85
-	regularCashCost := regularCostYuan * 1.2 * 0.85
-	regularConvertDpPrice := 0.0
+	//regularCashCost := regularCostYuan * 1.2 * 0.85
+	//regularConvertDpPrice := 0.0
 	if regularConvertDp > 0 {
-		regularConvertDpPrice = regularCashCost / regularConvertDp
+		//regularConvertDpPrice = regularCashCost / regularConvertDp
 	}
-	regularDpOrderPrice := 0.0
+	//regularDpOrderPrice := 0.0
 	if regularDpAppOrderNums > 0 {
-		regularDpOrderPrice = regularCashCost / regularDpAppOrderNums
+		//regularDpOrderPrice = regularCashCost / regularDpAppOrderNums
 	}
 
 	// 实际消耗（元）
@@ -341,23 +341,23 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 	}
 
 	// 常规活动数据
-	if regularCount > 0 {
-		markdownText += fmt.Sprintf(
-			"**常规活动-海纳【飞猪常规活动 %s日报】**  \n"+
-				"**唤起量**：%d  \n"+
-				"**现金消耗**：%.2f（日预算 5000）  \n"+
-				"**唤起成本**：%.2f（考核 0.5）  \n"+
-				"**下单 pv 成本**：%.2f（考核 35）  \n\n",
-			displayDate,
-			int64(regularConvertDp),
-			regularCashCost,
-			regularConvertDpPrice,
-			regularDpOrderPrice,
-		)
-		if energyCount > 0 {
-			markdownText += "---\n"
-		}
-	}
+	// if regularCount > 0 {
+	// 	markdownText += fmt.Sprintf(
+	// 		"**常规活动-海纳【飞猪常规活动 %s日报】**  \n"+
+	// 			"**唤起量**：%d  \n"+
+	// 			"**现金消耗**：%.2f（日预算 5000）  \n"+
+	// 			"**唤起成本**：%.2f（考核 0.5）  \n"+
+	// 			"**下单 pv 成本**：%.2f（考核 35）  \n\n",
+	// 		displayDate,
+	// 		int64(regularConvertDp),
+	// 		regularCashCost,
+	// 		regularConvertDpPrice,
+	// 		regularDpOrderPrice,
+	// 	)
+	// 	if energyCount > 0 {
+	// 		markdownText += "---\n"
+	// 	}
+	// }
 
 	// 集能量活动数据
 	if energyCount > 0 {
