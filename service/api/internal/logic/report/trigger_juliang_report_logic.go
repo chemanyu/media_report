@@ -24,10 +24,10 @@ func NewTriggerJuliangReportLogic(ctx context.Context, svcCtx *svc.ServiceContex
 	}
 }
 
-func (l *TriggerJuliangReportLogic) TriggerJuliangReport() (resp *types.TriggerJuliangReportResp, err error) {
-	// 调用巨量报表任务
-	script.ExecuteJuliangReportJob(l.svcCtx.DB, l.svcCtx.Config.DingTalk, l.svcCtx.Config.FileServer, false)
-	script.ExecuteJuliangReportJob(l.svcCtx.DB, l.svcCtx.Config.DingTalk, l.svcCtx.Config.FileServer, true)
+func (l *TriggerJuliangReportLogic) TriggerJuliangReport(reportType string) (resp *types.TriggerJuliangReportResp, err error) {
+	// 调用巨量报表任务，type=daily 触发日报，否则触发时报
+	isDaily := reportType == "daily"
+	script.ExecuteJuliangReportJob(l.svcCtx.DB, l.svcCtx.Config.DingTalk, l.svcCtx.Config.FileServer, isDaily)
 
 	return &types.TriggerJuliangReportResp{
 		Code:    0,

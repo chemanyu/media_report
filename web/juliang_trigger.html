@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>巨量报表 - 手动触发</title>
+    <link rel="stylesheet" href="https://unpkg.com/element-plus@2.4.4/dist/index.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f2f5;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        #app { max-width: 600px; margin: 0 auto; }
+        .card {
+            background: #fff;
+            border-radius: 8px;
+            padding: 32px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .card-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #303133;
+            margin-bottom: 8px;
+        }
+        .card-desc {
+            font-size: 13px;
+            color: #909399;
+            margin-bottom: 28px;
+            line-height: 1.6;
+        }
+        .btn-row {
+            display: flex;
+            gap: 16px;
+        }
+        .result-box {
+            margin-top: 20px;
+            padding: 14px 18px;
+            border-radius: 6px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        .result-box.success { background: #f0f9eb; color: #67c23a; border: 1px solid #c2e7b0; }
+        .result-box.error   { background: #fef0f0; color: #f56c6c; border: 1px solid #fbc4c4; }
+    </style>
+</head>
+<body>
+<div id="app">
+    <div class="card">
+        <div class="card-title">手动触发巨量报表</div>
+        <div class="card-desc">
+            点击下方按钮手动触发巨量报表任务。<br>
+            · <b>时报</b>：拉取今日数据，计算基准为消耗（stat_cost）<br>
+            · <b>日报</b>：拉取昨日数据，计算基准为现金消耗（stat_cash_cost）<br>
+            触发后任务在后台异步执行，完成后将通过钉钉推送结果。
+        </div>
+        <div class="btn-row">
+            <el-button type="primary" :loading="loadingHourly" @click="trigger('hourly')">
+                触发时报
+            </el-button>
+            <el-button type="warning" :loading="loadingDaily" @click="trigger('daily')">
+                触发日报
+            </el-button>
+        </div>
+        <div v-if="result" class="result-box" :class="result.ok ? 'success' : 'error'">
+            {{ result.msg }}
+        </div>
+    </div>
+</div>
+
+<script src="https://unpkg.com/vue@3.3.8/dist/vue.global.js"></script>
+<script src="https://unpkg.com/element-plus@2.4.4/dist/index.full.js"></script>
+<script src="https://unpkg.com/axios@1.6.2/dist/axios.min.js"></script>
+<script>
+    const { createApp, ref } = Vue;
+    const { ElMessage } = ElementPlus;
+
+    createApp({
+        setup() {
+            const loadingHourly = ref(false);
+            const loadingDaily  = ref(false);
+            const result = ref(null);
+
+            const isProduction = window.location.pathname.includes('/guangyixinmedia/');
+            const API_BASE = isProduction ? '/guangyixinmedia' : '';
+
+            async function trigger(type) {
+                const isDaily = type === 'daily';
+                if (isDaily) loadingDaily.value = true;
+                else         loadingHourly.value = true;
+                result.value = null;
+
+                try {
+                    const resp = await axios.get(`${API_BASE}/report/juliang/trigger`, {
+                        params: { type }
+                    });
+                    const data = resp.data;
+                    if (data.code === 0 || data.code === 200) {
+                        result.value = { ok: true, msg: `触发成功：${data.message || '任务已在后台执行'}` };
+                        ElMessage.success('触发成功');
+                    } else {
+                        result.value = { ok: false, msg: `触发失败：${data.message || '未知错误'}` };
+                        ElMessage.error('触发失败');
+                    }
+                } catch (e) {
+                    result.value = { ok: false, msg: `请求异常：${e.message}` };
+                    ElMessage.error('请求异常');
+                } finally {
+                    if (isDaily) loadingDaily.value = false;
+                    else         loadingHourly.value = false;
+                }
+            }
+
+            return { loadingHourly, loadingDaily, result, trigger };
+        }
+    }).use(ElementPlus).mount('#app');
+</script>
+</body>
+</html>

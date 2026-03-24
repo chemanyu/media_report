@@ -11,8 +11,9 @@ import (
 
 func TriggerJuliangReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		reportType := r.URL.Query().Get("type")
 		l := logic.NewTriggerJuliangReportLogic(r.Context(), svcCtx)
-		resp, err := l.TriggerJuliangReport()
+		resp, err := l.TriggerJuliangReport(reportType)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

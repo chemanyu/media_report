@@ -223,6 +223,9 @@
                         <div class="submenu-item" :class="{active: currentPage === 'tasktype'}" @click="navigateTo('tasktype', '任务类型配置')">
                             任务类型配置
                         </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'juliang_trigger'}" @click="navigateTo('juliang_trigger', '手动触发报表')">
+                            手动触发报表
+                        </div>
                     </div>
                 </div>
 
@@ -392,6 +395,10 @@
                         'tasktype': {
                             url: `${pathPrefix}/web/config_tasktype.html`,
                             subtitle: '管理任务类型配置信息'
+                        },
+                        'juliang_trigger': {
+                            url: `${pathPrefix}/web/juliang_trigger.html`,
+                            subtitle: '手动触发巨量时报或日报任务'
                         },
                         'elm_hc': {
                             url: `${pathPrefix}/web/elm_hc_report.html`,
