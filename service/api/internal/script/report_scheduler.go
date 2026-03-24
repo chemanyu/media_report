@@ -86,7 +86,7 @@ func Cron(config config.Config, db *gorm.DB) {
 		logx.Infof("汇川饿了么日报表定时任务已启动，Cron 表达式: %s", config.Schedule.HuichuanElmDailyCron)
 	}
 
-	// 添加汇川饿了么小时报表任务 & 巨量数据报告
+	// 添加汇川饿了么小时报表任务
 	if config.Schedule.HuichuanElmHourlyCron != "" {
 		_, err := cronScheduler.AddFunc(config.Schedule.HuichuanElmHourlyCron, func() {
 			FetchHuichuanElmReportsByHour(db, config.JuliangDLS, config.ADX)
