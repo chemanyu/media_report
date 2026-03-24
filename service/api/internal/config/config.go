@@ -67,14 +67,15 @@ type MySQLConfig struct {
 type ScheduleConfig struct {
 	ReportCron            string // 报表任务 cron 表达式
 	TokenRefreshCron      string // token 刷新 cron 表达式
-	JuliangReportCron     string // 巨量报表任务 cron 表达式
+	JuliangReportCron     string // 巨量报表时任务 cron 表达式
+	JuliangDayReportCron  string // 巨量报表日报任务 cron 表达式
 	HuichuanElmDailyCron  string // 汇川饿了么日报表任务 cron 表达式
 	HuichuanElmHourlyCron string // 汇川饿了么小时报表任务 cron 表达式
 	TanxCron              string // Tanx 数据抓取任务 cron 表达式
 	FzHourCron            string // 飞猪时报更新外投媒体的数据
 	FzDayReportCron       string
-	FzDayCron             string
-	QczjHourCron          string // QCZJ 分时监控 cron 表达式（每小时触发）
+	//FzDayCron             string
+	QczjHourCron string // QCZJ 分时监控 cron 表达式（每小时触发）
 }
 
 type DingTalkConfig struct {

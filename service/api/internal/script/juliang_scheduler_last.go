@@ -482,11 +482,11 @@ func sendSummaryNotification(ctx context.Context, accountReports []AccountReport
 	}
 
 	// 生成Excel报表并获取下载URL
-	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, fileServer,
+	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, fileServer, false,
 		totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, avgCtr, totalConvertCnt, 0, avgConversionCost, avgConversionRate,
 		totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
 
 	// 发送钉钉通知
-	sendJuliangDingTalkNotification(ctx, dingTalk, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt,
+	sendJuliangDingTalkNotification(ctx, dingTalk, false, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt,
 		totalConvertCnt, avgConversionCost, avgConversionRate, avgCtr, totalAccounts, totalServiceFeeCost, totalRevenue, totalProfit, profitRate, 0, excelDownloadURL)
 }

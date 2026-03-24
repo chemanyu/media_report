@@ -26,7 +26,8 @@ func NewTriggerJuliangReportLogic(ctx context.Context, svcCtx *svc.ServiceContex
 
 func (l *TriggerJuliangReportLogic) TriggerJuliangReport() (resp *types.TriggerJuliangReportResp, err error) {
 	// 调用巨量报表任务
-	script.ExecuteJuliangReportJob(l.svcCtx.DB, l.svcCtx.Config.DingTalk, l.svcCtx.Config.FileServer)
+	script.ExecuteJuliangReportJob(l.svcCtx.DB, l.svcCtx.Config.DingTalk, l.svcCtx.Config.FileServer, false)
+	script.ExecuteJuliangReportJob(l.svcCtx.DB, l.svcCtx.Config.DingTalk, l.svcCtx.Config.FileServer, true)
 
 	return &types.TriggerJuliangReportResp{
 		Code:    0,

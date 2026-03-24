@@ -45,12 +45,12 @@ type AccountReportData struct {
 }
 
 // ExecuteJuliangReportJob 执行巨量报表任务 (导出供外部调用)
-func ExecuteJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileServer config.FileServerConfig) {
-	executeJuliangReportJob(db, dingTalk, fileServer)
+func ExecuteJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileServer config.FileServerConfig, isDaily bool) {
+	executeJuliangReportJob(db, dingTalk, fileServer, isDaily)
 }
 
 // executeJuliangReportJob 执行巨量报表任务
-func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileServer config.FileServerConfig) {
+func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileServer config.FileServerConfig, isDaily bool) {
 	ctx := context.Background()
 	logx.Infof("开始执行巨量报表任务 - %s", time.Now().Format("2006-01-02 15:04:05"))
 
@@ -72,10 +72,16 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 		return
 	}
 
-	// 计算时间范围（今天的开始和结束时间戳）
+	// 计算时间范围（时报取今天，日报取昨天）
 	now := time.Now()
-	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-	endOfDay := time.Date(now.Year(), now.Month(), now.Day(), 23, 59, 59, 999999999, now.Location())
+	var targetDay time.Time
+	if isDaily {
+		targetDay = now.AddDate(0, 0, -1)
+	} else {
+		targetDay = now
+	}
+	startOfDay := time.Date(targetDay.Year(), targetDay.Month(), targetDay.Day(), 0, 0, 0, 0, now.Location())
+	endOfDay := time.Date(targetDay.Year(), targetDay.Month(), targetDay.Day(), 23, 59, 59, 999999999, now.Location())
 
 	startTime := strconv.FormatInt(startOfDay.Unix(), 10)
 	endTime := strconv.FormatInt(endOfDay.Unix(), 10)
@@ -150,7 +156,12 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 			"conversion_rate",
 		},
 		"filter": map[string]interface{}{
-			"advertiser":      map[string]interface{}{},
+			"advertiser": map[string]interface{}{
+				"stat_cost": map[string]interface{}{
+					"rangeLower": "0.01",
+					"rangeUpper": "",
+				},
+			},
 			"group":           map[string]interface{}{},
 			"pricingCategory": []int{2},
 			"campaign":        map[string]interface{}{},
@@ -231,7 +242,12 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 					"conversion_rate",
 				},
 				"filter": map[string]interface{}{
-					"advertiser":      map[string]interface{}{},
+					"advertiser": map[string]interface{}{
+						"stat_cost": map[string]interface{}{
+							"rangeLower": "0.01",
+							"rangeUpper": "",
+						},
+					},
 					"group":           map[string]interface{}{},
 					"pricingCategory": []int{2},
 					"campaign":        map[string]interface{}{},
@@ -346,17 +362,22 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 
 			// 计算返点消耗 = 消耗 / (1 + 返点率)
 			// 例如：返点率0.04（4个点），则 消耗/1.04
+			// 时报用 cost，日报用 cashCost
 			var rebateCost float64
+			costBasis := cost
+			if isDaily {
+				costBasis = cashCost
+			}
 			if rebateRate > 0 {
-				rebateCost = cost / (1 + rebateRate)
+				rebateCost = costBasis / (1 + rebateRate)
 			} else {
-				rebateCost = cost
+				rebateCost = costBasis
 			}
 			totalRebateCost += rebateCost
 
-			// 计算服务费 = 返点消耗 * 服务费率
+			// 计算服务费 = 成本基准 * 服务费率
 			var serviceFeeCost float64
-			serviceFeeCost = cost * serviceFeeRate
+			serviceFeeCost = costBasis * serviceFeeRate
 			totalServiceFeeCost += serviceFeeCost
 
 			// 获取归因扣量数据 (advertiser_rate_false_4)
@@ -411,7 +432,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 
 	// 打印汇总数据
 	if totalAccounts == 0 {
-		logx.Infof("今日暂无巨量账户数据，跳过的账户数: %d", skippedAccounts)
+		logx.Infof("暂无巨量账户数据，跳过的账户数: %d", skippedAccounts)
 		return
 	}
 
@@ -443,19 +464,19 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 	logx.Infof("已保存 %d 条账户数据，待后续生成Excel报表", len(accountReports))
 
 	// 生成Excel报表并获取下载URL
-	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, fileServer,
+	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, fileServer, isDaily,
 		totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, avgCtr, totalConvertCnt, totalDeductionCount, avgConversionCost, avgConversionRate,
 		totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
 
 	// 发送钉钉通知
-	sendJuliangDingTalkNotification(ctx, dingTalk, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt,
+	sendJuliangDingTalkNotification(ctx, dingTalk, isDaily, totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt,
 		totalConvertCnt, avgConversionCost, avgConversionRate, avgCtr, totalAccounts, totalServiceFeeCost, totalRevenue, totalProfit, profitRate, skippedAccounts, excelDownloadURL)
 
 	logx.Infof("巨量报表任务执行完成 - %s", time.Now().Format("2006-01-02 15:04:05"))
 }
 
 // sendJuliangDingTalkNotification 发送巨量钉钉通知
-func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.DingTalkConfig,
+func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.DingTalkConfig, isDaily bool,
 	totalCost, totalCashCost, totalRebateCost float64, totalShowCnt, totalClickCnt, totalConvertCnt int64,
 	avgConversionCost, avgConversionRate, avgCtr float64, totalAccounts int,
 	totalServiceFeeCost, totalRevenue, totalProfit, profitRate float64, skippedAccounts int, excelDownloadURL string) {
@@ -469,9 +490,14 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 	now := time.Now()
 	timeStr := now.Format("2006-01-02 15时")
 
+	reportType := "时报"
+	if isDaily {
+		reportType = "日报"
+	}
+
 	// 构建钉钉消息
 	markdownText := fmt.Sprintf(
-		"#### 巨量时报  \n---\n"+
+		"#### 巨量%s  \n---\n"+
 			"**时间**：%s  \n"+
 			"**账户数**：%d  \n"+
 			"**总消耗**：%.2f  \n"+
@@ -489,6 +515,7 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 			"**利润率**：%.2f%%  \n"+
 			"**备注不符合标准跳过账户数**：%d  \n\n"+
 			"详细账户信息请下载文件：[下载](%s)",
+		reportType,
 		timeStr,
 		totalAccounts,
 		totalCost,
@@ -511,7 +538,7 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 	msg := map[string]interface{}{
 		"msgtype": "markdown",
 		"markdown": map[string]interface{}{
-			"title": "巨量时报",
+			"title": "巨量" + reportType,
 			"text":  markdownText,
 		},
 	}
@@ -555,7 +582,7 @@ func parseInt64(s string) int64 {
 }
 
 // generateAndUploadExcelReport 生成Excel报表并返回下载URL
-func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountReportData, fileServer config.FileServerConfig,
+func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountReportData, fileServer config.FileServerConfig, isDaily bool,
 	totalCost, totalCashCost, totalRebateCost float64, totalShowCnt, totalClickCnt int64, avgCtr float64, totalConvertCnt, totalDeductionCount int64,
 	avgConversionCost, avgConversionRate, totalServiceFeeCost, totalRevenue, totalProfit, profitRate float64) string {
 	if len(accountReports) == 0 {
@@ -656,7 +683,11 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 
 	// 生成文件名（包含时间戳）
 	now := time.Now()
-	filename := fmt.Sprintf("juliang_report_%s.xlsx", now.Format("20060102_150405"))
+	filePrefix := "juliang_report"
+	if isDaily {
+		filePrefix = "juliang_day_report"
+	}
+	filename := fmt.Sprintf("%s_%s.xlsx", filePrefix, now.Format("20060102_150405"))
 	filepath := filepath.Join(savePath, filename)
 
 	// 保存文件

@@ -61,14 +61,15 @@ MySQL:
 # 定时任务配置
 Schedule:
   ReportCron: "0 10,12,14,16,18,22 * * *"  # 每天10点、12点、14点、16点、18点、22点执行报表任务
-  TokenRefreshCron: "1 0 * * *"            # 每天0点1分刷新 token
-  HuichuanElmDailyCron: "0 11 * * *"        # 汇川饿了么日报表任务
-  HuichuanElmHourlyCron: "2 * * * *"       # 汇川饿了么小时报表任务 & 巨量报表数据
-  JuliangReportCron: "4 10,12,14,16,18,22 * * *" 
+  TokenRefreshCron: "1 0 * * *"            # 每天0点1分刷新 token）0点1分
+  HuichuanElmDailyCron: "0 11 * * *"        # 汇川饿了么日报表任务 11点
+  HuichuanElmHourlyCron: "2 * * * *"       # 汇川饿了么小时报表任务 每小时2分
+  JuliangReportCron: "4 * * * *"  #巨量时报：每天10点、12点、14点、16点、18点、22点 4分
+  JuliangDayReportCron: "10 10 * * *" 
   TanxCron: "15 12 * * *"         # Tanx 数据抓取任务，每天12:15执行
   FzHourCron: "1 10,14,18,20 * * *"
   FzDayReportCron: "58 23 * * *"
-  FzDayCron: "20 10 * * *"
+  #FzDayCron: "20 10 * * *"
   QczjHourCron: "3 10-23 * * *"   # QCZJ 分时监控，每天 09-23 时整点执行
 
 # 钉钉机器人配置
