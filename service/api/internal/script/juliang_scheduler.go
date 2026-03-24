@@ -3,7 +3,6 @@ package script
 import (
 	"context"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -502,12 +501,6 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 	}
 
 	logx.Infof("已保存 %d 条账户数据，待后续生成Excel报表", len(accountReports))
-
-	// 保留两位小数（四舍五入）
-	totalCost = math.Round(totalCost*100) / 100
-	totalCashCost = math.Round(totalCashCost*100) / 100
-	totalRebateCost = math.Round(totalRebateCost*100) / 100
-	totalServiceFeeCost = math.Round(totalServiceFeeCost*100) / 100
 
 	// 生成Excel报表并获取下载URL
 	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, skippedReports, fileServer, isDaily,

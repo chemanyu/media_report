@@ -65,7 +65,7 @@ Schedule:
   HuichuanElmDailyCron: "0 11 * * *"        # 汇川饿了么日报表任务 11点
   HuichuanElmHourlyCron: "2 * * * *"       # 汇川饿了么小时报表任务 每小时2分
   JuliangReportCron: "4 * * * *"  #巨量时报：每天10点、12点、14点、16点、18点、22点 4分
-  JuliangDayReportCron: "10 10 * * *" 
+  JuliangDayReportCron: "5 10 * * *" 
   TanxCron: "15 12 * * *"         # Tanx 数据抓取任务，每天12:15执行
   FzHourCron: "1 10,14,18,20 * * *"
   FzDayReportCron: "58 23 * * *"
