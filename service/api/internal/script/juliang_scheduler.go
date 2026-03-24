@@ -535,44 +535,80 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 	}
 
 	// 构建钉钉消息
-	markdownText := fmt.Sprintf(
-		"#### 巨量%s  \n---\n"+
-			"**时间**：%s  \n"+
-			"**账户数**：%d  \n"+
-			"**总消耗**：%.2f  \n"+
-			"**现金消耗**：%.2f  \n"+
-			"**返后消耗**：%.2f  \n"+
-			"**曝光量**：%d  \n"+
-			"**点击量**：%d  \n"+
-			"**点击率**：%.2f%%  \n"+
-			"**转化数**：%d  \n"+
-			"**转化成本**：%.2f  \n"+
-			"**转化率**：%.2f%%  \n"+
-			"**服务费成本**：%.2f  \n"+
-			"**预估收入**：%.2f  \n"+
-			"**预估利润**：%.2f  \n"+
-			"**利润率**：%.2f%%  \n"+
-			"**备注不符合标准跳过账户数**：%d  \n\n"+
-			"详细账户信息请下载文件：[下载](%s)",
-		reportType,
-		timeStr,
-		totalAccounts,
-		totalCost,
-		totalCashCost,
-		totalRebateCost,
-		totalShowCnt,
-		totalClickCnt,
-		avgCtr,
-		totalConvertCnt,
-		avgConversionCost,
-		avgConversionRate,
-		totalServiceFeeCost,
-		totalRevenue,
-		totalProfit,
-		profitRate,
-		skippedAccounts,
-		excelDownloadURL,
-	)
+	var markdownText string
+	if isDaily {
+		markdownText = fmt.Sprintf(
+			"#### 巨量%s  \n---\n"+
+				"**时间**：%s  \n"+
+				"**账户数**：%d  \n"+
+				"**总消耗**：%.2f  \n"+
+				"**现金消耗**：%.2f  \n"+
+				"**返后消耗**：%.2f  \n"+
+				"**曝光量**：%d  \n"+
+				"**点击量**：%d  \n"+
+				"**点击率**：%.2f%%  \n"+
+				"**转化数**：%d  \n"+
+				"**转化成本**：%.2f  \n"+
+				"**转化率**：%.2f%%  \n"+
+				"**服务费成本**：%.2f  \n"+
+				"**备注不符合标准跳过账户数**：%d  \n\n"+
+				"详细账户信息请下载文件：[下载](%s)",
+			reportType,
+			timeStr,
+			totalAccounts,
+			totalCost,
+			totalCashCost,
+			totalRebateCost,
+			totalShowCnt,
+			totalClickCnt,
+			avgCtr,
+			totalConvertCnt,
+			avgConversionCost,
+			avgConversionRate,
+			totalServiceFeeCost,
+			skippedAccounts,
+			excelDownloadURL,
+		)
+	} else {
+		markdownText = fmt.Sprintf(
+			"#### 巨量%s  \n---\n"+
+				"**时间**：%s  \n"+
+				"**账户数**：%d  \n"+
+				"**总消耗**：%.2f  \n"+
+				"**现金消耗**：%.2f  \n"+
+				"**返后消耗**：%.2f  \n"+
+				"**曝光量**：%d  \n"+
+				"**点击量**：%d  \n"+
+				"**点击率**：%.2f%%  \n"+
+				"**转化数**：%d  \n"+
+				"**转化成本**：%.2f  \n"+
+				"**转化率**：%.2f%%  \n"+
+				"**服务费成本**：%.2f  \n"+
+				"**预估收入**：%.2f  \n"+
+				"**预估利润**：%.2f  \n"+
+				"**利润率**：%.2f%%  \n"+
+				"**备注不符合标准跳过账户数**：%d  \n\n"+
+				"详细账户信息请下载文件：[下载](%s)",
+			reportType,
+			timeStr,
+			totalAccounts,
+			totalCost,
+			totalCashCost,
+			totalRebateCost,
+			totalShowCnt,
+			totalClickCnt,
+			avgCtr,
+			totalConvertCnt,
+			avgConversionCost,
+			avgConversionRate,
+			totalServiceFeeCost,
+			totalRevenue,
+			totalProfit,
+			profitRate,
+			skippedAccounts,
+			excelDownloadURL,
+		)
+	}
 
 	msg := map[string]interface{}{
 		"msgtype": "markdown",
