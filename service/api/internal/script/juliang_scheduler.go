@@ -532,6 +532,7 @@ func sendJuliangDingTalkNotification(ctx context.Context, dingConfig config.Ding
 	reportType := "时报"
 	if isDaily {
 		reportType = "日报"
+		timeStr = now.AddDate(0, 0, -1).Format("2006-01-02")
 	}
 
 	// 构建钉钉消息
