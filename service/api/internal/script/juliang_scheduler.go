@@ -44,6 +44,15 @@ type AccountReportData struct {
 	ProfitRate      float64 // 预估利润率
 }
 
+// SkippedAccountData 跳过的账户数据（备注不符合规范）
+type SkippedAccountData struct {
+	AdvertiserId   string
+	AdvertiserName string
+	Remark         string
+	Cost           float64
+	CashCost       float64
+}
+
 // ExecuteJuliangReportJob 执行巨量报表任务 (导出供外部调用)
 func ExecuteJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileServer config.FileServerConfig, isDaily bool) {
 	executeJuliangReportJob(db, dingTalk, fileServer, isDaily)
@@ -126,6 +135,8 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 
 	// 保存每条账户数据
 	var accountReports []AccountReportData
+	// 保存跳过的账户数据
+	var skippedReports []SkippedAccountData
 
 	// 第一步：先请求第一页获取总数
 	limit := 100
@@ -304,6 +315,13 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 			// 如果分割后小于4个部分，跳过
 			if len(parts) < 4 {
 				skippedAccounts++
+				skippedReports = append(skippedReports, SkippedAccountData{
+					AdvertiserId:   strconv.FormatInt(account.AdvertiserId, 10),
+					AdvertiserName: account.AdvertiserName,
+					Remark:         remark,
+					Cost:           parseNumber(account.StatCost),
+					CashCost:       parseNumber(account.StatCashCost),
+				})
 				continue
 			}
 
@@ -328,14 +346,35 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 			// 校验：如果主体-端口、服务商、任务不在数据库配置中，跳过此条数据
 			if !rebateExists {
 				skippedAccounts++
+				skippedReports = append(skippedReports, SkippedAccountData{
+					AdvertiserId:   strconv.FormatInt(account.AdvertiserId, 10),
+					AdvertiserName: account.AdvertiserName,
+					Remark:         remark,
+					Cost:           parseNumber(account.StatCost),
+					CashCost:       parseNumber(account.StatCashCost),
+				})
 				continue
 			}
 			if !serviceFeeExists {
 				skippedAccounts++
+				skippedReports = append(skippedReports, SkippedAccountData{
+					AdvertiserId:   strconv.FormatInt(account.AdvertiserId, 10),
+					AdvertiserName: account.AdvertiserName,
+					Remark:         remark,
+					Cost:           parseNumber(account.StatCost),
+					CashCost:       parseNumber(account.StatCashCost),
+				})
 				continue
 			}
 			if !taskTypeExists {
 				skippedAccounts++
+				skippedReports = append(skippedReports, SkippedAccountData{
+					AdvertiserId:   strconv.FormatInt(account.AdvertiserId, 10),
+					AdvertiserName: account.AdvertiserName,
+					Remark:         remark,
+					Cost:           parseNumber(account.StatCost),
+					CashCost:       parseNumber(account.StatCashCost),
+				})
 				continue
 			}
 
@@ -464,7 +503,7 @@ func executeJuliangReportJob(db *gorm.DB, dingTalk config.DingTalkConfig, fileSe
 	logx.Infof("已保存 %d 条账户数据，待后续生成Excel报表", len(accountReports))
 
 	// 生成Excel报表并获取下载URL
-	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, fileServer, isDaily,
+	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, skippedReports, fileServer, isDaily,
 		totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, avgCtr, totalConvertCnt, totalDeductionCount, avgConversionCost, avgConversionRate,
 		totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
 
@@ -582,7 +621,7 @@ func parseInt64(s string) int64 {
 }
 
 // generateAndUploadExcelReport 生成Excel报表并返回下载URL
-func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountReportData, fileServer config.FileServerConfig, isDaily bool,
+func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountReportData, skippedReports []SkippedAccountData, fileServer config.FileServerConfig, isDaily bool,
 	totalCost, totalCashCost, totalRebateCost float64, totalShowCnt, totalClickCnt int64, avgCtr float64, totalConvertCnt, totalDeductionCount int64,
 	avgConversionCost, avgConversionRate, totalServiceFeeCost, totalRevenue, totalProfit, profitRate float64) string {
 	if len(accountReports) == 0 {
@@ -668,6 +707,20 @@ func generateAndUploadExcelReport(ctx context.Context, accountReports []AccountR
 	f.SetCellValue(sheetName, fmt.Sprintf("R%d", totalRow), totalRevenue)
 	f.SetCellValue(sheetName, fmt.Sprintf("S%d", totalRow), totalProfit)
 	f.SetCellValue(sheetName, fmt.Sprintf("T%d", totalRow), fmt.Sprintf("%.2f%%", profitRate))
+
+	// 写入跳过的账户数据（附在汇总行之后）
+	if len(skippedReports) > 0 {
+		skipStartRow := totalRow + 1
+		f.SetCellValue(sheetName, fmt.Sprintf("A%d", skipStartRow), "以下为跳过的账户（备注不符合规范）")
+		for i, s := range skippedReports {
+			row := skipStartRow + 1 + i
+			f.SetCellValue(sheetName, fmt.Sprintf("A%d", row), s.AdvertiserId)
+			f.SetCellValue(sheetName, fmt.Sprintf("B%d", row), s.AdvertiserName)
+			f.SetCellValue(sheetName, fmt.Sprintf("F%d", row), s.Remark)
+			f.SetCellValue(sheetName, fmt.Sprintf("G%d", row), s.Cost)
+			f.SetCellValue(sheetName, fmt.Sprintf("H%d", row), s.CashCost)
+		}
+	}
 
 	// 设置默认活动工作表
 	f.SetActiveSheet(index)

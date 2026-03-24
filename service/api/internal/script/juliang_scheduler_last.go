@@ -482,7 +482,7 @@ func sendSummaryNotification(ctx context.Context, accountReports []AccountReport
 	}
 
 	// 生成Excel报表并获取下载URL
-	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, fileServer, false,
+	excelDownloadURL := generateAndUploadExcelReport(ctx, accountReports, nil, fileServer, false,
 		totalCost, totalCashCost, totalRebateCost, totalShowCnt, totalClickCnt, avgCtr, totalConvertCnt, 0, avgConversionCost, avgConversionRate,
 		totalServiceFeeCost, totalRevenue, totalProfit, profitRate)
 
