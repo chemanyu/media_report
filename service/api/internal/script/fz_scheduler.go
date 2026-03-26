@@ -109,8 +109,8 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	// 计算成本（数据库中是分，需要除以100）
 	// 实际消耗（元）
 	//regularCostYuan := regularCost / 100
-	// 现金消耗 = 实际消耗 * 1.2 * 0.85
-	//regularCashCost := regularCostYuan * 1.2 * 0.85
+	// 现金消耗 = 实际消耗 * 1.3 * 0.85
+	//regularCashCost := regularCostYuan * 1.3 * 0.85
 	//regularConvertDpPrice := 0.0
 	if regularConvertDp > 0 {
 		//regularConvertDpPrice = regularCashCost / regularConvertDp
@@ -122,8 +122,8 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 
 	// 实际消耗（元）
 	energyCostYuan := energyCost / 100
-	// 现金消耗 = 实际消耗 * 1.2 * 0.85
-	energyCashCost := energyCostYuan * 1.2 * 0.85
+	// 现金消耗 = 实际消耗 * 1.3 * 0.85
+	energyCashCost := energyCostYuan * 1.3 * 0.85
 	energyConvertDpPrice := 0.0
 	if energyConvertDp > 0 {
 		energyConvertDpPrice = energyCashCost / energyConvertDp
@@ -133,7 +133,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	totalConvertDp := regularConvertDp + energyConvertDp
 	totalDpAppOrderNums := regularDpAppOrderNums + energyDpAppOrderNums
 	totalCostYuan := (regularCost + energyCost) / 100
-	totalCashCost := totalCostYuan * 1.2 * 0.85
+	totalCashCost := totalCostYuan * 1.3 * 0.85
 	totalConvertDpPrice := 0.0
 	if totalConvertDp > 0 {
 		totalConvertDpPrice = totalCashCost / totalConvertDp
@@ -281,8 +281,8 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 	// 计算成本（数据库中是分，需要除以100）
 	// 实际消耗（元）
 	//regularCostYuan := regularCost / 100
-	// 现金消耗 = 实际消耗 * 1.2 * 0.85
-	//regularCashCost := regularCostYuan * 1.2 * 0.85
+	// 现金消耗 = 实际消耗 * 1.3 * 0.85
+	//regularCashCost := regularCostYuan * 1.3 * 0.85
 	//regularConvertDpPrice := 0.0
 	if regularConvertDp > 0 {
 		//regularConvertDpPrice = regularCashCost / regularConvertDp
@@ -294,8 +294,8 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 
 	// 实际消耗（元）
 	energyCostYuan := energyCost / 100
-	// 现金消耗 = 实际消耗 * 1.2 * 0.85
-	energyCashCost := energyCostYuan * 1.2 * 0.85
+	// 现金消耗 = 实际消耗 * 1.3 * 0.85
+	energyCashCost := energyCostYuan * 1.3 * 0.85
 	energyConvertDpPrice := 0.0
 	if energyConvertDp > 0 {
 		energyConvertDpPrice = energyCashCost / energyConvertDp
@@ -305,7 +305,7 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 	totalConvertDp := regularConvertDp + energyConvertDp
 	totalDpAppOrderNums := regularDpAppOrderNums + energyDpAppOrderNums
 	totalCostYuan := (regularCost + energyCost) / 100
-	totalCashCost := totalCostYuan * 1.2 * 0.85
+	totalCashCost := totalCostYuan * 1.3 * 0.85
 	totalConvertDpPrice := 0.0
 	if totalConvertDp > 0 {
 		totalConvertDpPrice = totalCashCost / totalConvertDp
