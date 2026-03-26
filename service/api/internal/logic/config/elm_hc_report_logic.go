@@ -230,3 +230,36 @@ func (l *TriggerElmHcDailyReportLogic) TriggerElmHcDailyReport(reportDate string
 		Message: "日报任务已触发，正在后台执行",
 	}, nil
 }
+
+// TriggerElmHcHourlyReportLogic 手动触发汇川饿了么小时报
+type TriggerElmHcHourlyReportLogic struct {
+	logx.Logger
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+}
+
+func NewTriggerElmHcHourlyReportLogic(ctx context.Context, svcCtx *svc.ServiceContext) *TriggerElmHcHourlyReportLogic {
+	return &TriggerElmHcHourlyReportLogic{
+		Logger: logx.WithContext(ctx),
+		ctx:    ctx,
+		svcCtx: svcCtx,
+	}
+}
+
+// TriggerElmHcHourlyReport 触发小时报，reportHour 格式 "2006010215"，为空则取上一个小时
+func (l *TriggerElmHcHourlyReportLogic) TriggerElmHcHourlyReport(reportHour string) (*types.ElmHcReportCommonResp, error) {
+	if reportHour != "" {
+		l.Logger.Infof("手动触发汇川饿了么小时报任务，小时: %s", reportHour)
+	} else {
+		l.Logger.Info("手动触发汇川饿了么小时报任务（上一小时数据）")
+	}
+
+	go func() {
+		script.FetchHuichuanElmReportsByHour(l.svcCtx.DB, l.svcCtx.Config.JuliangDLS, l.svcCtx.Config.ADX, reportHour)
+	}()
+
+	return &types.ElmHcReportCommonResp{
+		Code:    0,
+		Message: "小时报任务已触发，正在后台执行",
+	}, nil
+}

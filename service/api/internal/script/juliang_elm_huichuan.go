@@ -390,15 +390,23 @@ func getJuliangReportData(juliangConfig config.JuliangConfig, accessToken string
 }
 
 // FetchHuichuanElmReportsByHour 获取回传饿了么所有账户的小时级报表数据并发送到ADX
-func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConfig, adxConfig config.ADXConfig) {
+// reportHour: 指定小时，格式 "2006010215"（如 "2026032614"），为空则取上一个小时
+func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConfig, adxConfig config.ADXConfig, reportHour string) {
 	logx.Infof("开始获取回传饿了么小时级报表数据 - %s", time.Now().Format("2006-01-02 15:04:05"))
 
-	// 获取当前时间，计算上一个小时的时间范围
-	now := time.Now()
-	// 上一个小时的开始时间：当前小时-1，分钟和秒为00
-	lastHour := now.Add(-1 * time.Hour)
+	var lastHour time.Time
+	if reportHour != "" {
+		t, err := time.ParseInLocation("2006010215", reportHour, time.Local)
+		if err != nil {
+			logx.Errorf("解析小时参数失败: %v", err)
+			return
+		}
+		lastHour = t
+	} else {
+		// 获取当前时间，计算上一个小时的时间范围
+		lastHour = time.Now().Add(-1 * time.Hour)
+	}
 	startTime := lastHour.Format("2006-01-02 15") + ":00:00"
-	// 上一个小时的结束时间：当前小时，分钟为00，秒为00
 	endTime := lastHour.Format("2006-01-02 15") + ":59:59"
 	// 日期和小时
 	dt := lastHour.Format("20060102")
@@ -662,7 +670,7 @@ func sendHourDataToADX(adxConfig config.ADXConfig, data []types.ADXReportData) e
 			logx.Errorf("第 %d 批小时数据发送失败: %v, URL: %s, Headers: %s, 数据: %s", batchNum, err, adxConfig.BaseURL+url, string(headersJSON), string(batchJSON))
 			return fmt.Errorf("第 %d 批小时数据发送失败: %v", batchNum, err)
 		}
-		//logx.Infof("hour input: %v", string(batchJSON))
+		logx.Infof("hour input: %v", string(batchJSON))
 
 		// 检查响应
 		if !resp.Data {

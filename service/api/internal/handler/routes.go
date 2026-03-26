@@ -278,6 +278,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/config/elmhc/trigger_daily_report",
 				Handler: config.TriggerElmHcDailyReportHandler(serverCtx),
 			},
+			{
+				// 手动触发汇川饿了么小时报
+				Method:  http.MethodPost,
+				Path:    "/config/elmhc/trigger_hourly_report",
+				Handler: config.TriggerElmHcHourlyReportHandler(serverCtx),
+			},
 		},
 	)
 

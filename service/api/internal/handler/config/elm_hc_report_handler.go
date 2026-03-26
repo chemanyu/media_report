@@ -77,6 +77,22 @@ func TriggerElmHcDailyReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc
 	}
 }
 
+// TriggerElmHcHourlyReportHandler 手动触发汇川饿了么小时报
+func TriggerElmHcHourlyReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// 获取小时参数（可选，格式: 2026032614）
+		reportHour := r.URL.Query().Get("hour")
+
+		l := config.NewTriggerElmHcHourlyReportLogic(r.Context(), svcCtx)
+		resp, err := l.TriggerElmHcHourlyReport(reportHour)
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, resp)
+		}
+	}
+}
+
 // DeleteElmHcReportHandler 删除汇川饿了么数据报表
 func DeleteElmHcReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
