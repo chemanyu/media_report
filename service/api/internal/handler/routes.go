@@ -308,6 +308,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: report.GetJingchengCookieHandler(serverCtx),
 			},
 			{
+				// 获取大航海Cookie
+				Method:  http.MethodGet,
+				Path:    "/report/dhh/cookie",
+				Handler: report.GetJingchengCookieHandler(serverCtx),
+			},
+			{
 				// 下载饿了么汇川报表数据（Excel）
 				Method:  http.MethodGet,
 				Path:    "/report/elm/download",
@@ -346,6 +352,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				// 更新京橙Cookie
 				Method:  http.MethodPost,
 				Path:    "/update/jingcheng/cookie",
+				Handler: update.UpdateJingchengCookieHandler(serverCtx),
+			},
+			{
+				// 更新大航海Cookie
+				Method:  http.MethodPost,
+				Path:    "/update/dhh/cookie",
 				Handler: update.UpdateJingchengCookieHandler(serverCtx),
 			},
 			{

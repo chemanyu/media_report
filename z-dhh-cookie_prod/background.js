@@ -60,8 +60,8 @@ function updateCookieAutomatically() {
         }
       });
     } else {
-      console.log('未保存域名，尝试查找京东联盟相关页面');
-      // 如果没有保存的域名，查找京东联盟相关的标签页
+      console.log('未保存域名，尝试查大航海相关页面');
+      // 如果没有保存的域名，查找大喊Ghia相关的标签页
       chrome.tabs.query({}, function(allTabs) {
         const relevantTab = allTabs.find(tab => 
           tab.url && (tab.url.includes('dhh.taobao.com'))
@@ -70,7 +70,7 @@ function updateCookieAutomatically() {
         if (relevantTab) {
           fetchAndSendCookies(relevantTab.url);
         } else {
-          console.log('未找到京东联盟相关页面，跳过本次更新');
+          console.log('未找到大航海相关页面，跳过本次更新');
         }
       });
     }
@@ -103,7 +103,7 @@ function fetchAndSendCookies(url) {
       
       // 提取 x-csrftoken（查找名为 X-Csrftoken 的 cookie）
       const csrfCookie = cookies.find(cookie => 
-        cookie.name === 'csrftoken'
+        cookie.name === 'XSRF-TOKEN'
       );
       const csrfToken = csrfCookie ? csrfCookie.value : '';
       
@@ -117,14 +117,14 @@ function fetchAndSendCookies(url) {
 
       // 发送到后端API
       // Send POST request to the API
-      fetch('https://rta.zhltech.net/index.php?r=tool/ad-tool-gyx/update-cookie', {
+      fetch('http://127.0.0.1:8888/update/dhh/cookie', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ 
           cookie: cookieString,
-          unionId: "dhh"
+          csrfToken: csrfToken
         })
       })
       .then(response => {

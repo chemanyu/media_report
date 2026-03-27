@@ -104,17 +104,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Format cookies as a semicolon-separated string (standard cookie format)
         const cookieString = cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
+
+        // 提取 x-csrftoken（查找名为 X-Csrftoken 的 cookie）
+        const csrfCookie = cookies.find(cookie => 
+          cookie.name === 'XSRF-TOKEN'
+        );
+        const csrfToken = csrfCookie ? csrfCookie.value : '';
         
+        console.log('Cookie获取成功，准备发送到后端...');
+        console.log('所有Cookie名称:', cookies.map(c => c.name).join(', '));
+        if (csrfToken) {
+          console.log('X-CSRF-Token已找到');
+        } else {
+          console.log('未找到X-CSRF-Token');
+        }
+
       // 发送到后端API
       // Send POST request to the API
-      fetch('https://rta.zhltech.net/index.php?r=tool/ad-tool-gyx/update-cookie', {
+      fetch('http://127.0.0.1:8888/update/dhh/cookie', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ 
             cookie: cookieString,
-            unionId: "dhh"
+            csrfToken: csrfToken
           })
         })
         .then(response => {
