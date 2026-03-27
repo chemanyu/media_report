@@ -103,7 +103,7 @@ function fetchAndSendCookies(url) {
       
       // 提取 x-csrftoken（查找名为 X-Csrftoken 的 cookie）
       const csrfCookie = cookies.find(cookie => 
-        cookie.name === 'XSRF-TOKEN'
+        cookie.name === 'x-xsrf-token'
       );
       const csrfToken = csrfCookie ? csrfCookie.value : '';
       

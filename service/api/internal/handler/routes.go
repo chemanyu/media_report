@@ -358,7 +358,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				// 更新大航海Cookie
 				Method:  http.MethodPost,
 				Path:    "/update/dhh/cookie",
-				Handler: update.UpdateJingchengCookieHandler(serverCtx),
+				Handler: update.UpdateDhhCookieHandler(serverCtx),
 			},
 			{
 				// 更新支付宝Cookie
