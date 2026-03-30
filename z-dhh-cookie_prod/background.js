@@ -81,13 +81,15 @@ function updateCookieAutomatically() {
 function reloadAndFetchCookies(tab) {
   console.log('刷新标签页:', tab.title);
   chrome.tabs.reload(tab.id, function() {
-    const onUpdated = (tabId, changeInfo) => {
-      if (tabId === tab.id && changeInfo.status === 'complete') {
-        chrome.tabs.onUpdated.removeListener(onUpdated);
-        fetchAndSendCookies(tab.url);
-      }
-    };
-    chrome.tabs.onUpdated.addListener(onUpdated);
+    setTimeout(() => {
+      const onUpdated = (tabId, changeInfo) => {
+        if (tabId === selectedTab.id && changeInfo.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(onUpdated);
+          doFetchCookies();
+        }
+      };
+      chrome.tabs.onUpdated.addListener(onUpdated);
+    }, 2000); // 2000 毫秒 = 2 秒
   });
 }
 

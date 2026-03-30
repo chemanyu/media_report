@@ -149,13 +149,15 @@ document.addEventListener('DOMContentLoaded', function() {
       // 先刷新标签页，等加载完成后再获取 cookie
       statusDiv.textContent = '刷新页面中...';
       chrome.tabs.reload(selectedTab.id, function() {
-        const onUpdated = (tabId, changeInfo) => {
-          if (tabId === selectedTab.id && changeInfo.status === 'complete') {
-            chrome.tabs.onUpdated.removeListener(onUpdated);
-            doFetchCookies();
-          }
-        };
-        chrome.tabs.onUpdated.addListener(onUpdated);
+        setTimeout(() => {
+          const onUpdated = (tabId, changeInfo) => {
+            if (tabId === selectedTab.id && changeInfo.status === 'complete') {
+              chrome.tabs.onUpdated.removeListener(onUpdated);
+              doFetchCookies();
+            }
+          };
+          chrome.tabs.onUpdated.addListener(onUpdated);
+        }, 2000); // 2000 毫秒 = 2 秒
       });
     } catch (error) {
       showError('URL解析错误: ' + error.message);
