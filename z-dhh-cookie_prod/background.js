@@ -77,47 +77,61 @@ function updateCookieAutomatically() {
   });
 }
 
-// 刷新标签页，等加载完成后再提取并发送Cookie
+// 刷新标签页，attach debugger 监听目标接口请求头，拿到真实 Cookie
 function reloadAndFetchCookies(tab) {
-  console.log('刷新标签页:', tab.title);
-  chrome.tabs.reload(tab.id, function() {
-      const onUpdated = (tabId, changeInfo) => {
-        if (tabId === tab.id && changeInfo.status === 'complete') {
-          chrome.tabs.onUpdated.removeListener(onUpdated);
-          setTimeout(() => {
-            fetchAndSendCookies(tab);
-          }, 5000);
+  console.log('刷新标签页，准备用 debugger 抓取 Cookie:', tab.title);
+  const target = { tabId: tab.id };
+  const TARGET_URL_PATTERN = 'dhh.taobao.com/polystar/api/creative/material/forminfo';
+
+  chrome.debugger.attach(target, '1.3', () => {
+    if (chrome.runtime.lastError) {
+      console.error('attach debugger 失败:', chrome.runtime.lastError.message);
+      return;
+    }
+
+    chrome.debugger.sendCommand(target, 'Network.enable', {}, () => {
+      const onEvent = (source, method, params) => {
+        if (source.tabId !== tab.id) return;
+        if (method !== 'Network.requestWillBeSent') return;
+        if (!params.request.url.includes(TARGET_URL_PATTERN)) return;
+
+        const cookie = params.request.headers['cookie'] || params.request.headers['Cookie'] || '';
+        if (!cookie) {
+          console.log('目标接口请求头中未找到 Cookie');
+          return;
         }
+
+        console.log('从接口请求头捕获到 Cookie，长度:', cookie.length);
+
+        // 拿到后立即 detach，不再监听
+        chrome.debugger.onEvent.removeListener(onEvent);
+        chrome.debugger.detach(target, () => {});
+
+        const xsrfToken = cookie.split('; ')
+          .map(c => c.split('='))
+          .find(([k]) => k === 'XSRF-TOKEN')?.[1] || '';
+
+        sendCookieToServer(cookie, xsrfToken);
       };
-      chrome.tabs.onUpdated.addListener(onUpdated);
+
+      chrome.debugger.onEvent.addListener(onEvent);
+
+      // 刷新页面，触发目标接口请求
+      chrome.tabs.reload(tab.id);
+
+      // 超时保护：30秒内没捕获到就 detach
+      setTimeout(() => {
+        chrome.debugger.onEvent.removeListener(onEvent);
+        chrome.debugger.detach(target, () => {});
+        console.log('超时未捕获到目标接口，已 detach debugger');
+      }, 30000);
+    });
   });
 }
 
-// 提取并发送Cookie的核心逻辑（从目标页面直接读取，保证与Network面板一致）
-function fetchAndSendCookies(tab) {
-  chrome.scripting.executeScript(
-    {
-      target: { tabId: tab.id },
-      func: () => document.cookie,
-    },
-    (results) => {
-      if (chrome.runtime.lastError) {
-        console.error('注入脚本失败:', chrome.runtime.lastError.message);
-        return;
-      }
-      const cookieString = results && results[0] && results[0].result || '';
-      if (!cookieString) {
-        console.log('未从页面获取到Cookie');
-        return;
-      }
-
-      console.log('从页面获取到Cookie，长度:', cookieString.length);
-
-      const xsrfToken = cookieString.split('; ')
-        .map(c => c.split('='))
-        .find(([k]) => k === 'XSRF-TOKEN')?.[1] || '';
-
-      fetch('http://127.0.0.1:8888/update/dhh/cookie', {
+// 发送 Cookie 到后端
+function sendCookieToServer(cookieString, xsrfToken) {
+  fetch('http://127.0.0.1:8888/update/dhh/cookie', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ cookie: cookieString, csrfToken: xsrfToken })
@@ -143,8 +157,6 @@ function fetchAndSendCookies(tab) {
           message: error.message, priority: 2
         });
       });
-    }
-  );
 }
 
 function logError(message) {
