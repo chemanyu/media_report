@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const doFetchCookies = () => {
         statusDiv.textContent = 'Fetching cookies...';
-        chrome.cookies.getAll({ url: 'https://dhh.taobao.com/polystar/api/creative/material/forminfo' }, function(cookies) {
+        chrome.cookies.getAll({ domain: topLevelDomain }, function(cookies) {
           if (chrome.runtime.lastError) {
             showError('获取Cookie异常: ' + chrome.runtime.lastError.message);
             return;
