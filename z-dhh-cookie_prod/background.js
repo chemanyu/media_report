@@ -86,7 +86,7 @@ function reloadAndFetchCookies(tab) {
           chrome.tabs.onUpdated.removeListener(onUpdated);
           setTimeout(() => {
             doFetchCookies();
-          }, 2000); // 2000 毫秒 = 2 秒
+          }, 5000); // 2000 毫秒 = 2 秒
         }
       };
       chrome.tabs.onUpdated.addListener(onUpdated);
