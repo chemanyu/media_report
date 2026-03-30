@@ -53,7 +53,7 @@ function updateCookieAutomatically() {
         
         if (matchingTab) {
           console.log('找到匹配的标签页:', matchingTab.title);
-          fetchAndSendCookies(matchingTab.url);
+          reloadAndFetchCookies(matchingTab);
         } else {
           console.log('未找到匹配域名的标签页:', result.savedDomain);
           console.log('请打开', result.savedUrl, '或手动选择标签页');
@@ -68,12 +68,26 @@ function updateCookieAutomatically() {
         );
         
         if (relevantTab) {
-          fetchAndSendCookies(relevantTab.url);
+          reloadAndFetchCookies(relevantTab);
         } else {
           console.log('未找到大航海相关页面，跳过本次更新');
         }
       });
     }
+  });
+}
+
+// 刷新标签页，等加载完成后再提取并发送Cookie
+function reloadAndFetchCookies(tab) {
+  console.log('刷新标签页:', tab.title);
+  chrome.tabs.reload(tab.id, function() {
+    const onUpdated = (tabId, changeInfo) => {
+      if (tabId === tab.id && changeInfo.status === 'complete') {
+        chrome.tabs.onUpdated.removeListener(onUpdated);
+        fetchAndSendCookies(tab.url);
+      }
+    };
+    chrome.tabs.onUpdated.addListener(onUpdated);
   });
 }
 

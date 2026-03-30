@@ -88,72 +88,74 @@ document.addEventListener('DOMContentLoaded', function() {
       const currentUrl = new URL(selectedTab.url);
       const domain = currentUrl.hostname;
       const topLevelDomain = domain.split('.').slice(-2).join('.');
-      statusDiv.textContent = 'Fetching cookies...';
 
-      // Get all cookies for the selected URL
-      chrome.cookies.getAll({ url: 'https://dhh.taobao.com/polystar/api/creative/material/forminfo' }, function(cookies) {
-        if (chrome.runtime.lastError) {
-          showError('获取Cookie异常: ' + chrome.runtime.lastError.message);
-          return;
-        }
-        // showError('123123==' + cookies);
-        if (cookies.length === 0) {
-          showError('当前页面未找到Cookie.');
-          return;
-        }
-
-        // Format cookies as a semicolon-separated string (standard cookie format)
-        const excludeKeys = ['_uab_collina', '__wpkreporterwid_'];
-        const cookieString = cookies
-          .filter(cookie => !excludeKeys.includes(cookie.name))
-          .map(cookie => `${cookie.name}=${cookie.value}`)
-          .join('; ');
-
-        const xsrfToken = (cookies.find(cookie => cookie.name === 'XSRF-TOKEN') || {}).value || '';
-
-
-      // 发送到后端API
-      // Send POST request to the API
-      fetch('http://127.0.0.1:8888/update/dhh/cookie', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            cookie: cookieString,
-            csrfToken: xsrfToken
-          })
-        })
-        .then(response => {
-          if (!response.ok) {
-            showError('HTTP error! status.');
-            throw new Error(`HTTP error! status: ${response.status}`);
+      const doFetchCookies = () => {
+        statusDiv.textContent = 'Fetching cookies...';
+        chrome.cookies.getAll({ url: 'https://dhh.taobao.com/polystar/api/creative/material/forminfo' }, function(cookies) {
+          if (chrome.runtime.lastError) {
+            showError('获取Cookie异常: ' + chrome.runtime.lastError.message);
+            return;
           }
-          return response.text();  // Get the body as text; use .json() if the response is JSON
-        })
-        .then(body => {
-          statusDiv.textContent = 'Success!';
-          resultDiv.textContent = body;  // Display the response body
-          resultDiv.style.backgroundColor = '#d4edda';
-          resultDiv.style.borderColor = '#c3e6cb';
+          if (cookies.length === 0) {
+            showError('当前页面未找到Cookie.');
+            return;
+          }
 
-          // 保存用户选择的域名，供定时任务使用
-          chrome.storage.local.set({ 
-            'savedDomain': topLevelDomain,
-            'savedUrl': selectedTab.url,
-            'savedTitle': selectedTab.title 
-          }, function() {
-            console.log('已保存域名:', topLevelDomain);
-            showSavedDomain(); // 更新显示
+          const excludeKeys = ['_uab_collina', '__wpkreporterwid_'];
+          const cookieString = cookies
+            .filter(cookie => !excludeKeys.includes(cookie.name))
+            .map(cookie => `${cookie.name}=${cookie.value}`)
+            .join('; ');
+
+          const xsrfToken = (cookies.find(cookie => cookie.name === 'XSRF-TOKEN') || {}).value || '';
+
+          fetch('http://127.0.0.1:8888/update/dhh/cookie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cookie: cookieString, csrfToken: xsrfToken })
+          })
+          .then(response => {
+            if (!response.ok) {
+              showError('HTTP error! status.');
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text();
+          })
+          .then(body => {
+            statusDiv.textContent = 'Success!';
+            resultDiv.textContent = body;
+            resultDiv.style.backgroundColor = '#d4edda';
+            resultDiv.style.borderColor = '#c3e6cb';
+
+            chrome.storage.local.set({
+              'savedDomain': topLevelDomain,
+              'savedUrl': selectedTab.url,
+              'savedTitle': selectedTab.title
+            }, function() {
+              console.log('已保存域名:', topLevelDomain);
+              showSavedDomain();
+            });
+          })
+          .catch(error => {
+            showError('Error sending request: ' + error.message);
+          })
+          .finally(() => {
+            sendButton.disabled = false;
+            sendButton.textContent = '更新Cookie';
           });
-        })
-        .catch(error => {
-          showError('Error sending request: ' + error.message);
-        })
-        .finally(() => {
-          sendButton.disabled = false;
-          sendButton.textContent = '更新Cookie';
         });
+      };
+
+      // 先刷新标签页，等加载完成后再获取 cookie
+      statusDiv.textContent = '刷新页面中...';
+      chrome.tabs.reload(selectedTab.id, function() {
+        const onUpdated = (tabId, changeInfo) => {
+          if (tabId === selectedTab.id && changeInfo.status === 'complete') {
+            chrome.tabs.onUpdated.removeListener(onUpdated);
+            doFetchCookies();
+          }
+        };
+        chrome.tabs.onUpdated.addListener(onUpdated);
       });
     } catch (error) {
       showError('URL解析错误: ' + error.message);
