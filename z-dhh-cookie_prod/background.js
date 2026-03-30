@@ -1,5 +1,5 @@
 // 定时任务：每半天自动更新一次cookie
-const UPDATE_INTERVAL = 180; // 分钟
+const UPDATE_INTERVAL = 1; // 分钟
 
 // 监听定时器触发
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -103,7 +103,7 @@ function fetchAndSendCookies(url) {
     console.log('正在获取域名的Cookie:', topLevelDomain);
 
     // 获取指定域名的所有cookies
-    chrome.cookies.getAll({ url: 'https://dhh.taobao.com/polystar/api/creative/material/forminfo' }, function(cookies) {
+    chrome.cookies.getAll({ domain: topLevelDomain }, function(cookies) {
       if (chrome.runtime.lastError) {
         console.error('获取Cookie失败:', chrome.runtime.lastError.message);
         return;
