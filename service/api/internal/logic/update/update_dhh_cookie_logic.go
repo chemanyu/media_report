@@ -2,6 +2,7 @@ package logic
 
 import (
 	"context"
+	"time"
 
 	"media_report/service/api/internal/model"
 	"media_report/service/api/internal/svc"
@@ -31,6 +32,7 @@ func (l *UpdateDhhCookieLogic) UpdateDhhCookie(req *types.UpdateDhhCookieReq) (r
 		Updates(map[string]interface{}{
 			"token":         req.Token,
 			"refresh_token": req.CsrfToken,
+			"update_time":   time.Now().Unix(),
 		})
 
 	if result.Error != nil {

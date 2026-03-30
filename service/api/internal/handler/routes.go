@@ -311,7 +311,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				// 获取大航海Cookie
 				Method:  http.MethodGet,
 				Path:    "/report/dhh/cookie",
-				Handler: report.GetJingchengCookieHandler(serverCtx),
+				Handler: report.GetDhhCookieHandler(serverCtx),
 			},
 			{
 				// 下载饿了么汇川报表数据（Excel）
