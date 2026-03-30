@@ -93,19 +93,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
       statusDiv.textContent = '刷新页面中，等待接口请求...';
 
-      chrome.debugger.attach(target, '1.3', () => {
+      chrome.debugger.detach(target, () => {
+        // 忽略未 attach 时的报错，确保干净状态
+        void chrome.runtime.lastError;
+        chrome.debugger.attach(target, '1.3', () => {
         if (chrome.runtime.lastError) {
           showError('attach debugger 失败: ' + chrome.runtime.lastError.message);
           return;
         }
 
+        // 用 requestId 关联两个事件：requestWillBeSent 确认 URL，ExtraInfo 拿真实 Cookie
+        const pendingRequestIds = new Set();
+
         chrome.debugger.sendCommand(target, 'Network.enable', {}, () => {
           const onEvent = (source, method, params) => {
             if (source.tabId !== selectedTab.id) return;
-            if (method !== 'Network.requestWillBeSent') return;
-            if (!params.request.url.includes(TARGET_URL_PATTERN)) return;
 
-            const cookie = params.request.headers['cookie'] || params.request.headers['Cookie'] || '';
+            if (method === 'Network.requestWillBeSent') {
+              if (params.request.url.includes(TARGET_URL_PATTERN)) {
+                pendingRequestIds.add(params.requestId);
+              }
+              return;
+            }
+
+            if (method !== 'Network.requestWillBeSentExtraInfo') return;
+            if (!pendingRequestIds.has(params.requestId)) return;
+            pendingRequestIds.delete(params.requestId);
+
+            const headers = params.headers || {};
+            const cookie = headers['cookie'] || headers['Cookie'] || '';
             if (!cookie) {
               showError('目标接口请求头中未找到 Cookie');
               return;
@@ -168,6 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
           }, 30000);
         });
       });
+      }); // detach wrapper
     } catch (error) {
       showError('URL解析错误: ' + error.message);
     }

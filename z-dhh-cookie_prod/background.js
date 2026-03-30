@@ -83,19 +83,33 @@ function reloadAndFetchCookies(tab) {
   const target = { tabId: tab.id };
   const TARGET_URL_PATTERN = 'dhh.taobao.com/polystar/api/creative/material/forminfo';
 
-  chrome.debugger.attach(target, '1.3', () => {
+  chrome.debugger.detach(target, () => {
+    void chrome.runtime.lastError;
+    chrome.debugger.attach(target, '1.3', () => {
     if (chrome.runtime.lastError) {
       console.error('attach debugger 失败:', chrome.runtime.lastError.message);
       return;
     }
 
+    const pendingRequestIds = new Set();
+
     chrome.debugger.sendCommand(target, 'Network.enable', {}, () => {
       const onEvent = (source, method, params) => {
         if (source.tabId !== tab.id) return;
-        if (method !== 'Network.requestWillBeSent') return;
-        if (!params.request.url.includes(TARGET_URL_PATTERN)) return;
 
-        const cookie = params.request.headers['cookie'] || params.request.headers['Cookie'] || '';
+        if (method === 'Network.requestWillBeSent') {
+          if (params.request.url.includes(TARGET_URL_PATTERN)) {
+            pendingRequestIds.add(params.requestId);
+          }
+          return;
+        }
+
+        if (method !== 'Network.requestWillBeSentExtraInfo') return;
+        if (!pendingRequestIds.has(params.requestId)) return;
+        pendingRequestIds.delete(params.requestId);
+
+        const headers = params.headers || {};
+        const cookie = headers['cookie'] || headers['Cookie'] || '';
         if (!cookie) {
           console.log('目标接口请求头中未找到 Cookie');
           return;
@@ -127,6 +141,7 @@ function reloadAndFetchCookies(tab) {
       }, 30000);
     });
   });
+  }); // detach wrapper
 }
 
 // 发送 Cookie 到后端
