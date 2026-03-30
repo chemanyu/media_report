@@ -82,11 +82,11 @@ function reloadAndFetchCookies(tab) {
   console.log('刷新标签页:', tab.title);
   chrome.tabs.reload(tab.id, function() {
       const onUpdated = (tabId, changeInfo) => {
-        if (tabId === selectedTab.id && changeInfo.status === 'complete') {
+        if (tabId === tab.id && changeInfo.status === 'complete') {
           chrome.tabs.onUpdated.removeListener(onUpdated);
           setTimeout(() => {
-            doFetchCookies();
-          }, 5000); // 2000 毫秒 = 2 秒
+            fetchAndSendCookies(tab.url);
+          }, 5000);
         }
       };
       chrome.tabs.onUpdated.addListener(onUpdated);
