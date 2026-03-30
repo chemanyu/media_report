@@ -91,23 +91,22 @@ document.addEventListener('DOMContentLoaded', function() {
 
       const doFetchCookies = () => {
         statusDiv.textContent = 'Fetching cookies...';
-        chrome.cookies.getAll({ domain: topLevelDomain }, function(cookies) {
-          if (chrome.runtime.lastError) {
-            showError('获取Cookie异常: ' + chrome.runtime.lastError.message);
-            return;
-          }
-          if (cookies.length === 0) {
-            showError('当前页面未找到Cookie.');
-            return;
-          }
+        chrome.scripting.executeScript(
+          { target: { tabId: selectedTab.id }, func: () => document.cookie },
+          (results) => {
+            if (chrome.runtime.lastError) {
+              showError('获取Cookie异常: ' + chrome.runtime.lastError.message);
+              return;
+            }
+            const cookieString = results && results[0] && results[0].result || '';
+            if (!cookieString) {
+              showError('当前页面未找到Cookie.');
+              return;
+            }
 
-          const excludeKeys = ['_uab_collina', '__wpkreporterwid_'];
-          const cookieString = cookies
-            .filter(cookie => !excludeKeys.includes(cookie.name))
-            .map(cookie => `${cookie.name}=${cookie.value}`)
-            .join('; ');
-
-          const xsrfToken = (cookies.find(cookie => cookie.name === 'XSRF-TOKEN') || {}).value || '';
+          const xsrfToken = cookieString.split('; ')
+            .map(c => c.split('='))
+            .find(([k]) => k === 'XSRF-TOKEN')?.[1] || '';
 
           fetch('http://127.0.0.1:8888/update/dhh/cookie', {
             method: 'POST',
@@ -143,7 +142,8 @@ document.addEventListener('DOMContentLoaded', function() {
             sendButton.disabled = false;
             sendButton.textContent = '更新Cookie';
           });
-        });
+          }
+        );
       };
 
       // 先刷新标签页，等加载完成后再获取 cookie

@@ -85,7 +85,7 @@ function reloadAndFetchCookies(tab) {
         if (tabId === tab.id && changeInfo.status === 'complete') {
           chrome.tabs.onUpdated.removeListener(onUpdated);
           setTimeout(() => {
-            fetchAndSendCookies(tab.url);
+            fetchAndSendCookies(tab);
           }, 5000);
         }
       };
@@ -93,60 +93,43 @@ function reloadAndFetchCookies(tab) {
   });
 }
 
-// 提取并发送Cookie的核心逻辑
-function fetchAndSendCookies(url) {
-  try {
-    const currentUrl = new URL(url);
-    const domain = currentUrl.hostname;
-    const topLevelDomain = domain.split('.').slice(-2).join('.');
-
-    console.log('正在获取域名的Cookie:', topLevelDomain);
-
-    // 获取指定域名的所有cookies
-    chrome.cookies.getAll({ domain: topLevelDomain }, function(cookies) {
+// 提取并发送Cookie的核心逻辑（从目标页面直接读取，保证与Network面板一致）
+function fetchAndSendCookies(tab) {
+  chrome.scripting.executeScript(
+    {
+      target: { tabId: tab.id },
+      func: () => document.cookie,
+    },
+    (results) => {
       if (chrome.runtime.lastError) {
-        console.error('获取Cookie失败:', chrome.runtime.lastError.message);
+        console.error('注入脚本失败:', chrome.runtime.lastError.message);
+        return;
+      }
+      const cookieString = results && results[0] && results[0].result || '';
+      if (!cookieString) {
+        console.log('未从页面获取到Cookie');
         return;
       }
 
-      if (cookies.length === 0) {
-        console.log('当前域名未找到Cookie:', topLevelDomain);
-        return;
-      }
+      console.log('从页面获取到Cookie，长度:', cookieString.length);
 
-      // 格式化cookies为字符串
-      const excludeKeys = ['_uab_collina', '__wpkreporterwid_'];
-      const cookieString = cookies
-        .filter(cookie => !excludeKeys.includes(cookie.name))
-        .map(cookie => `${cookie.name}=${cookie.value}`)
-        .join('; ');
+      const xsrfToken = cookieString.split('; ')
+        .map(c => c.split('='))
+        .find(([k]) => k === 'XSRF-TOKEN')?.[1] || '';
 
-      const xsrfToken = (cookies.find(cookie => cookie.name === 'XSRF-TOKEN') || {}).value || '';
-
-      // 发送到后端API
-      // Send POST request to the API
       fetch('http://127.0.0.1:8888/update/dhh/cookie', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          cookie: cookieString,
-          csrfToken: xsrfToken
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cookie: cookieString, csrfToken: xsrfToken })
       })
       .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         return response.text();
       })
       .then(body => {
         console.log('Cookie更新成功:', body);
-        // 可以选择发送通知
         chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icon48.png',
+          type: 'basic', iconUrl: 'icon48.png',
           title: 'Cookie更新成功',
           message: `更新时间: ${new Date().toLocaleString()}`,
           priority: 1
@@ -155,17 +138,13 @@ function fetchAndSendCookies(url) {
       .catch(error => {
         console.error('发送Cookie失败:', error.message);
         chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icon48.png',
+          type: 'basic', iconUrl: 'icon48.png',
           title: 'Cookie更新失败',
-          message: error.message,
-          priority: 2
+          message: error.message, priority: 2
         });
       });
-    });
-  } catch (error) {
-    console.error('处理URL时出错:', error.message);
-  }
+    }
+  );
 }
 
 function logError(message) {
