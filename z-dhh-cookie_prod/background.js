@@ -81,15 +81,15 @@ function updateCookieAutomatically() {
 function reloadAndFetchCookies(tab) {
   console.log('刷新标签页:', tab.title);
   chrome.tabs.reload(tab.id, function() {
-    setTimeout(() => {
       const onUpdated = (tabId, changeInfo) => {
         if (tabId === selectedTab.id && changeInfo.status === 'complete') {
           chrome.tabs.onUpdated.removeListener(onUpdated);
-          doFetchCookies();
+          setTimeout(() => {
+            doFetchCookies();
+          }, 2000); // 2000 毫秒 = 2 秒
         }
       };
       chrome.tabs.onUpdated.addListener(onUpdated);
-    }, 2000); // 2000 毫秒 = 2 秒
   });
 }
 
