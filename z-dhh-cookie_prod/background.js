@@ -87,7 +87,7 @@ function fetchAndSendCookies(url) {
     console.log('正在获取域名的Cookie:', topLevelDomain);
 
     // 获取指定域名的所有cookies
-    chrome.cookies.getAll({ domain: topLevelDomain }, function(cookies) {
+    chrome.cookies.getAll({ url: 'https://dhh.taobao.com/polystar/api/creative/material/forminfo' }, function(cookies) {
       if (chrome.runtime.lastError) {
         console.error('获取Cookie失败:', chrome.runtime.lastError.message);
         return;
@@ -99,9 +99,13 @@ function fetchAndSendCookies(url) {
       }
 
       // 格式化cookies为字符串
-      const cookieString = cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
-      
-     
+      const excludeKeys = ['_uab_collina', '__wpkreporterwid_'];
+      const cookieString = cookies
+        .filter(cookie => !excludeKeys.includes(cookie.name))
+        .map(cookie => `${cookie.name}=${cookie.value}`)
+        .join('; ');
+
+      const xsrfToken = (cookies.find(cookie => cookie.name === 'XSRF-TOKEN') || {}).value || '';
 
       // 发送到后端API
       // Send POST request to the API
@@ -110,9 +114,9 @@ function fetchAndSendCookies(url) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           cookie: cookieString,
-         csrfToken: "d6c6c613-f07b-4fe5-b78e-12f44cec4a8a"
+          csrfToken: xsrfToken
         })
       })
       .then(response => {

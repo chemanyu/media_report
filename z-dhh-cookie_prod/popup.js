@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
       statusDiv.textContent = 'Fetching cookies...';
 
       // Get all cookies for the selected URL
-      chrome.cookies.getAll({ domain: topLevelDomain }, function(cookies) {
+      chrome.cookies.getAll({ url: 'https://dhh.taobao.com/polystar/api/creative/material/forminfo' }, function(cookies) {
         if (chrome.runtime.lastError) {
           showError('获取Cookie异常: ' + chrome.runtime.lastError.message);
           return;
@@ -103,9 +103,15 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Format cookies as a semicolon-separated string (standard cookie format)
-        const cookieString = cookies.map(cookie => `${cookie.name}=${cookie.value}`).join('; ');
+        const excludeKeys = ['_uab_collina', '__wpkreporterwid_'];
+        const cookieString = cookies
+          .filter(cookie => !excludeKeys.includes(cookie.name))
+          .map(cookie => `${cookie.name}=${cookie.value}`)
+          .join('; ');
 
-      
+        const xsrfToken = (cookies.find(cookie => cookie.name === 'XSRF-TOKEN') || {}).value || '';
+
+
       // 发送到后端API
       // Send POST request to the API
       fetch('http://127.0.0.1:8888/update/dhh/cookie', {
@@ -113,9 +119,9 @@ document.addEventListener('DOMContentLoaded', function() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             cookie: cookieString,
-            csrfToken: "d6c6c613-f07b-4fe5-b78e-12f44cec4a8a"
+            csrfToken: xsrfToken
           })
         })
         .then(response => {
