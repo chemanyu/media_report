@@ -156,7 +156,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 				"**唤起量**：%d  \n"+
 				"**现金消耗**：%.2f（日预算 10500）  \n"+
 				"**唤起成本**：%.2f（考核 0.5）  \n"+
-				"**下单 pv 成本**：%.2f（考核 35）  \n\n",
+				"**下单 pv 成本**：%.2f（考核 50）  \n\n",
 			displayDate,
 			int64(totalConvertDp),
 			totalCashCost,
@@ -175,7 +175,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	// 			"**唤起量**：%d  \n"+
 	// 			"**现金消耗**：%.2f（日预算 5000）  \n"+
 	// 			"**唤起成本**：%.2f（考核 0.5）  \n"+
-	// 			"**下单 pv 成本**：%.2f（考核 35）  \n\n",
+	// 			"**下单 pv 成本**：%.2f（考核 50）  \n\n",
 	// 		displayDate,
 	// 		int64(regularConvertDp),
 	// 		regularCashCost,
@@ -328,7 +328,7 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 				"**唤起量**：%d  \n"+
 				"**现金消耗**：%.2f（日预算 10500）  \n"+
 				"**唤起成本**：%.2f（考核 0.5）  \n"+
-				"**下单 pv 成本**：%.2f（考核 35）  \n\n",
+				"**下单 pv 成本**：%.2f（考核 50）  \n\n",
 			displayDate,
 			int64(totalConvertDp),
 			totalCashCost,
@@ -347,7 +347,7 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 	// 			"**唤起量**：%d  \n"+
 	// 			"**现金消耗**：%.2f（日预算 5000）  \n"+
 	// 			"**唤起成本**：%.2f（考核 0.5）  \n"+
-	// 			"**下单 pv 成本**：%.2f（考核 35）  \n\n",
+	// 			"**下单 pv 成本**：%.2f（考核 50）  \n\n",
 	// 		displayDate,
 	// 		int64(regularConvertDp),
 	// 		regularCashCost,
