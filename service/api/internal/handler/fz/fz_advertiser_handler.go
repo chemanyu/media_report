@@ -61,6 +61,19 @@ func FzAdvertiserUpdateHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	}
 }
 
+// FzAdnAdvertiserListHandler 获取飞猪ADN账户列表（供外部项目调用）
+func FzAdnAdvertiserListHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := fz.NewFzAdvertiserLogic(r.Context(), svcCtx)
+		resp, err := l.GetAdnList()
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, resp)
+		}
+	}
+}
+
 // FzAdvertiserDeleteHandler 删除飞猪媒体账户
 func FzAdvertiserDeleteHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {

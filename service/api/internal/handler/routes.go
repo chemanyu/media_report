@@ -105,6 +105,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/api/fz_advertiser/delete",
 				Handler: fz.FzAdvertiserDeleteHandler(serverCtx),
 			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/api/fz_advertiser/adn/list",
+				Handler: fz.FzAdnAdvertiserListHandler(serverCtx),
+			},
 		},
 	)
 

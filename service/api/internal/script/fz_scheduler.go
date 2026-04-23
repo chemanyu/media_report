@@ -91,8 +91,8 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	var regularCount, energyCount int64
 
 	for _, report := range reports {
-		if report.MediaAdvId == "1073770254_348117" {
-			// 集能量活动
+		if report.MediaAdvId == "1001197563" {
+			// 酒店专项
 			energyCost += report.Cost
 			energyConvertDp += float64(report.ConvertDp)
 			energyDpAppOrderNums += float64(report.DpAppOrderNums)
@@ -108,16 +108,16 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 
 	// 计算成本（数据库中是分，需要除以100）
 	// 实际消耗（元）
-	//regularCostYuan := regularCost / 100
+	regularCostYuan := regularCost / 100
 	// 现金消耗 = 实际消耗 * 1.2 * 0.85
-	//regularCashCost := regularCostYuan * 1.2 * 0.85
-	//regularConvertDpPrice := 0.0
+	regularCashCost := regularCostYuan * 1.2 * 0.85
+	regularConvertDpPrice := 0.0
 	if regularConvertDp > 0 {
-		//regularConvertDpPrice = regularCashCost / regularConvertDp
+		regularConvertDpPrice = regularCashCost / regularConvertDp
 	}
-	//regularDpOrderPrice := 0.0
+	regularDpOrderPrice := 0.0
 	if regularDpAppOrderNums > 0 {
-		//regularDpOrderPrice = regularCashCost / regularDpAppOrderNums
+		regularDpOrderPrice = regularCashCost / regularDpAppOrderNums
 	}
 
 	// 实际消耗（元）
@@ -169,28 +169,28 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	}
 
 	// 常规活动数据
-	// if regularCount > 0 {
-	// 	markdownText += fmt.Sprintf(
-	// 		"**常规活动-海纳【飞猪常规活动 %s简报】**  \n"+
-	// 			"**唤起量**：%d  \n"+
-	// 			"**现金消耗**：%.2f（日预算 5000）  \n"+
-	// 			"**唤起成本**：%.2f（考核 0.5）  \n"+
-	// 			"**下单 pv 成本**：%.2f（考核 50）  \n\n",
-	// 		displayDate,
-	// 		int64(regularConvertDp),
-	// 		regularCashCost,
-	// 		regularConvertDpPrice,
-	// 		regularDpOrderPrice,
-	// 	)
-	// 	if energyCount > 0 {
-	// 		markdownText += "---\n"
-	// 	}
-	// }
+	if regularCount > 0 {
+		markdownText += fmt.Sprintf(
+			"**常规活动-海纳【飞猪常规活动 %s简报】**  \n"+
+				"**唤起量**：%d  \n"+
+				"**现金消耗**：%.2f（日预算 5000）  \n"+
+				"**唤起成本**：%.2f（考核 0.5）  \n"+
+				"**下单 pv 成本**：%.2f（考核 50）  \n\n",
+			displayDate,
+			int64(regularConvertDp),
+			regularCashCost,
+			regularConvertDpPrice,
+			regularDpOrderPrice,
+		)
+		if energyCount > 0 {
+			markdownText += "---\n"
+		}
+	}
 
-	// 集能量活动数据
+	// 酒店专项活动数据
 	if energyCount > 0 {
 		markdownText += fmt.Sprintf(
-			"**集能量-海纳【飞猪集能量 %s简报】**  \n"+
+			"**酒店专项【飞猪酒店专项 %s简报】**  \n"+
 				"**唤起量**：%d  \n"+
 				"**现金消耗**：%.2f（日预算 500）  \n"+
 				"**唤起成本**：%.2f（考核 0.2）  \n",

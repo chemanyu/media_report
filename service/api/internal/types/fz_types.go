@@ -20,6 +20,18 @@ type FzAdvertiserDeleteReq struct {
 	Id int64 `json:"id" binding:"required"` // 账户ID
 }
 
+// ADN账户信息
+type FzAdnAdvertiserItem struct {
+	Id           int64  `json:"id"`
+	MediaAdvId   string `json:"media_adv_id"`
+	MediaAdvName string `json:"media_adv_name"`
+}
+
+// 获取ADN账户列表响应
+type FzAdnAdvertiserListResp struct {
+	List []*FzAdnAdvertiserItem `json:"list"`
+}
+
 // =============== 飞猪小时报 ===============
 
 // 飞猪小时报列表查询请求

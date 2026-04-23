@@ -29,6 +29,24 @@ func (l *FzAdvertiserLogic) GetList() ([]*model.FzMediaAdvertiser, error) {
 	return advertiserModel.FindAll()
 }
 
+// GetAdnList 获取ADN账户列表
+func (l *FzAdvertiserLogic) GetAdnList() (*types.FzAdnAdvertiserListResp, error) {
+	advertiserModel := model.NewFzMediaAdvertiserModel(l.svcCtx.DB)
+	list, err := advertiserModel.FindByMedia("adn")
+	if err != nil {
+		return nil, err
+	}
+	items := make([]*types.FzAdnAdvertiserItem, 0, len(list))
+	for _, a := range list {
+		items = append(items, &types.FzAdnAdvertiserItem{
+			Id:           a.Id,
+			MediaAdvId:   a.MediaAdvId,
+			MediaAdvName: a.MediaAdvName,
+		})
+	}
+	return &types.FzAdnAdvertiserListResp{List: items}, nil
+}
+
 // Add 添加账户
 func (l *FzAdvertiserLogic) Add(req *types.FzAdvertiserAddReq) (*types.CommonResp, error) {
 	advertiserModel := model.NewFzMediaAdvertiserModel(l.svcCtx.DB)
