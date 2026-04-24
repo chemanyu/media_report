@@ -128,6 +128,10 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	if energyConvertDp > 0 {
 		energyConvertDpPrice = energyCashCost / energyConvertDp
 	}
+	energyDpOrderPrice := 0.0
+	if energyDpAppOrderNums > 0 {
+		energyDpOrderPrice = energyCashCost / energyDpAppOrderNums
+	}
 
 	// 汇总数据（常规 + 集能量）
 	totalConvertDp := regularConvertDp + energyConvertDp
@@ -193,11 +197,13 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 			"**酒店专项【飞猪酒店专项 %s简报】**  \n"+
 				"**唤起量**：%d  \n"+
 				"**现金消耗**：%.2f（日预算 5000）  \n"+
+				"**唤起成本**：%.2f（考核 0.5）  \n"+
 				"**下单 pv 成本**：%.2f（考核 0.2）  \n",
 			displayDate,
 			int64(energyConvertDp),
 			energyCashCost,
 			energyConvertDpPrice,
+			energyDpOrderPrice,
 		)
 	}
 
