@@ -802,7 +802,8 @@ func fetchAttributionData(ctx context.Context) map[string]int64 {
 
 	// 调用归因接口
 	var resp types.AttributionResponse
-	err := client.Get(ctx, "/attribution/data", nil, &resp)
+	date := time.Now().AddDate(0, 0, -1).Format("20060102")
+	err := client.Get(ctx, "/attribution/data?date="+date, nil, &resp)
 	if err != nil {
 		logx.Errorf("调用归因接口失败: %v", err)
 		return make(map[string]int64)
