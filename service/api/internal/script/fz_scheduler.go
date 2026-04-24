@@ -154,7 +154,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 		markdownText += fmt.Sprintf(
 			"**汇总-海纳【飞猪app拉活 %s简报】**  \n"+
 				"**唤起量**：%d  \n"+
-				"**现金消耗**：%.2f（日预算 10500）  \n"+
+				"**现金消耗**：%.2f（日预算 25500  \n"+
 				"**唤起成本**：%.2f（考核 0.5）  \n"+
 				"**下单 pv 成本**：%.2f（考核 50）  \n\n",
 			displayDate,
@@ -173,7 +173,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 		markdownText += fmt.Sprintf(
 			"**常规活动-海纳【飞猪常规活动 %s简报】**  \n"+
 				"**唤起量**：%d  \n"+
-				"**现金消耗**：%.2f（日预算 5000）  \n"+
+				"**现金消耗**：%.2f（日预算 20500  \n"+
 				"**唤起成本**：%.2f（考核 0.5）  \n"+
 				"**下单 pv 成本**：%.2f（考核 50）  \n\n",
 			displayDate,
@@ -192,8 +192,8 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 		markdownText += fmt.Sprintf(
 			"**酒店专项【飞猪酒店专项 %s简报】**  \n"+
 				"**唤起量**：%d  \n"+
-				"**现金消耗**：%.2f（日预算 500）  \n"+
-				"**唤起成本**：%.2f（考核 0.2）  \n",
+				"**现金消耗**：%.2f（日预算 5000）  \n"+
+				"**下单 pv 成本**：%.2f（考核 0.2）  \n",
 			displayDate,
 			int64(energyConvertDp),
 			energyCashCost,
