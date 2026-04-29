@@ -59,7 +59,7 @@ func TestGenerateAppKeySign(t *testing.T) {
 	// TODO: 替换为实际的 mediaId、token、originalUrl
 	mediaId := "100339"
 	token := "4vHy1s6JTs9bYuqD1fHroJJGzaChTOqY"
-	originalUrl := "http://adnv2.atd.com/index.php?r=openapi/ocpx/advertiser-control&action=start&appKey=32908011"
+	originalUrl := "http://new-adn.admate.cn/index.php?r=openapi/ocpx/advertiser-control&action=start&appKey=32908011"
 
 	fmt.Printf("\n========== 生成加密 Sign ==========\n")
 	fmt.Printf("mediaId:     %s\n", mediaId)
