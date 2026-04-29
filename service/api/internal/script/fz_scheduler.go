@@ -30,8 +30,8 @@ func ExecuteFzDataSyncJob(db *gorm.DB, config config.Config) {
 	// 创建业务逻辑实例
 	l := fzlogic.NewFzHourlyReportLogic(ctx, svcCtx)
 
-	var oppoCount, xiaomiCount int
-	var oppoErr, xiaomiErr error
+	var oppoCount, xiaomiCount, honorCount int
+	var oppoErr, xiaomiErr, honorErr error
 
 	// 同步今天的OPPO数据
 	oppoCount, oppoErr = l.SyncTodayOppoData()
@@ -49,16 +49,20 @@ func ExecuteFzDataSyncJob(db *gorm.DB, config config.Config) {
 		logx.Infof("成功同步小米数据，账户数量: %d", xiaomiCount)
 	}
 
-	// 汇总结果
-	if oppoErr == nil && xiaomiErr == nil {
-		logx.Infof("飞猪外投数据同步任务执行完成 - OPPO: %d个账户, 小米: %d个账户 - %s",
-			oppoCount, xiaomiCount, time.Now().Format("2006-01-02 15:04:05"))
-	} else if oppoErr != nil && xiaomiErr != nil {
-		logx.Errorf("飞猪外投数据同步任务失败 - OPPO和小米数据均同步失败")
+	// 同步今天的荣耀数据
+	honorCount, honorErr = l.SyncTodayHonorData()
+	if honorErr != nil {
+		logx.Errorf("同步荣耀数据失败: %v", honorErr)
 	} else {
-		logx.Infof("飞猪外投数据同步任务部分完成 - OPPO: %d个账户, 小米: %d个账户 - %s",
-			oppoCount, xiaomiCount, time.Now().Format("2006-01-02 15:04:05"))
+		logx.Infof("成功同步荣耀数据，账户数量: %d", honorCount)
 	}
+
+	// 汇总结果
+	logx.Infof("飞猪外投数据同步任务执行完成 - OPPO: %d个账户, 小米: %d个账户, 荣耀: %d个账户 - %s",
+		oppoCount, xiaomiCount, honorCount, time.Now().Format("2006-01-02 15:04:05"))
+	_ = oppoErr
+	_ = xiaomiErr
+	_ = honorErr
 }
 
 // sendFzDingTalkNotification 发送飞猪数据钉钉通知
@@ -85,7 +89,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 		return
 	}
 
-	// 分组统计：集能量活动 vs 常规活动
+	// 分组统计：常规活动（含荣耀）vs 酒店专项
 	var regularCost, regularConvertDp, regularDpAppOrderNums float64
 	var energyCost, energyConvertDp, energyDpAppOrderNums float64
 	var regularCount, energyCount int64
@@ -98,7 +102,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 			energyDpAppOrderNums += float64(report.DpAppOrderNums)
 			energyCount++
 		} else {
-			// 常规活动
+			// 常规活动（含荣耀）
 			regularCost += report.Cost
 			regularConvertDp += float64(report.ConvertDp)
 			regularDpAppOrderNums += float64(report.DpAppOrderNums)
@@ -133,7 +137,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 		energyDpOrderPrice = energyCashCost / energyDpAppOrderNums
 	}
 
-	// 汇总数据（常规 + 集能量）
+	// 汇总数据（常规 + 酒店专项）
 	totalConvertDp := regularConvertDp + energyConvertDp
 	totalDpAppOrderNums := regularDpAppOrderNums + energyDpAppOrderNums
 	totalCostYuan := (regularCost + energyCost) / 100
@@ -172,7 +176,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 		}
 	}
 
-	// 常规活动数据
+	// 常规活动数据（含荣耀）
 	if regularCount > 0 {
 		markdownText += fmt.Sprintf(
 			"**常规活动-海纳【飞猪常规活动 %s简报】**  \n"+
@@ -263,7 +267,7 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 		return
 	}
 
-	// 分组统计：集能量活动 vs 常规活动
+	// 分组统计：常规活动（含荣耀）vs 集能量
 	var regularCost, regularConvertDp, regularDpAppOrderNums float64
 	var energyCost, energyConvertDp, energyDpAppOrderNums float64
 	var regularCount, energyCount int64
@@ -276,31 +280,17 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 			energyDpAppOrderNums += float64(report.DpAppOrderNums)
 			energyCount++
 		} else {
-			// 常规活动
+			// 常规活动（含荣耀）
 			regularCost += report.Cost
 			regularConvertDp += float64(report.ConvertDp)
 			regularDpAppOrderNums += float64(report.DpAppOrderNums)
 			regularCount++
 		}
 	}
+	_ = regularDpAppOrderNums
+	_ = energyDpAppOrderNums
 
-	// 计算成本（数据库中是分，需要除以100）
-	// 实际消耗（元）
-	//regularCostYuan := regularCost / 100
-	// 现金消耗 = 实际消耗 * 1.2 * 0.85
-	//regularCashCost := regularCostYuan * 1.2 * 0.85
-	//regularConvertDpPrice := 0.0
-	if regularConvertDp > 0 {
-		//regularConvertDpPrice = regularCashCost / regularConvertDp
-	}
-	//regularDpOrderPrice := 0.0
-	if regularDpAppOrderNums > 0 {
-		//regularDpOrderPrice = regularCashCost / regularDpAppOrderNums
-	}
-
-	// 实际消耗（元）
 	energyCostYuan := energyCost / 100
-	// 现金消耗 = 实际消耗 * 1.2 * 0.85
 	energyCashCost := energyCostYuan * 1.2 * 0.85
 	energyConvertDpPrice := 0.0
 	if energyConvertDp > 0 {
@@ -345,25 +335,6 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 			markdownText += "---\n"
 		}
 	}
-
-	// 常规活动数据
-	// if regularCount > 0 {
-	// 	markdownText += fmt.Sprintf(
-	// 		"**常规活动-海纳【飞猪常规活动 %s日报】**  \n"+
-	// 			"**唤起量**：%d  \n"+
-	// 			"**现金消耗**：%.2f（日预算 5000）  \n"+
-	// 			"**唤起成本**：%.2f（考核 0.5）  \n"+
-	// 			"**下单 pv 成本**：%.2f（考核 50）  \n\n",
-	// 		displayDate,
-	// 		int64(regularConvertDp),
-	// 		regularCashCost,
-	// 		regularConvertDpPrice,
-	// 		regularDpOrderPrice,
-	// 	)
-	// 	if energyCount > 0 {
-	// 		markdownText += "---\n"
-	// 	}
-	// }
 
 	// 集能量活动数据
 	if energyCount > 0 {

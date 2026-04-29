@@ -1,0 +1,445 @@
+5.3获取Access Token
+
+请求URL
+Environment	URL
+生产环境	https://{domain}/auth/realms/advertisement/protocol/openid-connect/token
+请求方式
+POST
+请求参数
+Name	Type	Length	Description	Required
+grant_type	String	128	固定取值：client_credentials	Yes
+client_id	String	128	邮件申请到的Client ID	Yes
+client_secret	String	128	邮件申请到的Client Secret	Yes
+
+请求示例
+curl --location --request POST 'https://iam.developer.hihonor.com/auth/realms/advertisement/protocol/openid-connect/token' \
+--header 'Content-Type: application/x-www-form-urlencoded' \
+--data-urlencode 'grant_type=client_credentials' \
+--data-urlencode 'client_id=de7d28d73bab4ca48b51cd261b0d7774' \
+--data-urlencode 'client_secret=2F6ZHRPGlkgicgaXbLUfgpzTqfdKu9Vg'
+响应参数
+Name	Type	Length	Description	Required
+access_token	String	2048	用于业务接口认证/鉴权的授权令牌，过期后需重新获取 建议对access_token进行缓存	Yes
+expires_in	Integer	N/A	Access Token有效期，单位：秒。默认有效期为1小时，过期后需重新获取	Yes
+token_type	String	16	Token类型：Bearer	No
+not-before-policy	Integer	N/A	有效期的起始时间，默认为当前时间	No
+scope	String	255	权限范围	No
+error	String	64	异常错误码，仅发生异常时返回本字段	No
+error_description	String	255	异常错误描述，仅发生异常时返回本字段	No
+
+响应示例
+{
+"access_token": "eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICIxNFgyOGNrUmlzLWpaTmhRZk9WUFJCQWlxdkhHV1VIVlcyTWx4aElBbFdNIn0.eyJleHAiOjE2NzI3Mzk5MDIsImlhdCI6MTY3MjczNjMwMiwianRpIjoiNTE1ZjU1OGMtNGI1Yi00ZGE0LWI4ZTctYTBlMmZjYWI3NWE4IiwiaXNzIjoiaHR0cHM6Ly9pYW0tZGV2LmNsb3VkLmhpaG9ub3IuY29tL2F1dGgvcmVhbG1zL2FkdmVydGlzZW1lbnQiLCJhdWQiOiJBZFBsYXRmb3JtRGVsaXZlcnkiLCJzdWIiOiJkNGFjNjE0ZS0yMjYzLTQxYjItYWNmYS03NzZmMzc4MDZmM2MiLCJ0eXAiOiJCZWFyZXIiLCJhenAiOiJkZTdkMjhkNzNiYWI0Y2E0OGI1MWNkMjYxYjBkNzc3NCIsImFjciI6IjEiLCJzY29wZSI6IiIsImNsaWVudEhvc3QiOiIxMC4zMi4xMi4zOSIsImNsaWVudElkIjoiZGU3ZDI4ZDczYmFiNGNhNDhiNTFjZDI2MWIwZDc3NzQiLCJyb2xlcyI6WyJ1cm46YWQ6bWFya2V0aW5nYXBpIl0sInRlYW1faWQiOlsiMTU5NzE0ODAyNDIwMzExNjU0NCJdLCJ0ZWFtX3JvbGVzIjp7fSwiY2xpZW50QWRkcmVzcyI6IjEwLjMyLjEyLjM5In0.AFOSviiKBMX5w3tfkMM9ekomL6-EgJuRFtF9oxl6-BWtveHRnmp6SxxhybpYtHi2nhVmUHogVZGCGumB_pP2EmKnwHXFyPtylMZmvGWE-qcpy1s2fJQfq83QRDYJgkrIOvKAHnJWX0a3_1m9DMTSs5pBMfuByyOsrYlersS1qqKkFEMZP7taxVYLrRzznxSUM9mqi7Cq7AUBHtZDrWdcKLX7njbBe0t9_g7KQO4dtBlPyfa6_oBFhIwx8Fx1N6oWCCiWrTX2Tgww9c01bm6Dg8TtVL3-Xlzxp5BgWwij1pOvlyXjTyOt5NPQc2lQdqZQqnDsF49JMYGW_WxUHUq0dA",
+"expires_in": 3600,
+"refresh_expires_in": 0,
+"token_type": "Bearer",
+"not-before-policy": 0,
+"scope": ""
+}
+
+
+
+
+
+8.18 广告主报表查询（新）
+请求URL
+Environment	URL
+生产环境	https://{domain}/openapi/v2_2/support/ad-report/advertiser
+
+请求方式
+POST
+请求头
+Name	Type	Length	Description	Required
+x-request-id	String	128	接口调用方指定的当前操作的唯一标识，例如：UUID	Yes
+Authorization	String	255	Bearer {Access Token}	Yes
+sub-advertiser-id	String	128	Authorization为服务商时，此字段必填，填写一个该服务商管理的子客的广告主id。Authorization为直客时，此字段选填，为空或为直客本身的广告主id代表操作直客本身数据，为管家管理的直客广告主id则代表管家操作管理的直客的数据	Yes
+
+请求参数
+Name	Type	Length	Description	Required
+filtering	Object1	N/A	过滤字段	No
+startTime	String	10	开始时间，时间格式：“yyyy-MM-dd”	Yes
+endTime	String	10	结束时间，时间格式：“yyyy-MM-dd”	Yes
+timeDimension	Integer	N/A	时间维度，默认为0-天	No
+orderField	String	128	排序字段，广告主报表指标字段的英文名列	No
+orderType	Integer	N/A	排序类型	No
+indexFiltrationList	Object Array	5	查询的过滤条件，条件最多为5个	No
+pageIndex	Integer	N/A	分页当前页（默认第一页）	No
+pageSize	Integer	N/A	分页大小（默认10条）	No
+indexScreenList	String Array	200	查询指定指标，
+如果包含了可聚合列则按照聚合列聚合数据返回。聚合列聚合数据举例
+如果此参数为空，返回广告主报表指标字段的”是否默认”列为是的字段，且默认按照时间加广告主id聚合数据
+其中广告主报表指标字段的”是否必须”列为是的字段是默认返回不需要指定	No
+
+Object：
+Name	Type	Length	Description	Required
+filterField	String	128	过滤的指标，广告主报表指标字段的英文名列	No
+symbolType	Integer	N/A	比较类型	No
+value	Double	N/A	查询过滤值
+说明：广告主报表指标字段小数类最多两位小数，整数类传整数，金额单位：元	No
+
+Object1：
+Name	Type	Length	Description	Required
+trackType	Integer	N/A	归因数据口径，缺省值0-曝光归因	No
+
+请求示例
+curl --location --request POST 'https://ads.cloud.honor.com/openapi/v2_2/support/ad-report/advertiser'\
+--header 'content-type: application/json' \
+--header 'x-request-id: 3420edbf-ec5b-11ec-a210-00ff998485a9' \
+--header 'Authorization: eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJnZE5WNXlVeEJXUjY0bm02TzNoME1JWFpuNzZRLTlPMlhjc09tSzQ2aFRVIn0.eyJleHAiOjE3NDU3NDg4NjMsImlhdCI6MTc0NTc0NTI2MywianRpIjoiOTNmYTA5MmYtZWJlZi00ZDdkLThhNjMtNTNjOGVjNGI2OWQ3IiwiaXNzIjoiaHR0cHM6Ly9pYW0tdGVzdC5jbG91ZC5oaWhvbm9yLmNvbS9hdXRoL3JlYWxtcy9hZHZlcnRpc2VtZW50LXNpdCIsImF1ZCI6IkFkUGxhdGZvcm1EZWxpdmVyeSIsInN1YiI6IjkzNDgyNTM3LWQxNGMtNGQzOC05MmQxLTJhZWQ0ZDVlNTk4NSIsInR5cCI6IkJlYXJlciIsImF6cCI6IjE4MzA1MTIyMTk0MzEyMzk2ODAiLCJhY3IiOiIxIiwic2NvcGUiOiIiLCJjbGllbnRJZCI6IjE4MzA1MTIyMTk0MzEyMzk2ODAiLCJjbGllbnRIb3N0IjoiMTAuMTUuMTQzLjEwMyIsInJvbGVzIjpbInVybjphZDptYXJrZXRpbmdhcGkiXSwidGVhbV9pZCI6WyIxMTUyNzYiXSwidGVhbV9yb2xlcyI6e30sImNsaWVudEFkZHJlc3MiOiIxMC4xNS4xNDMuMTAzIn0.fgsjeZvUKWSu7NUkTjhmtQrbXLIwxsiA2MPOpAE5PjnE0Q_8jhLd_j0bDzoQHmVXuMJge5eRfudhvip2cAf9stO81IKfxgb7QCO1r8Ssaamls7spSoBh7A_-HidPLDTh8naomMPk77NCu_e1Z_5NCyh43lJpjOgEpd_1dBf5nPlSH0XiU7R6h13xEMoiySGoKOmYfSLkSbYBydtisLB8wOf6OhZ-6f8zoDCq13DHDH1Nq4BGC3XuShOmtomOgSAMmXHbW37bWYaeaCsRbR6zSWnsKdwp0nq9FtK_xcFoxAuw_VxaqGVH7DroIU0APsWKgDPe4CbUmKeu1XaJodrl0A' \
+--data-raw '{
+    "filtering": {
+        "trackType": null
+    },
+    "pageSize": 10,
+    "pageIndex": 1,
+    "startTime": "2025-05-01",
+    "endTime": "2025-05-31",
+    "timeDimension": 0,
+    "orderField": "click",
+    "orderType": 1,
+    "indexFiltrationList": [
+        {
+            "filterField": "click",
+            "symbolType": 2,
+            "value": 400
+        }
+    ],
+    "indexScreenList": [
+        "clickRate",
+        "aveImp",
+        "cashCount"
+    ]
+}'
+响应参数
+Name	Type	Length	Description	Required
+code	Integer	N/A	返回码	Yes
+message	String	255	响应描述	Yes
+data	Object 	N/A	报表明细数据	Yes
+Object 定义:
+Name	Type	Length	Description	Required
+adPageResponse	adPageResponse	N/A	分页统计详情	No
+adAdvertiserStatcVo	Map<String,Object>	N/A	基于筛选条件的总计	No
+adPageResponse 定义:
+Name	Type	Length	Description	Required
+pageSize	Integer	N/A	分页大小	Yes
+pageIndex	Integer	N/A	页码	Yes
+totalCount	Integer	N/A	总条数	Yes
+data	Object2 Array	N/A	指标数据	Yes
+Object2 定义:
+Name	Type	Length	Description	Required
+metrics	Map<String,Object>	N/A	指标值 	Yes
+staticTime	String	10	日期 时间格式：“yyyy-MM-dd”	Yes
+statcHour	Integer	N/A	小时段	No
+timePeriod	Long	N/A	时间戳（精确到天）	Yes
+
+响应示例
+{
+    "code": 0,
+    "message": "",
+    "data": {
+        "adPageResponse": {
+            "totalCount": 3,
+            "pageSize": 10,
+            "pageIndex": 1,
+            "data": [
+                {
+                    "metrics": {
+                        "clickRate": 86.33,
+                        "adBilling": 400000000,
+                        "impression": 600,
+                        "click": 518,
+                        "cashCount": 250000000,
+                        "aveImp": 666666666.6667
+                    },
+                    "staticTime": "2025-05-19",
+                    "timePeriod": 1747584000000
+                },
+                {
+                    "metrics": {
+                        "clickRate": 83.60,
+                        "adBilling": 300000000,
+                        "impression": 500,
+                        "click": 418,
+                        "cashCount": 100000000,
+                        "aveImp": 600000000.0000
+                    },
+                    "staticTime": "2025-05-18",
+                    "timePeriod": 1747497600000
+                }
+            ]
+        },
+        "adAdvertiserStatcVo": {
+            "clickRate": 86.33,
+            "adBilling": 1200000000,
+            "impression": 1800,
+            "click": 1554,
+            "cashCount": 400000000,
+            "aveImp": 666666666.6667
+        }
+    }
+}
+
+
+
+
+
+
+
+广告主报表指标字段
+
+广告主报表支持的指标字段
+默认按照：时间加广告主id聚合数据返回
+英文名	中文名	类型	是否支持排序	是否支持过滤	是否为金额	是否可聚合	是否默认	是否必须
+adBilling	广告消耗(元)	小数	支持	支持	是	否	是	是
+impression	广告展示数	整数	支持	支持	否	否	是	是
+click	广告点击数	整数	支持	支持	否	否	是	是
+clickRate	点击率	小数	支持	支持	否	否	否	否
+aveImp	平均展示单价	小数	支持	支持	是	否	否	否
+aveClick	平均点击单价	小数	支持	支持	是	否	否	否
+cashCount	现金广告消耗(元)	小数	支持	支持	是	否	否	否
+creditCount	授信额度广告消耗(元)	小数	支持	支持	是	否	否	否
+virtualAndCashCount	返货金广告消耗(元)	小数	支持	支持	是	否	否	否
+virtualCount	虚拟金广告消耗(元)	小数	支持	支持	是	否	否	否
+finishDownload	应用下载完成数	整数	支持	支持	否	否	否	否
+finishDownloadRate	应用下载率	小数	支持	支持	否	否	否	否
+finishDownloadCost	应用下载成本	小数	支持	支持	是	否	否	否
+activate	激活	整数	支持	支持	否	否	否	否
+impressionActivateRate	曝光激活率	小数	支持	支持	否	否	否	否
+clickActivateRate	点击激活率	小数	支持	支持	否	否	否	否
+downloadActivateRate	下载激活率	小数	支持	支持	否	否	否	否
+activateCost	激活成本	小数	支持	支持	是	否	否	否
+honorActiveEvent	荣耀激活	整数	支持	支持	否	否	否	否
+impressionHonorActiveEventRate	曝光荣耀激活率	小数	支持	支持	否	否	否	否
+clickHonorActiveEventRate	点击荣耀激活率	小数	支持	支持	否	否	否	否
+downloadHonorActiveEventRate	下载荣耀激活率	小数	支持	支持	否	否	否	否
+honorActivateCost	荣耀激活成本	小数	支持	支持	是	否	否	否
+honorPull	荣耀拉活	整数	支持	支持	否	否	否	否
+honorPullRate	荣耀拉活率	小数	支持	支持	否	否	否	否
+honorPullCost	全网首唤成本	小数	支持	支持	是	否	否	否
+register	注册	整数	支持	支持	否	否	否	否
+impressionRegisterRate	曝光注册率	小数	支持	支持	否	否	否	否
+registerRate	点击注册率	小数	支持	支持	否	否	否	否
+downloadRegisterRate	下载注册率	小数	支持	支持	否	否	否	否
+registerCost	注册成本	小数	支持	支持	是	否	否	否
+login	登录	整数	支持	支持	否	否	否	否
+impressionLoginRate	曝光登录率	小数	支持	支持	否	否	否	否
+loginRate	点击登录率	小数	支持	支持	否	否	否	否
+downloadLoginRate	下载登录率	小数	支持	支持	否	否	否	否
+loginCost	登录成本	小数	支持	支持	是	否	否	否
+retain	次留	整数	支持	支持	否	否	否	否
+activateRetainRate	激活次留率	小数	支持	支持	否	否	否	否
+registerRetainRate	注册次留率	小数	支持	支持	否	否	否	否
+retainCost	次留成本	小数	支持	支持	是	否	否	否
+honorRetain	荣耀次留	整数	支持	支持	否	否	否	否
+honorRetainCost	荣耀次留成本	小数	支持	支持	是	否	否	否
+threeDayRetain	3日留存	整数	支持	支持	否	否	否	否
+threeDayRetainCost	3日留存成本	小数	支持	支持	是	否	否	否
+honorThreeDayRetain	荣耀3日留存	整数	支持	支持	否	否	否	否
+honorThreeDayRetainCost	荣耀3日留存成本	小数	支持	支持	是	否	否	否
+sevenDayRetain	7日留存	整数	支持	支持	否	否	否	否
+sevenDayRetainCost	7日留存成本	小数	支持	支持	是	否	否	否
+honorSevenDayRetain	荣耀7日留存	整数	支持	支持	否	否	否	否
+honorSevenDayRetainCost	荣耀7日留存成本	小数	支持	支持	是	否	否	否
+reEngage	拉活	整数	支持	支持	否	否	否	否
+impressionPullRate	曝光拉活率	小数	支持	支持	否	否	否	否
+clickPullRate	点击拉活率	小数	支持	支持	否	否	否	否
+pullCost	拉活成本	小数	支持	支持	是	否	否	否
+honorAddQuickApp	荣耀加桌	整数	支持	支持	否	否	否	否
+impressionHonorAddQuickAppRate	曝光荣耀加桌率	小数	支持	支持	否	否	否	否
+honorAddQuickAppRate	点击荣耀加桌率	小数	支持	支持	否	否	否	否
+honorAddQuickAppCost	荣耀加桌成本	小数	支持	支持	是	否	否	否
+addQuickApp	快应用添加	整数	支持	支持	否	否	否	否
+impressionAddQuickAppRate	曝光快应用添加率	小数	支持	支持	否	否	否	否
+addQuickAppRate	点击快应用添加率	小数	支持	支持	否	否	否	否
+addQuickAppCost	快应用添加成本	小数	支持	支持	是	否	否	否
+reNew	更新	整数	支持	支持	否	否	否	否
+impressionReNewRate	曝光更新率	小数	支持	支持	否	否	否	否
+clickReNewRate	点击更新率	小数	支持	支持	否	否	否	否
+downloadReNewRate	下载更新率	小数	支持	支持	否	否	否	否
+reNewCost	更新成本	小数	支持	支持	是	否	否	否
+paid	首次付费	整数	支持	支持	否	否	否	否
+paidCost	首次付费成本	小数	支持	支持	是	否	否	否
+payment	付费	整数	支持	支持	否	否	否	否
+paymentCost	付费成本	小数	支持	支持	是	否	否	否
+paymentAmount	付费金额	小数	支持	支持	是	否	否	否
+oneDayPay	首日付费	整数	支持	支持	否	否	否	否
+oneDayPayCost	首日付费成本	小数	支持	支持	是	否	否	否
+oneDayPayment	首日付费金额	小数	支持	支持	是	否	否	否
+gameLtv	累计变现金额	小数	支持	支持	是	否	否	否
+gameLtvRoi	累计变现ROI	小数	支持	支持	否	否	否	否
+gameLpt	累计付费金额	小数	支持	支持	是	否	否	否
+openedFromPushNotification	从推送通知打开	整数	支持	支持	否	否	否	否
+mediaCostImp	媒体变现曝光	整数	支持	支持	否	否	否	否
+mediaCostClick	媒体变现点击	整数	支持	支持	否	否	否	否
+ltv0d	当日变现LTV	小数	支持	支持	是	否	否	否
+ltv0dROI	当日变现ROI	小数	支持	支持	否	否	否	否
+ltv3d	3日变现LTV	小数	支持	支持	是	否	否	否
+ltv3dROI	3日变现ROI	小数	支持	支持	否	否	否	否
+ltv7d	7日变现LTV	小数	支持	支持	是	否	否	否
+ltv7dROI	7日变现ROI	小数	支持	支持	否	否	否	否
+ltv30d	30日变现LTV	小数	支持	支持	是	否	否	否
+ltv30dROI	30日变现ROI	小数	支持	支持	否	否	否	否
+preOpenAccount	预开户	整数	支持	支持	否	否	否	否
+preOpenAccountCost	预开户成本	小数	支持	支持	是	否	否	否
+cardAddSuccess	添卡数	整数	支持	支持	否	否	否	否
+cardAddSuccessCost	添卡成本	小数	支持	支持	是	否	否	否
+honorKeyAction	荣耀关键行为	整数	支持	支持	否	否	否	否
+honorKeyActionCost	荣耀关键行为成本	小数	支持	支持	是	否	否	否
+quickAppInvoke	快应用调起量	整数	支持	支持	否	否	否	否
+gameActivate	游戏激活	整数	支持	支持	否	否	否	否
+gameActivateRate	游戏激活率	小数	支持	支持	否	否	否	否
+gameActivateCost	游戏激活成本	小数	支持	支持	是	否	否	否
+gameRegister	游戏注册	整数	支持	支持	否	否	否	否
+gameRegisterRate	游戏注册率	小数	支持	支持	否	否	否	否
+gameRegisterCost	游戏注册成本	小数	支持	支持	是	否	否	否
+gameFirstPay	游戏首次付费	整数	支持	支持	否	否	否	否
+gameFirstPayRate	游戏首次付费率	小数	支持	支持	否	否	否	否
+gameFirstPayCost	游戏首次付费成本	小数	支持	支持	是	否	否	否
+gamePay	游戏付费	整数	支持	支持	否	否	否	否
+clickGamePayRate	游戏付费率	小数	支持	支持	否	否	否	否
+gamePayCost	游戏付费成本	小数	支持	支持	是	否	否	否
+gamePay1stDay	游戏首日付费	整数	支持	支持	否	否	否	否
+clickGamePay1stDayRate	游戏首日付费率	小数	支持	支持	否	否	否	否
+gamePay1stDayCost	游戏首日付费成本	小数	支持	支持	是	否	否	否
+payment1std	游戏首日付费金额	小数	支持	支持	是	否	否	否
+payment1stdROI	游戏首日付费ROI	小数	支持	支持	否	否	否	否
+payment7thd	游戏7日付费金额	小数	支持	支持	是	否	否	否
+payment7thdROI	游戏7日付费ROI	小数	支持	支持	否	否	否	否
+gamePayAmount	游戏付费金额	小数	支持	支持	是	否	否	否
+payment30thdROI	游戏30日付费ROI	小数	支持	支持	否	否	否	否
+gameRetain	游戏次留	整数	支持	支持	否	否	否	否
+gameRegisterGameRetainRate	游戏注册次留率	小数	支持	支持	否	否	否	否
+gameActivateRetainRate	游戏激活次留率	小数	支持	支持	否	否	否	否
+gameRetainCost	游戏次留成本	小数	支持	支持	是	否	否	否
+spentCredits	花掉积分	整数	支持	支持	否	否	否	否
+spentCreditsCost	花掉积分成本	小数	支持	支持	是	否	否	否
+gamePackageRedemption	礼包兑换	整数	支持	支持	否	否	否	否
+gamePackageRedemptionCost	礼包兑换成本	小数	支持	支持	是	否	否	否
+gamePackageClaiming	礼包领取	整数	支持	支持	否	否	否	否
+gamePackageClaimingCost	礼包领取成本	小数	支持	支持	是	否	否	否
+createRole	创建角色	整数	支持	支持	否	否	否	否
+createRoleCost	创建角色成本	小数	支持	支持	是	否	否	否
+authorize	游戏授权	整数	支持	支持	否	否	否	否
+authorizeCost	游戏授权成本	小数	支持	支持	是	否	否	否
+tutorialCompletion	完成新手教程	整数	支持	支持	否	否	否	否
+tutorialCompletionCost	完成新手教程成本	小数	支持	支持	是	否	否	否
+achievementUnlocked	解锁成就	整数	支持	支持	否	否	否	否
+achievementUnlockedCost	解锁成就成本	小数	支持	支持	是	否	否	否
+levelAchieved	达到级别	整数	支持	支持	否	否	否	否
+levelAchievedCost	达到级别成本	小数	支持	支持	是	否	否	否
+episodeAchieved	游戏通关关卡次数	整数	支持	支持	否	否	否	否
+episodeAchievedCost	游戏通关关卡次数成本	小数	支持	支持	是	否	否	否
+browse	浏览	整数	支持	支持	否	否	否	否
+collection	收藏	整数	支持	支持	否	否	否	否
+preOrder	下单	整数	支持	支持	否	否	否	否
+preOrderCost	下单成本	小数	支持	支持	是	否	否	否
+subscribe	订阅	整数	支持	支持	否	否	否	否
+subscribeCost	订阅成本	小数	支持	支持	是	否	否	否
+subscribeAmount	订阅金额	小数	支持	支持	是	否	否	否
+reservation	预约服务	整数	支持	支持	否	否	否	否
+reservationCost	预约服务成本	小数	支持	支持	是	否	否	否
+addToCart	加入购物车	整数	支持	支持	否	否	否	否
+addToCartCost	加入购物车成本	小数	支持	支持	是	否	否	否
+deliver	订单发货	整数	支持	支持	否	否	否	否
+deliverCost	订单发货成本	小数	支持	支持	是	否	否	否
+orderSigning	订单签收	整数	支持	支持	否	否	否	否
+orderSigningCost	订单签收成本	小数	支持	支持	是	否	否	否
+firstPurchase	首次购买	整数	支持	支持	否	否	否	否
+firstPurchaseCost	首次购买成本	小数	支持	支持	是	否	否	否
+purchaseMemberCard	购买会员	整数	支持	支持	否	否	否	否
+purchaseMemberCardCost	购买会员成本	小数	支持	支持	是	否	否	否
+purchaseMemberCardAmount	购买会员金额	小数	支持	支持	是	否	否	否
+addToWishlist	添加到心愿清单	整数	支持	支持	否	否	否	否
+addToWishlistCost	添加到心愿清单成本	小数	支持	支持	是	否	否	否
+trailClassPaid	体验课付费	整数	支持	支持	否	否	否	否
+trailClassPaidCost	体验课付费成本	小数	支持	支持	是	否	否	否
+fullClassPaid	正价课付费	整数	支持	支持	否	否	否	否
+fullClassPaidCost	正价课付费成本	小数	支持	支持	是	否	否	否
+liveRewards	直播打赏	整数	支持	支持	否	否	否	否
+liveRewardsCost	直播打赏成本	小数	支持	支持	是	否	否	否
+liveRewardsAmount	直播打赏金额	小数	支持	支持	是	否	否	否
+skuPurchase	商品购买	整数	支持	支持	否	否	否	否
+skuPurchaseCost	商品购买成本	小数	支持	支持	是	否	否	否
+skuPurchaseAmount	商品购买金额	小数	支持	支持	是	否	否	否
+pageVisit	页面访问量	整数	支持	支持	否	否	否	否
+userVisit	用户访问量	整数	支持	支持	否	否	否	否
+downloadButtonClick	落地页下载点击总量	整数	支持	支持	否	否	否	否
+buttonJump	button按钮点击量	整数	支持	支持	否	否	否	否
+totalJump	页面跳转数	整数	支持	支持	否	否	否	否
+finishDownLoadLanding	落地页应用下载完成总数	整数	支持	支持	否	否	否	否
+downLoadConvRate	落地页下载转化率	小数	支持	支持	否	否	否	否
+formSubmitClick	表单提交点击次数	整数	支持	支持	否	否	否	否
+formSubmitSuccess	表单提交成功次数	整数	支持	支持	否	否	否	否
+formSubmit	表单提交	整数	支持	支持	否	否	否	否
+formSubmitCost	表单提交成本	小数	支持	支持	是	否	否	否
+consult	有效咨询	整数	支持	支持	否	否	否	否
+consultCost	有效咨询成本	小数	支持	支持	是	否	否	否
+effectiveLeadsForm	有效线索-表单	整数	支持	支持	否	否	否	否
+effectiveLeadsFormCost	有效线索-表单成本	小数	支持	支持	是	否	否	否
+potentialCustomerForm	潜在客户线索-表单	整数	支持	支持	否	否	否	否
+potentialCustomerFormCost	潜在客户线索-表单成本	小数	支持	支持	是	否	否	否
+customAcquisit	有效获客	整数	支持	支持	否	否	否	否
+customAcquisitCost	有效获客成本	小数	支持	支持	是	否	否	否
+book	有效预定	整数	支持	支持	否	否	否	否
+bookCost	有效预定成本	小数	支持	支持	是	否	否	否
+effectiveLeadsShop	有效到店	整数	支持	支持	否	否	否	否
+effectiveLeadsShopCost	有效到店成本	小数	支持	支持	是	否	否	否
+openApp	应用打开	整数	支持	支持	否	否	否	否
+consultOnline	网页咨询	整数	支持	支持	否	否	否	否
+consultOnlineCost	网页咨询成本	小数	支持	支持	是	否	否	否
+effectiveLeadsOnline	有效线索-咨询	整数	支持	支持	否	否	否	否
+effectiveLeadsOnlineCost	有效线索-咨询成本	小数	支持	支持	是	否	否	否
+potentialCustomerOnline	潜在客户线索-咨询	整数	支持	支持	否	否	否	否
+potentialCustomerOnlineCost	潜在客户线索-咨询成本	小数	支持	支持	是	否	否	否
+phoneDialing	电话直拨	整数	支持	支持	否	否	否	否
+phoneDialingCost	电话直拨成本	小数	支持	支持	是	否	否	否
+effectiveLeadsPhone	有效线索-电话	整数	支持	支持	否	否	否	否
+effectiveLeadsPhoneCost	有效线索-电话成本	小数	支持	支持	是	否	否	否
+potentialCustomerPhone	潜在客户线索-电话	整数	支持	支持	否	否	否	否
+potentialCustomerPhoneCost	潜在客户线索-电话成本	小数	支持	支持	是	否	否	否
+followScan	扫码关注	整数	支持	支持	否	否	否	否
+leadsLottery	抽奖线索	整数	支持	支持	否	否	否	否
+addPaymentInfo	添加付款信息	整数	支持	支持	否	否	否	否
+startTrial	开始试用	整数	支持	支持	否	否	否	否
+initiatedCheckout	发起结账	整数	支持	支持	否	否	否	否
+invite	邀请	整数	支持	支持	否	否	否	否
+search	搜索	整数	支持	支持	否	否	否	否
+share	分享	整数	支持	支持	否	否	否	否
+travelBooking	旅行预订	整数	支持	支持	否	否	否	否
+rate	评级	整数	支持	支持	否	否	否	否
+contentView	内容视图	整数	支持	支持	否	否	否	否
+customAppDown	变现关键行为(应用)	整数	支持	支持	否	否	否	否
+customAppDownCost	变现关键行为(应用)成本	小数	支持	支持	是	否	否	否
+customWebPage	自定义-网页	整数	支持	支持	否	否	否	否
+customWebPageCost	自定义-网页成本	小数	支持	支持	是	否	否	否
+customQuickApp	变现关键行为(快应用)	整数	支持	支持	否	否	否	否
+customQuickAppCost	变现关键行为(快应用)成本	小数	支持	支持	是	否	否	否
+customMiniApp	自定义-小程序	整数	支持	支持	否	否	否	否
+customMiniAppCost	自定义-小程序成本	小数	支持	支持	是	否	否	否
+loanCompletion	完件	整数	支持	支持	否	否	否	否
+loanCompletionCost	完件成本	小数	支持	支持	是	否	否	否
+preCredit	预授信	整数	支持	支持	否	否	否	否
+preCreditCost	预授信成本	小数	支持	支持	是	否	否	否
+credit	授信	整数	支持	支持	否	否	否	否
+creditCost	授信成本	小数	支持	支持	是	否	否	否
+follow	关注	整数	支持	支持	否	否	否	否
+forward	转发	整数	支持	支持	否	否	否	否
+reading	阅读	整数	支持	支持	否	否	否	否
+thumbsUp	点赞	整数	支持	支持	否	否	否	否
+comment	评论	整数	支持	支持	否	否	否	否
+customAppBehavior	自定义行为(应用)	整数	支持	支持	否	否	否	否
+customAppBehaviorCost	自定义行为(应用)成本	整数	支持	支持	是	否	否	否
+thirtyDayGameLTV	游戏30日LTV	小数	支持	支持	是	否	否	否
+sevenDayGameLTV	游戏7日LTV	小数	支持	支持	是	否	否	否
+threeDayGameLTV	游戏3日LTV	小数	支持	支持	是	否	否	否
+oneDayGameLTV	游戏首日LTV	小数	支持	支持	是	否	否	否
+thirtyDayPayArpu	30日付费arpu	小数	支持	支持	是	否	否	否
+sevenDayPayArpu	7日付费arpu	小数	支持	支持	是	否	否	否
+threeDayPayArpu	3日付费arpu	小数	支持	支持	是	否	否	否
+oneDayPayArpu	首日付费arpu	小数	支持	支持	是	否	否	否
+payment3thdROI	游戏3日付费ROI	小数	支持	支持	是	否	否	否
+payment3thd	游戏3日付费金额	小数	支持	支持	是	否	否	否
+thirtyDayFirstPay	30日首次付费	整数	支持	支持	否	否	否	否
+sevenDayFirstPay	7日首次付费	整数	支持	支持	否	否	否	否
+threeDayFirstPay	3日首次付费	整数	支持	支持	否	否	否	否
+oneDayFirstPay	首日首次付费	整数	支持	支持	否	否	否	否

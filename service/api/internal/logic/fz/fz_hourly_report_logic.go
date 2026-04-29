@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"media_report/service/api/internal/honor"
 	"media_report/service/api/internal/model"
 	"media_report/service/api/internal/oppo"
 	"media_report/service/api/internal/svc"
@@ -273,6 +274,119 @@ func (l *FzHourlyReportLogic) SaveAdnData(req *types.FzSyncAdnDataReq) error {
 		req.MediaAdvName, req.MediaAdvId, req.Cost, req.ConvertDp, req.DpAppOrderNums, req.Click, req.Expose)
 
 	return nil
+}
+
+// SyncHonorData 同步荣耀媒体数据
+func (l *FzHourlyReportLogic) SyncHonorData(reportDate string) (int, error) {
+	// 1. 从数据库获取所有荣耀账户
+	advertiserModel := model.NewFzMediaAdvertiserModel(l.svcCtx.DB)
+	advertisers, err := advertiserModel.FindByMedia("honor")
+	if err != nil {
+		return 0, fmt.Errorf("查询荣耀账户失败: %w", err)
+	}
+
+	if len(advertisers) == 0 {
+		return 0, fmt.Errorf("未找到荣耀账户")
+	}
+
+	// 2. 将日期格式从 20260211 转换为 2026-02-11
+	var formattedDate string
+	if len(reportDate) == 8 {
+		formattedDate = fmt.Sprintf("%s-%s-%s", reportDate[0:4], reportDate[4:6], reportDate[6:8])
+	} else {
+		formattedDate = reportDate
+	}
+
+	reportModel := model.NewFzHourlyReportModel(l.svcCtx.DB)
+	reportDateInt, _ := strconv.Atoi(reportDate)
+	successCount := 0
+
+	for _, advertiser := range advertisers {
+		if advertiser.ClientID == "" || advertiser.ClientSecret == "" {
+			fmt.Printf("荣耀账户 %s(%s) 未配置 ClientID/ClientSecret，跳过\n", advertiser.MediaAdvName, advertiser.MediaAdvId)
+			continue
+		}
+
+		// 3. 每个账户使用自己的凭据创建独立客户端
+		honorClient := honor.NewHonorAPIClient(advertiser.ClientID, advertiser.ClientSecret)
+
+		// 4. 查询该账户广告主报表（honorPull/payment 非默认字段，须显式指定）
+		req := honor.ReportRequest{
+			StartTime:       formattedDate,
+			EndTime:         formattedDate,
+			TimeDimension:   0,
+			PageIndex:       1,
+			PageSize:        100,
+			IndexScreenList: []string{"honorPull", "honorPullCost", "payment", "paymentCost"},
+		}
+
+		items, err := honorClient.QueryAdvertiserReport(req, advertiser.MediaAdvId)
+		if err != nil {
+			fmt.Printf("查询荣耀账户 %s(%s) 数据失败: %v\n", advertiser.MediaAdvName, advertiser.MediaAdvId, err)
+			continue
+		}
+
+		if len(items) == 0 {
+			fmt.Printf("荣耀账户 %s(%s) 暂无数据\n", advertiser.MediaAdvName, advertiser.MediaAdvId)
+			continue
+		}
+
+		// 5. 汇总所有返回条目（API 按版位拆分，需汇总）
+		var totalCost float64
+		var totalImpression, totalClick, totalHonorPull, totalPayment int64
+		var totalHonorPullCost, totalPaymentCost float64
+
+		for _, item := range items {
+			totalCost += honor.ToFloat64(item.Metrics.AdBilling)
+			totalImpression += honor.ToInt64(item.Metrics.Impression)
+			totalClick += honor.ToInt64(item.Metrics.Click)
+			totalHonorPull += honor.ToInt64(item.Metrics.HonorPull)
+			totalHonorPullCost += honor.ToFloat64(item.Metrics.HonorPullCost)
+			totalPayment += honor.ToInt64(item.Metrics.Payment)
+			totalPaymentCost += honor.ToFloat64(item.Metrics.PaymentCost)
+		}
+
+		var avgHonorPullCost float64
+		if totalHonorPull > 0 {
+			avgHonorPullCost = totalHonorPullCost / float64(totalHonorPull)
+		}
+		var avgPaymentCost float64
+		if totalPayment > 0 {
+			avgPaymentCost = totalPaymentCost / float64(totalPayment)
+		}
+
+		report := &model.FzHourlyReport{
+			Media:           "honor",
+			MediaAdvId:      advertiser.MediaAdvId,
+			MediaAdvName:    advertiser.MediaAdvName,
+			ReportDate:      reportDateInt,
+			Cost:            totalCost / 10000,             // 微→分（1元=1000000微，1分=10000微）
+			ConvertDp:       totalHonorPull,                // 全网首唤数
+			DpAppOrderNums:  totalPayment,                  // 付费数
+			Click:           totalClick,
+			Expose:          totalImpression,
+			ConvertDpPrice:  avgHonorPullCost / 10000,      // 微→分
+			DpAppOrderPrice: avgPaymentCost / 10000,        // 微→分
+		}
+
+		if err := reportModel.InsertOrUpdate(report); err != nil {
+			fmt.Printf("保存荣耀账户 %s(%s) 数据失败: %v\n", advertiser.MediaAdvName, advertiser.MediaAdvId, err)
+			continue
+		}
+
+		successCount++
+		fmt.Printf("成功同步荣耀账户 %s(%s) 数据: 消耗=%.2f分, 全网首唤=%d, 付费=%d, 点击=%d, 曝光=%d\n",
+			advertiser.MediaAdvName, advertiser.MediaAdvId, totalCost, totalHonorPull, totalPayment, totalClick, totalImpression)
+	}
+
+	return successCount, nil
+}
+
+// SyncTodayHonorData 同步今天的荣耀数据
+func (l *FzHourlyReportLogic) SyncTodayHonorData() (int, error) {
+	loc, _ := time.LoadLocation("Asia/Shanghai")
+	today := time.Now().In(loc).Format("20060102")
+	return l.SyncHonorData(today)
 }
 
 // GetReportList 获取报表列表

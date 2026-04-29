@@ -40,7 +40,26 @@ func TestGenerateSign(t *testing.T) {
 	// TODO: 替换为实际的 mediaId、token、originalUrl
 	mediaId := "100339"
 	token := "OhqCUwzRIj1Pwp2D6d1oo0IbWM0OLHX0"
-	originalUrl := "http://adn.atd.com/index.php?r=openapi/ocpx/advertiser-control&action=stop&advertiserId=100609&specialType=630"
+	originalUrl := "http://adn.atd.com/index.php?r=openapi/ocpx/advertiser-control&action=start&advertiserId=100609&specialType=630"
+
+	fmt.Printf("\n========== 生成加密 Sign ==========\n")
+	fmt.Printf("mediaId:     %s\n", mediaId)
+	fmt.Printf("token:       %s\n", strings.Repeat("*", len(token)))
+	fmt.Printf("originalUrl: %s\n", originalUrl)
+	fmt.Printf("------------------------------------\n")
+
+	sign := generateSign(mediaId, token, originalUrl)
+
+	fmt.Printf("====================================\n")
+	fmt.Printf("最终 sign: %s\n", sign)
+	fmt.Printf("====================================\n\n")
+}
+
+func TestGenerateAppKeySign(t *testing.T) {
+	// TODO: 替换为实际的 mediaId、token、originalUrl
+	mediaId := "100339"
+	token := "4vHy1s6JTs9bYuqD1fHroJJGzaChTOqY"
+	originalUrl := "http://adnv2.atd.com/index.php?r=openapi/ocpx/advertiser-control&action=start&appKey=32908011"
 
 	fmt.Printf("\n========== 生成加密 Sign ==========\n")
 	fmt.Printf("mediaId:     %s\n", mediaId)

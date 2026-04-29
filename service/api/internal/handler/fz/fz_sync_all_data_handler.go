@@ -17,8 +17,8 @@ func FzSyncAllDataHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 		l := fz.NewFzHourlyReportLogic(r.Context(), svcCtx)
 
-		var oppoCount, xiaomiCount int
-		var oppoErr, xiaomiErr error
+		var oppoCount, xiaomiCount, honorCount int
+		var oppoErr, xiaomiErr, honorErr error
 
 		// 同步OPPO数据
 		if reportDate != "" {
@@ -34,6 +34,26 @@ func FzSyncAllDataHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			xiaomiCount, xiaomiErr = l.SyncTodayXiaomiData()
 		}
 
+		// 同步荣耀数据
+		if reportDate != "" {
+			honorCount, honorErr = l.SyncHonorData(reportDate)
+		} else {
+			honorCount, honorErr = l.SyncTodayHonorData()
+		}
+
+		oppoErrMsg := ""
+		if oppoErr != nil {
+			oppoErrMsg = oppoErr.Error()
+		}
+		xiaomiErrMsg := ""
+		if xiaomiErr != nil {
+			xiaomiErrMsg = xiaomiErr.Error()
+		}
+		honorErrMsg := ""
+		if honorErr != nil {
+			honorErrMsg = honorErr.Error()
+		}
+
 		// 构建响应
 		result := map[string]interface{}{
 			"success": true,
@@ -42,29 +62,25 @@ func FzSyncAllDataHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 				"oppo": map[string]interface{}{
 					"count":   oppoCount,
 					"success": oppoErr == nil,
-					"error":   "",
+					"error":   oppoErrMsg,
 				},
 				"xiaomi": map[string]interface{}{
 					"count":   xiaomiCount,
 					"success": xiaomiErr == nil,
-					"error":   "",
+					"error":   xiaomiErrMsg,
+				},
+				"honor": map[string]interface{}{
+					"count":   honorCount,
+					"success": honorErr == nil,
+					"error":   honorErrMsg,
 				},
 			},
 		}
 
-		// 添加错误信息
-		if oppoErr != nil {
-			result["data"].(map[string]interface{})["oppo"].(map[string]interface{})["error"] = oppoErr.Error()
-		}
-		if xiaomiErr != nil {
-			result["data"].(map[string]interface{})["xiaomi"].(map[string]interface{})["error"] = xiaomiErr.Error()
-		}
-
-		// 如果都失败了，返回错误
-		if oppoErr != nil && xiaomiErr != nil {
+		if oppoErr != nil && xiaomiErr != nil && honorErr != nil {
 			result["success"] = false
 			result["message"] = "同步失败"
-		} else if oppoErr != nil || xiaomiErr != nil {
+		} else if oppoErr != nil || xiaomiErr != nil || honorErr != nil {
 			result["message"] = "部分同步成功"
 		}
 

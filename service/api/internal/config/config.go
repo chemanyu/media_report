@@ -21,7 +21,8 @@ type Config struct {
 	Tanx        TanxConfig       // 淘宝联盟配置
 	OppoAPI     OppoAPIConfig    // OPPO广告API配置
 	XiaomiAPI   XiaomiAPIConfig  // 小米广告API配置
-	Ulink       UlinkConfig      // 转链模块配置
+	//HonorAPI    HonorAPIConfig   // 荣耀广告API配置
+	Ulink UlinkConfig // 转链模块配置
 }
 
 type KuaishouConfig struct {
@@ -118,6 +119,12 @@ type OppoAPIConfig struct {
 type XiaomiAPIConfig struct {
 	SignId    string // 签名ID
 	SecretKey string // 密钥
+}
+
+// HonorAPIConfig 荣耀广告API配置
+type HonorAPIConfig struct {
+	ClientID     string // OAuth2 Client ID
+	ClientSecret string // OAuth2 Client Secret
 }
 
 // UlinkConfig 转链模块配置

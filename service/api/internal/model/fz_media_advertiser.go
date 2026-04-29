@@ -10,9 +10,11 @@ import (
 // FzMediaAdvertiser 飞猪媒体账户表
 type FzMediaAdvertiser struct {
 	Id           int64     `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	Media        string    `gorm:"column:media" json:"media"`                   // 媒体简称，oppo, xiaomi, adn
-	MediaAdvId   string    `gorm:"column:media_adv_id" json:"media_adv_id"`     // 媒体账户ID
-	MediaAdvName string    `gorm:"column:media_adv_name" json:"media_adv_name"` // 媒体账户名称
+	Media        string    `gorm:"column:media" json:"media"`                         // 媒体简称，oppo, xiaomi, adn, honor
+	MediaAdvId   string    `gorm:"column:media_adv_id" json:"media_adv_id"`           // 媒体账户ID
+	MediaAdvName string    `gorm:"column:media_adv_name" json:"media_adv_name"`       // 媒体账户名称
+	ClientID     string    `gorm:"column:client_id" json:"client_id"`                 // OAuth2 Client ID（honor专用）
+	ClientSecret string    `gorm:"column:client_secret" json:"client_secret"`         // OAuth2 Client Secret（honor专用）
 	CreateTime   time.Time `gorm:"column:create_time;autoCreateTime" json:"create_time"`
 	UpdateTime   time.Time `gorm:"column:update_time;autoUpdateTime" json:"update_time"`
 }
