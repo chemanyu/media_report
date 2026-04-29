@@ -389,19 +389,20 @@ func (l *FzHourlyReportLogic) SyncTodayHonorData() (int, error) {
 	return l.SyncHonorData(today)
 }
 
-// GetReportList 获取报表列表
+// GetReportList 获取报表列表（最多查询单天数据，以 end_date 为准）
 func (l *FzHourlyReportLogic) GetReportList(req *types.FzHourlyReportListReq) ([]*model.FzHourlyReport, error) {
 	reportModel := model.NewFzHourlyReportModel(l.svcCtx.DB)
 
-	// 解析日期参数
-	var startDate, endDate int
-	if req.StartDate != "" {
-		startDate, _ = strconv.Atoi(req.StartDate)
-	}
+	// 以 end_date 为查询日期，不传则取今天
+	var queryDate int
 	if req.EndDate != "" {
-		endDate, _ = strconv.Atoi(req.EndDate)
+		queryDate, _ = strconv.Atoi(req.EndDate)
+	} else if req.StartDate != "" {
+		queryDate, _ = strconv.Atoi(req.StartDate)
+	} else {
+		loc, _ := time.LoadLocation("Asia/Shanghai")
+		queryDate, _ = strconv.Atoi(time.Now().In(loc).Format("20060102"))
 	}
 
-	// 查询数据
-	return reportModel.FindByDateRange(req.Media, startDate, endDate)
+	return reportModel.FindByDateRange(req.Media, queryDate, queryDate)
 }
