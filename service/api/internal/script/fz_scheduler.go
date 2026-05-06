@@ -97,10 +97,10 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	for _, report := range reports {
 		if report.MediaAdvId == "1001197563" {
 			// 酒店专项
-			energyCost += report.Cost
-			energyConvertDp += float64(report.ConvertDp)
-			energyDpAppOrderNums += float64(report.DpAppOrderNums)
-			energyCount++
+			// energyCost += report.Cost
+			// energyConvertDp += float64(report.ConvertDp)
+			// energyDpAppOrderNums += float64(report.DpAppOrderNums)
+			// energyCount++
 		} else {
 			// 常规活动（含荣耀）
 			regularCost += report.Cost
@@ -112,29 +112,29 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 
 	// 计算成本（数据库中是分，需要除以100）
 	// 实际消耗（元）
-	regularCostYuan := regularCost / 100
+	//regularCostYuan := regularCost / 100
 	// 现金消耗 = 实际消耗 * 1.2 * 0.85
-	regularCashCost := regularCostYuan * 1.2 * 0.85
-	regularConvertDpPrice := 0.0
+	//regularCashCost := regularCostYuan * 1.2 * 0.85
+	//regularConvertDpPrice := 0.0
 	if regularConvertDp > 0 {
-		regularConvertDpPrice = regularCashCost / regularConvertDp
+		//regularConvertDpPrice = regularCashCost / regularConvertDp
 	}
-	regularDpOrderPrice := 0.0
+	//regularDpOrderPrice := 0.0
 	if regularDpAppOrderNums > 0 {
-		regularDpOrderPrice = regularCashCost / regularDpAppOrderNums
+		//regularDpOrderPrice = regularCashCost / regularDpAppOrderNums
 	}
 
 	// 实际消耗（元）
-	energyCostYuan := energyCost / 100
+	//energyCostYuan := energyCost / 100
 	// 现金消耗 = 实际消耗 * 1.2 * 0.85
-	energyCashCost := energyCostYuan * 1.2 * 0.85
-	energyConvertDpPrice := 0.0
+	//energyCashCost := energyCostYuan * 1.2 * 0.85
+	//energyConvertDpPrice := 0.0
 	if energyConvertDp > 0 {
-		energyConvertDpPrice = energyCashCost / energyConvertDp
+		//energyConvertDpPrice = energyCashCost / energyConvertDp
 	}
-	energyDpOrderPrice := 0.0
+	//energyDpOrderPrice := 0.0
 	if energyDpAppOrderNums > 0 {
-		energyDpOrderPrice = energyCashCost / energyDpAppOrderNums
+		//energyDpOrderPrice = energyCashCost / energyDpAppOrderNums
 	}
 
 	// 汇总数据（常规 + 酒店专项）
@@ -177,39 +177,39 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	}
 
 	// 常规活动数据（含荣耀）
-	if regularCount > 0 {
-		markdownText += fmt.Sprintf(
-			"**常规活动-海纳【飞猪常规活动 %s简报】**  \n"+
-				"**唤起量**：%d  \n"+
-				"**现金消耗**：%.2f（日预算 30500  \n"+
-				"**唤起成本**：%.2f（考核 0.5）  \n"+
-				"**下单 pv 成本**：%.2f（考核 50）  \n\n",
-			displayDate,
-			int64(regularConvertDp),
-			regularCashCost,
-			regularConvertDpPrice,
-			regularDpOrderPrice,
-		)
-		if energyCount > 0 {
-			markdownText += "---\n"
-		}
-	}
+	// if regularCount > 0 {
+	// 	markdownText += fmt.Sprintf(
+	// 		"**常规活动-海纳【飞猪常规活动 %s简报】**  \n"+
+	// 			"**唤起量**：%d  \n"+
+	// 			"**现金消耗**：%.2f（日预算 30500  \n"+
+	// 			"**唤起成本**：%.2f（考核 0.5）  \n"+
+	// 			"**下单 pv 成本**：%.2f（考核 50）  \n\n",
+	// 		displayDate,
+	// 		int64(regularConvertDp),
+	// 		regularCashCost,
+	// 		regularConvertDpPrice,
+	// 		regularDpOrderPrice,
+	// 	)
+	// 	if energyCount > 0 {
+	// 		markdownText += "---\n"
+	// 	}
+	// }
 
 	// 酒店专项活动数据
-	if energyCount > 0 {
-		markdownText += fmt.Sprintf(
-			"**酒店专项【飞猪酒店专项 %s简报】**  \n"+
-				"**唤起量**：%d  \n"+
-				"**现金消耗**：%.2f（日预算 5000）  \n"+
-				"**唤起成本**：%.2f（考核 0.5）  \n"+
-				"**下单 pv 成本**：%.2f（考核 50）  \n",
-			displayDate,
-			int64(energyConvertDp),
-			energyCashCost,
-			energyConvertDpPrice,
-			energyDpOrderPrice,
-		)
-	}
+	// if energyCount > 0 {
+	// 	markdownText += fmt.Sprintf(
+	// 		"**酒店专项【飞猪酒店专项 %s简报】**  \n"+
+	// 			"**唤起量**：%d  \n"+
+	// 			"**现金消耗**：%.2f（日预算 5000）  \n"+
+	// 			"**唤起成本**：%.2f（考核 0.5）  \n"+
+	// 			"**下单 pv 成本**：%.2f（考核 50）  \n",
+	// 		displayDate,
+	// 		int64(energyConvertDp),
+	// 		energyCashCost,
+	// 		energyConvertDpPrice,
+	// 		energyDpOrderPrice,
+	// 	)
+	// }
 
 	if markdownText == "" {
 		logx.Info("没有需要发送的飞猪数据")
