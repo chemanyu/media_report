@@ -162,9 +162,9 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 		markdownText += fmt.Sprintf(
 			"**汇总-海纳【飞猪app拉活 %s简报】**  \n"+
 				"**唤起量**：%d  \n"+
-				"**现金消耗**：%.2f（日预算 35500  \n"+
+				"**现金消耗**：%.2f（日预算 30500  \n"+
 				"**唤起成本**：%.2f（考核 0.5）  \n"+
-				"**下单 pv 成本**：%.2f（考核 50）  \n\n",
+				"**下单 pv 成本**：%.2f（考核 55）  \n\n",
 			displayDate,
 			int64(totalConvertDp),
 			totalCashCost,
