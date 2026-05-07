@@ -132,7 +132,7 @@ type UlinkConfig struct {
 	TaobaoAppKey      string // 淘宝客 AppKey
 	TaobaoAppSecret   string // 淘宝客 AppSecret
 	DefaultMaterialId string // 默认活动素材ID
-	DefaultEventId    string // 默认CPA活动ID（4439384=福利购, 4297311=超级红包）
+	DefaultEventId    string // 默认CPA活动ID（5080256=福利购, 4297311=超级红包）
 	PythonPath        string // python3 可执行文件路径（如 "python3"）
 	ScriptDir         string // Python 脚本目录（如 "./scripts/ulink"）
 	ChromeDriverPath  string // ChromeDriver 路径（传给 Python 脚本）
