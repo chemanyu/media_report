@@ -1,0 +1,32 @@
+[Unit]
+Description=Media Report API (go-zero)
+Documentation=https://rta.zhltech.net/guangyixinmedia
+After=network-online.target mysql.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+
+# 切换到 service/api 是关键：media-api.yaml 里的相对路径
+# （etc/media-api.yaml、./download_files、../../scripts/ulink、../../logs/sql.log）
+# 必须以这个目录为 cwd 才能解析
+WorkingDirectory=/data/media_report/service/api
+ExecStart=/data/media_report/bin/media-api -f etc/media-api.yaml
+
+Restart=on-failure
+RestartSec=5s
+TimeoutStopSec=30s
+
+# 时区与日志
+Environment=TZ=Asia/Shanghai
+StandardOutput=append:/data/media_report/logs/media-api.stdout.log
+StandardError=append:/data/media_report/logs/media-api.stderr.log
+
+# 资源 / 安全（保守值，按需调整）
+LimitNOFILE=65535
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
