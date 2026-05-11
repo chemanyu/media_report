@@ -13,6 +13,7 @@ import (
 	fz "media_report/service/api/internal/handler/fz"
 	qczj "media_report/service/api/internal/handler/qczj"
 	report "media_report/service/api/internal/handler/report"
+	sync "media_report/service/api/internal/handler/sync"
 	tanx "media_report/service/api/internal/handler/tanx"
 	ulink "media_report/service/api/internal/handler/ulink"
 	update "media_report/service/api/internal/handler/update"
@@ -522,4 +523,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 	)
+
+	// 内部同步接口：仅在 SyncDump.Enabled=true 的实例响应
+	server.AddRoute(rest.Route{
+		Method:  http.MethodGet,
+		Path:    "/api/internal/sync/dump",
+		Handler: sync.DumpHandler(serverCtx),
+	})
 }

@@ -140,6 +140,9 @@ func Cron(config config.Config, db *gorm.DB) {
 	// 	logx.Infof("飞猪日报数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.FzDayCron)
 	// }
 
+	// 从生产同步配置表（仅 SyncFromProd.Enabled=true 的实例响应）
+	RegisterSyncFromProd(cronScheduler, db, config.SyncFromProd)
+
 	// QCZJ 分时监控（09-23 时每小时触发）
 	if config.Schedule.QczjHourCron != "" {
 		_, err := cronScheduler.AddFunc(config.Schedule.QczjHourCron, func() {

@@ -149,6 +149,42 @@ XiaomiAPI:
   SignId: "229d841af7a5fc79b66ee6a47e11eee3"
   SecretKey: "xtLqxGLlsNMhhKLr"
 
+# 从生产环境同步配置表（覆盖式）
+# 仅在新部署的从节点（如 172.16.3.34）启用，主生产保持 Enabled=false
+SyncFromProd:
+  Enabled: false
+  BaseURL: ""              # 例如 https://rta.zhltech.net/guangyixinmedia
+  Token: ""                # 共享鉴权 Token，与生产 SyncDump.Token 对齐
+  BasicAuthUser: ""        # 生产 nginx HTTP Basic Auth 用户名（无则留空）
+  BasicAuthPass: ""        # 生产 nginx HTTP Basic Auth 密码（无则留空）
+  Cron: "*/30 * * * *"     # 每 30 分钟同步一次
+  Timeout: 30
+  Tables:
+    - media_token
+    - cainiao_advertiser
+    - cainiao_cardinality
+    - fz_media_advertiser
+    - qczj_config
+    - rebate
+    - service_fee
+    - task_type
+    - elm_hc_performance_report
+
+# 只读 dump 接口（仅在主生产启用，从节点保持 Enabled=false）
+SyncDump:
+  Enabled: true
+  Token: ""                # 共享鉴权 Token，与从节点 SyncFromProd.Token 对齐
+  Tables:
+    - media_token
+    - cainiao_advertiser
+    - cainiao_cardinality
+    - fz_media_advertiser
+    - qczj_config
+    - rebate
+    - service_fee
+    - task_type
+    - elm_hc_performance_report
+
 # 转链模块配置
 Ulink:
   TaobaoAppKey: "35238422"

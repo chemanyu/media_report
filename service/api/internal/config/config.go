@@ -22,7 +22,9 @@ type Config struct {
 	OppoAPI     OppoAPIConfig    // OPPO广告API配置
 	XiaomiAPI   XiaomiAPIConfig  // 小米广告API配置
 	//HonorAPI    HonorAPIConfig   // 荣耀广告API配置
-	Ulink UlinkConfig // 转链模块配置
+	Ulink        UlinkConfig        // 转链模块配置
+	SyncFromProd SyncFromProdConfig // 从生产环境同步配置表（仅 34 启用）
+	SyncDump     SyncDumpConfig     // 暴露给其他实例的只读 dump 接口（仅生产启用）
 }
 
 type KuaishouConfig struct {
@@ -125,6 +127,27 @@ type XiaomiAPIConfig struct {
 type HonorAPIConfig struct {
 	ClientID     string // OAuth2 Client ID
 	ClientSecret string // OAuth2 Client Secret
+}
+
+// SyncFromProdConfig 从生产环境同步配置表（覆盖式）
+// 仅在新部署的从节点启用，主生产保持 Enabled=false
+type SyncFromProdConfig struct {
+	Enabled       bool     // 是否启用
+	BaseURL       string   // 生产入口，例如 https://rta.zhltech.net/guangyixinmedia
+	Token         string   // 共享鉴权 Token（X-Sync-Token Header）
+	BasicAuthUser string   // nginx HTTP Basic Auth 用户名（可选）
+	BasicAuthPass string   // nginx HTTP Basic Auth 密码（可选）
+	Cron          string   // 同步 cron 表达式
+	Tables        []string // 要同步的表清单
+	Timeout       int      // HTTP 超时（秒），默认 30
+}
+
+// SyncDumpConfig 只读 dump 接口配置
+// 仅在主生产启用，从节点保持 Enabled=false
+type SyncDumpConfig struct {
+	Enabled bool     // 是否启用
+	Token   string   // 共享鉴权 Token，与 SyncFromProd.Token 对齐
+	Tables  []string // 允许 dump 的表白名单
 }
 
 // UlinkConfig 转链模块配置
