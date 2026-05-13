@@ -19,8 +19,8 @@ import (
 )
 
 func Cron(config config.Config, db *gorm.DB) {
-	// 检查是否配置了定时任务
-	if config.Schedule.ReportCron == "" && config.Schedule.TokenRefreshCron == "" {
+	// 检查是否配置了定时任务（从节点可能只启用 SyncFromProd，不配置其它 cron）
+	if config.Schedule.ReportCron == "" && config.Schedule.TokenRefreshCron == "" && !config.SyncFromProd.Enabled {
 		logx.Info("未配置定时任务，跳过启动")
 		return
 	}
