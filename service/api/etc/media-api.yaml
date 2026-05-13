@@ -153,10 +153,10 @@ XiaomiAPI:
 # 仅在新部署的从节点（如 172.16.3.34）启用，主生产保持 Enabled=false
 SyncFromProd:
   Enabled: false
-  BaseURL: ""              # 例如 https://rta.zhltech.net/guangyixinmedia
-  Token: ""                # 共享鉴权 Token，与生产 SyncDump.Token 对齐
-  BasicAuthUser: ""        # 生产 nginx HTTP Basic Auth 用户名（无则留空）
-  BasicAuthPass: ""        # 生产 nginx HTTP Basic Auth 密码（无则留空）
+  BaseURL: "https://rta.zhltech.net/guangyixinmedia"              # 例如 https://rta.zhltech.net/guangyixinmedia
+  Token: "media_report"                # 共享鉴权 Token，与生产 SyncDump.Token 对齐
+  BasicAuthUser: "guangyixin"        # 生产 nginx HTTP Basic Auth 用户名（无则留空）
+  BasicAuthPass: "*~je,R#(anqAD"        # 生产 nginx HTTP Basic Auth 密码（无则留空）
   Cron: "*/30 * * * *"     # 每 30 分钟同步一次
   Timeout: 30
   Tables:
@@ -173,7 +173,7 @@ SyncFromProd:
 # 只读 dump 接口（仅在主生产启用，从节点保持 Enabled=false）
 SyncDump:
   Enabled: true
-  Token: ""                # 共享鉴权 Token，与从节点 SyncFromProd.Token 对齐
+  Token: "media_report"                # 共享鉴权 Token，与从节点 SyncFromProd.Token 对齐
   Tables:
     - media_token
     - cainiao_advertiser

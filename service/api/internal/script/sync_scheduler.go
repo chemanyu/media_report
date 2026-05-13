@@ -59,7 +59,8 @@ func RegisterSyncFromProd(scheduler *cron.Cron, db *gorm.DB, cfg config.SyncFrom
 }
 
 func runSyncOnce(db *gorm.DB, cfg config.SyncFromProdConfig, timeoutSec int) {
-	logx.Infof("[sync] 开始一轮同步, 共 %d 张表", len(cfg.Tables))
+	logx.Infof("[sync] 开始一轮同步, 共 %d 张表, BaseURL=%s, TokenLen=%d, BasicAuthUser=%q, Timeout=%ds",
+		len(cfg.Tables), cfg.BaseURL, len(cfg.Token), cfg.BasicAuthUser, timeoutSec)
 	client := &http.Client{Timeout: time.Duration(timeoutSec) * time.Second}
 
 	successCount := 0
@@ -74,10 +75,12 @@ func runSyncOnce(db *gorm.DB, cfg config.SyncFromProdConfig, timeoutSec int) {
 }
 
 func syncOneTable(client *http.Client, db *gorm.DB, cfg config.SyncFromProdConfig, table string) error {
+	logx.Infof("[sync] %s 开始抓取上游数据", table)
 	rows, err := fetchDump(client, cfg, table)
 	if err != nil {
 		return err
 	}
+	logx.Infof("[sync] %s 上游返回 %d 行, 准备写入本地", table, len(rows))
 
 	// 覆盖式：事务内 TRUNCATE + 批量 INSERT
 	return db.Transaction(func(tx *gorm.DB) error {
@@ -99,33 +102,40 @@ func syncOneTable(client *http.Client, db *gorm.DB, cfg config.SyncFromProdConfi
 
 func fetchDump(client *http.Client, cfg config.SyncFromProdConfig, table string) ([]map[string]any, error) {
 	endpoint := strings.TrimRight(cfg.BaseURL, "/") + "/api/internal/sync/dump?table=" + url.QueryEscape(table)
+	logx.Infof("[sync] %s GET %s", table, endpoint)
 
 	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, endpoint, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("build request: %w", err)
 	}
 	req.Header.Set(syncTokenHeader, cfg.Token)
 	if cfg.BasicAuthUser != "" {
 		req.SetBasicAuth(cfg.BasicAuthUser, cfg.BasicAuthPass)
 	}
 
+	start := time.Now()
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("http do (%s): %w", endpoint, err)
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, readErr := io.ReadAll(resp.Body)
+	cost := time.Since(start)
+	logx.Infof("[sync] %s HTTP %d, bodyLen=%d, cost=%s", table, resp.StatusCode, len(body), cost)
+	if readErr != nil {
+		return nil, fmt.Errorf("read body: %w", readErr)
+	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("status %d: %s", resp.StatusCode, truncate(body, 200))
+		return nil, fmt.Errorf("status %d: %s", resp.StatusCode, truncate(body, 500))
 	}
 
 	var parsed syncDumpResp
 	if err := json.Unmarshal(body, &parsed); err != nil {
-		return nil, fmt.Errorf("decode: %w (body: %s)", err, truncate(body, 200))
+		return nil, fmt.Errorf("decode: %w (body: %s)", err, truncate(body, 500))
 	}
 	if parsed.Code != 200 {
-		return nil, fmt.Errorf("upstream code %d", parsed.Code)
+		return nil, fmt.Errorf("upstream code %d (body: %s)", parsed.Code, truncate(body, 500))
 	}
 	return parsed.Rows, nil
 }
