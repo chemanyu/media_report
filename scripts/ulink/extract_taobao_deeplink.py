@@ -1,14 +1,20 @@
+import sys
+# Go 通过 pipe 调用本脚本时，Windows Python 默认 stdout 退到 GBK，
+# 任何中文/emoji print 会 UnicodeEncodeError 导致脚本崩溃，Go 拿不到 JSON。
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException # Import TimeoutException
+from selenium.common.exceptions import TimeoutException
 import time
-import re
-from urllib.parse import unquote, parse_qs, urlparse, quote
-import requests # 导入 requests 包
+from urllib.parse import parse_qs, urlparse, quote
 
 # 配置 ChromeDriver 路径 - 如果您的路径不同，请替换为您的 ChromeDriver 路径
 # 对于 Linux，常见路径是 /usr/bin/chromedriver 或 /usr/local/bin/chromedriver
@@ -54,62 +60,145 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
 
     deeplink = None
     try:
-        #print(f"导航到短链接: {short_url}") # 函数内部日志保持
-        driver.get(short_url)
-
-        # 使用显式等待页面加载完成
-        current_url = driver.current_url
-        #print(f"初始加载后当前 URL: {current_url}")
-
-        print(f"plat: {platform }")
-
-        # 策略 2：查找 href 以 taobao:// 或 tbopen:// 开头的 <a> 标签
-        # 使用显式等待页面加载完成，并等待目标 <a> 标签出现
-        time.sleep(1)  # 简单等待，确保页面开始加载
+        # 注入 hook：劫持 location.href / assign / replace / window.open / a.click
+        # 淘宝/天猫的拉起方式是 location.href = "tbopen://..."，没有 <a> 标签，
+        # 必须在 JS 层捕获并阻止真实跳转（避免页面被打断）。
         try:
-            WebDriverWait(driver, 3).until(
-                EC.presence_of_element_located((By.XPATH, "//a[starts-with(@href, 'taobao://') or starts-with(@href, 'tbopen://')]") )
+            driver.execute_cdp_cmd('Page.enable', {})
+            hook_script = r"""
+            (function () {
+                window.__capturedTaobao = [];
+                var prefixes = ['tbopen://', 'taobao://', 'tmall://'];
+                var record = function (url, source) {
+                    try {
+                        if (typeof url !== 'string') return;
+                        for (var i = 0; i < prefixes.length; i++) {
+                            if (url.indexOf(prefixes[i]) === 0) {
+                                window.__capturedTaobao.push({ url: url, source: source });
+                                return;
+                            }
+                        }
+                    } catch (e) {}
+                };
+                var isCustomScheme = function (v) {
+                    if (typeof v !== 'string') return false;
+                    for (var i = 0; i < prefixes.length; i++) if (v.indexOf(prefixes[i]) === 0) return true;
+                    return false;
+                };
+                try {
+                    var hrefDesc = Object.getOwnPropertyDescriptor(Location.prototype, 'href');
+                    if (hrefDesc && hrefDesc.set) {
+                        var origSet = hrefDesc.set;
+                        Object.defineProperty(Location.prototype, 'href', {
+                            configurable: true, enumerable: true, get: hrefDesc.get,
+                            set: function (v) {
+                                record(v, 'location.href');
+                                if (isCustomScheme(v)) return;
+                                return origSet.call(this, v);
+                            }
+                        });
+                    }
+                } catch (e) {}
+                try {
+                    var origAssign = Location.prototype.assign;
+                    Location.prototype.assign = function (v) {
+                        record(v, 'location.assign');
+                        if (isCustomScheme(v)) return;
+                        return origAssign.apply(this, arguments);
+                    };
+                    var origReplace = Location.prototype.replace;
+                    Location.prototype.replace = function (v) {
+                        record(v, 'location.replace');
+                        if (isCustomScheme(v)) return;
+                        return origReplace.apply(this, arguments);
+                    };
+                } catch (e) {}
+                try {
+                    var origOpen = window.open;
+                    window.open = function (v) {
+                        record(v, 'window.open');
+                        if (isCustomScheme(v)) return null;
+                        return origOpen.apply(this, arguments);
+                    };
+                } catch (e) {}
+                try {
+                    var origClick = HTMLAnchorElement.prototype.click;
+                    HTMLAnchorElement.prototype.click = function () {
+                        record(this.href, 'a.click');
+                        if (isCustomScheme(this.href)) return;
+                        return origClick.apply(this, arguments);
+                    };
+                } catch (e) {}
+            })();
+            """
+            driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': hook_script})
+        except Exception as e:
+            print(f"注入 hook 失败: {e}")
+
+        driver.get(short_url)
+        current_url = driver.current_url
+        print(f"plat: {platform}")
+
+        time.sleep(1)
+        try:
+            WebDriverWait(driver, 5).until(
+                lambda d: d.execute_script('return document.readyState') == 'complete'
             )
         except TimeoutException:
-            print("页面加载或 deeplink <a> 标签等待超时，继续后续处理")
+            print("页面加载等待超时，继续后续处理")
 
-        try:
-            deeplink_elements = driver.find_elements(By.XPATH, "//a[starts-with(@href, 'taobao://') or starts-with(@href, 'tbopen://')]")
-            if deeplink_elements:
-                deeplink = deeplink_elements[0].get_attribute("href")
-                if short_url:
-                    try:
-                        # 解析 deeplink 中的 URL 参数
-                        parsed = urlparse(deeplink)
-                        params = parse_qs(parsed.query)
+        # 策略 1：从 hook 捕获（最可靠 —— 包含 location.href / a.click / window.open 等）
+        for _ in range(10):
+            try:
+                captured = driver.execute_script("return window.__capturedTaobao || [];") or []
+                for item in captured:
+                    url = item.get('url') if isinstance(item, dict) else None
+                    if url and (url.startswith('tbopen://') or url.startswith('taobao://') or url.startswith('tmall://')):
+                        deeplink = url
+                        print(f"从 hook 捕获 ({item.get('source')}): {deeplink}")
+                        break
+            except Exception as e:
+                print(f"读取 hook 出错: {e}")
+            if deeplink:
+                break
+            time.sleep(0.5)
 
-                        # 将 short_url 进行 URL 编码后替换 h5Url 参数
-                        params['h5Url'] = [short_url]
+        # 策略 2：从 <a> 标签查找（旧逻辑，作为兜底）
+        if not deeplink:
+            try:
+                deeplink_elements = driver.find_elements(
+                    By.XPATH,
+                    "//a[starts-with(@href, 'taobao://') or starts-with(@href, 'tbopen://') or starts-with(@href, 'tmall://')]"
+                )
+                if deeplink_elements:
+                    deeplink = deeplink_elements[0].get_attribute("href")
+                    print(f"从 <a> 标签找到: {deeplink}")
+            except Exception as e:
+                print(f"<a> 标签扫描出错: {e}")
 
-                        # 重新构建 query string
-                        from urllib.parse import urlencode
-                        new_query = urlencode(params, doseq=True)
+        if deeplink:
+            # 把 h5Url 替换成原始 short_url（保留旧行为）
+            try:
+                parsed = urlparse(deeplink)
+                params = parse_qs(parsed.query)
+                params['h5Url'] = [short_url]
+                from urllib.parse import urlencode
+                new_query = urlencode(params, doseq=True)
+                deeplink = f"{parsed.scheme}://{parsed.netloc}{parsed.path}?{new_query}"
+                print(f"替换 h5Url 后的 Deeplink: {deeplink}")
+            except Exception as e:
+                print(f"替换 h5Url 时出错: {e}，使用原始 Deeplink")
+            return deeplink, process_deeplink(deeplink, platform)
 
-                        # 重新构建完整的 deeplink
-                        deeplink = f"{parsed.scheme}://{parsed.netloc}{parsed.path}?{new_query}"
-                        print(f"替换 h5Url 后的 Deeplink: {deeplink}")
-                    except Exception as e:
-                        print(f"替换 h5Url 时出错: {e}，使用原始 Deeplink")
-                return deeplink, process_deeplink(deeplink, platform)
-        except Exception as e:
-            print(f"注意: 查找 <a> 标签中的 deeplink 时出错（或未找到）: {e}")
-
-        #print("未能找到 Deeplink。", {current_url})
+        print(f"未能提取 Deeplink，落地 URL: {current_url}")
 
     except Exception as e:
-        print(f"提取deeplink过程中发生错误: {e}") # 函数内部日志保持
-        # 如果是内部创建的 driver 且发生错误，可以考虑在这里关闭，但通常外部 finally 会处理
+        print(f"提取deeplink过程中发生错误: {e}")
     finally:
-        if internal_driver and driver is not None: # 只关闭内部创建的 driver
-            print("关闭内部创建的浏览器实例。") # 函数内部日志保持
+        if internal_driver and driver is not None:
+            print("关闭内部创建的浏览器实例。")
             driver.quit()
 
-    # 如果未找到 Deeplink，返回 None, None (两个值)
     return None, None
 
 def process_deeplink(deeplink, platform):

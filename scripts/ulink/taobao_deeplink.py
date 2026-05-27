@@ -20,6 +20,18 @@ import argparse
 import concurrent.futures
 import queue
 
+# Go 通过 pipe 调用本脚本时，Windows Python 默认 stdout 退到 GBK，
+# 任何中文/emoji print 会 UnicodeEncodeError 直接崩溃，导致 Go 拿不到 JSON。
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
+# Go 通过 exec.Command 调用时 cwd 不一定在脚本所在目录，
+# 导致 `from extract_taobao_deeplink import ...` 找不到模块。
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 from extract_taobao_deeplink import get_taobao_deeplink, CHROME_DRIVER_PATH as _DEFAULT_DRIVER
 
 
