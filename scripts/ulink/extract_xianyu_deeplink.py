@@ -1,14 +1,19 @@
+import sys
+# 关键：Go 通过 pipe 调用本脚本时，Windows Python 默认 stdout 退到 GBK，
+# 任何 emoji（✅/❌）会 UnicodeEncodeError 直接崩溃。强制 UTF-8。
+try:
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+except Exception:
+    pass
+
 from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.by import By
 from selenium.common.exceptions import TimeoutException
 import time
 import re
-import json
-from urllib.parse import urlparse
 
 # 配置 ChromeDriver 路径
 #CHROME_DRIVER_PATH = "/opt/homebrew/bin/chromedriver"

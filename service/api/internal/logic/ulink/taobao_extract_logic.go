@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -142,18 +143,41 @@ func (l *TaobaoExtractLogic) ExtractBatch(w http.ResponseWriter, r *http.Request
 	serveExcelFile(w, outputPath, "taobao_deeplink_results.xlsx")
 }
 
+// applyPythonEnv 给 Python 子进程设置 UTF-8 环境，避免 Windows GBK 编码崩溃，
+// 并把工作目录设到脚本所在目录，保证相对 import 正常。
+func applyPythonEnv(cmd *exec.Cmd, scriptPath string) {
+	cmd.Dir = filepath.Dir(scriptPath)
+	cmd.Env = append(os.Environ(),
+		"PYTHONIOENCODING=utf-8",
+		"PYTHONUTF8=1",
+	)
+}
+
 // runScript 调用 Python 脚本，绑定 context（超时/取消时自动终止子进程）
+// 返回 stdout；失败时错误信息里附带 stderr，方便 Windows 调试。
 func runScript(pythonPath, scriptPath string, args ...string) ([]byte, error) {
 	allArgs := append([]string{scriptPath}, args...)
 	cmd := exec.Command(pythonPath, allArgs...)
-	return cmd.Output()
+	applyPythonEnv(cmd, scriptPath)
+	return runWithStderr(cmd)
 }
 
 // runScriptWithContext 调用 Python 脚本并绑定 context，超时后自动 kill 子进程
 func runScriptWithContext(ctx context.Context, pythonPath, scriptPath string, args ...string) ([]byte, error) {
 	allArgs := append([]string{scriptPath}, args...)
 	cmd := exec.CommandContext(ctx, pythonPath, allArgs...)
-	return cmd.Output()
+	applyPythonEnv(cmd, scriptPath)
+	return runWithStderr(cmd)
+}
+
+func runWithStderr(cmd *exec.Cmd) ([]byte, error) {
+	var stderr strings.Builder
+	cmd.Stderr = &stderr
+	out, err := cmd.Output()
+	if err != nil {
+		return out, fmt.Errorf("%w; stderr: %s", err, stderr.String())
+	}
+	return out, nil
 }
 
 // lastJSONLine 从输出中取最后一个 JSON 行（Python 脚本可能会打印日志，最后一行是 JSON）
