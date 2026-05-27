@@ -324,7 +324,6 @@ def get_xianyu_deeplink(short_url, driver=None, platform="android"):
                                 return url
                 except Exception as e:
                     print(f"读取劫持结果出错: {e}")
-                time.sleep(0.5)
 
             # 方法2: 主动尝试调用页面里的 callapp 函数（闲鱼常用 callappReflow）
             print("\n[方法2] 尝试主动调用页面 callapp 函数 ...")
