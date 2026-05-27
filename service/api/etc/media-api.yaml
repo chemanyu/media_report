@@ -198,4 +198,4 @@ Ulink:
   ScriptDir: "../../scripts/ulink"
   #ChromeDriverPath: "/usr/local/bin/chromedriver"
   ChromeDriverPath: "D:\\148\\chromedriver-win64\\chromedriver.exe"
-  TempDir: "./uploads"
+  TempDir: "D:\\media_report\\media_report/uploads"
