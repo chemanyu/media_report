@@ -163,7 +163,10 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
         except TimeoutException:
             print("页面加载等待超时，继续后续处理")
 
-        # 策略 1：从 hook 捕获（最可靠 —— 包含 location.href / a.click / window.open 等）
+        # 策略 1：从 hook 捕获 + 同步轮询 performance log（最长 ~10s）
+        # 活动页（如 pages.tmall.com/wow/...）的 tbopen 请求通常在 1.5-3s 才发出，
+        # 必须真等，否则脚本会在请求发生之前就读完日志返回 None。
+        import json as _json
         for _ in range(20):
             try:
                 captured = driver.execute_script("return window.__capturedTaobao || [];") or []
@@ -177,7 +180,26 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                 print(f"读取 hook 出错: {e}")
             if deeplink:
                 break
-            # time.sleep(0.5)  # 已注释：无需等待
+            # 同步轮询 performance log，避免漏掉只在 Network 层发起、没走 JS hook 的 tbopen
+            try:
+                logs = driver.get_log('performance')
+                for entry in logs:
+                    try:
+                        msg = _json.loads(entry.get('message', '{}')).get('message', {})
+                        if msg.get('method') != 'Network.requestWillBeSent':
+                            continue
+                        url = msg.get('params', {}).get('request', {}).get('url', '')
+                        if url.startswith('tbopen://') or url.startswith('taobao://') or url.startswith('tmall://'):
+                            deeplink = url
+                            print(f"从 Network log 捕获(轮询): {deeplink}")
+                            break
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+            if deeplink:
+                break
+            time.sleep(0.5)
 
         # 策略 2：从 <a> 标签查找（旧逻辑，作为兜底）
         if not deeplink:
