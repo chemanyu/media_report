@@ -34,9 +34,11 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
     if driver is None:
         internal_driver = True
         chrome_options = Options()
+        # 与你浏览器 DevTools 手机模式一致：Android UA + 移动屏幕，
+        # 淘宝对 iOS / Android 的拉端策略不同，Android 直接下发 tbopen://
         mobile_emulation = {
             "deviceMetrics": {"width": 375, "height": 812, "pixelRatio": 3.0},
-            "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"
+            "userAgent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36"
         }
         chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
@@ -46,8 +48,11 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
-        chrome_options.add_argument("--user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1")
         chrome_options.add_argument('log-level=3')
+        # 开启 performance log，让 Chrome 把 Network.requestWillBeSent 事件写入日志，
+        # 兜底捕获 tbopen://（hook 不一定能拦到，但浏览器发起请求时一定有 Network 事件）
+        chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
+        chrome_options.set_capability("goog:perfLoggingPrefs", {"enableNetwork": True})
 
         try:
             service = Service(CHROME_DRIVER_PATH)
@@ -64,6 +69,13 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
 
     deeplink = None
     try:
+        # 启用 CDP Network 域：浏览器发起的任何 request（含 tbopen://）都会被记录
+        # 即使被浏览器拦截/无 handler 也会有 requestWillBeSent 事件
+        captured_network = []
+        try:
+            driver.execute_cdp_cmd('Network.enable', {})
+        except Exception as e:
+            print(f"启用 Network 域失败: {e}")
         # 注入 hook：劫持 location.href / assign / replace / window.open / a.click
         # 淘宝/天猫的拉起方式是 location.href = "tbopen://..."，没有 <a> 标签，
         # 必须在 JS 层捕获并阻止真实跳转（避免页面被打断）。
@@ -182,6 +194,39 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
 
         if deeplink:
             # 把 h5Url 替换成原始 short_url（保留旧行为）
+            try:
+                parsed = urlparse(deeplink)
+                params = parse_qs(parsed.query)
+                params['h5Url'] = [short_url]
+                from urllib.parse import urlencode
+                new_query = urlencode(params, doseq=True)
+                deeplink = f"{parsed.scheme}://{parsed.netloc}{parsed.path}?{new_query}"
+                print(f"替换 h5Url 后的 Deeplink: {deeplink}")
+            except Exception as e:
+                print(f"替换 h5Url 时出错: {e}，使用原始 Deeplink")
+            return deeplink, process_deeplink(deeplink, platform)
+
+        # 策略 3：从 Chrome performance log 解析 Network 事件，抓 tbopen:// 请求
+        # （hook 拦不到的场景：iframe 内 navigation / SDK 直接发起的资源请求等）
+        try:
+            import json as _json
+            logs = driver.get_log('performance')
+            for entry in logs:
+                try:
+                    msg = _json.loads(entry.get('message', '{}')).get('message', {})
+                    if msg.get('method') != 'Network.requestWillBeSent':
+                        continue
+                    url = msg.get('params', {}).get('request', {}).get('url', '')
+                    if url.startswith('tbopen://') or url.startswith('taobao://') or url.startswith('tmall://'):
+                        deeplink = url
+                        print(f"从 Network log 捕获: {deeplink}")
+                        break
+                except Exception:
+                    continue
+        except Exception as e:
+            print(f"读取 performance log 失败: {e}")
+
+        if deeplink:
             try:
                 parsed = urlparse(deeplink)
                 params = parse_qs(parsed.query)
