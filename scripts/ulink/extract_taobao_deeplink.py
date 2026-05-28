@@ -51,8 +51,11 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
         chrome_options.add_argument('log-level=3')
         # 开启 performance log，让 Chrome 把 Network.requestWillBeSent 事件写入日志，
         # 兜底捕获 tbopen://（hook 不一定能拦到，但浏览器发起请求时一定有 Network 事件）
-        chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL"})
-        chrome_options.set_capability("goog:perfLoggingPrefs", {"enableNetwork": True})
+        chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL", "browser": "ALL"})
+        # 必须同时开 Page —— tbopen:// 这种自定义 scheme 的顶层导航在 headless 下
+        # 经常不触发 Network.requestWillBeSent（被渲染端在到达网络栈前就拒掉），
+        # 但 Page.frameRequestedNavigation 一定会带着 URL 触发。
+        chrome_options.set_capability("goog:perfLoggingPrefs", {"enableNetwork": True, "enablePage": True})
 
         try:
             service = Service(CHROME_DRIVER_PATH)
@@ -101,6 +104,7 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                     for (var i = 0; i < prefixes.length; i++) if (v.indexOf(prefixes[i]) === 0) return true;
                     return false;
                 };
+                // Location.prototype.href
                 try {
                     var hrefDesc = Object.getOwnPropertyDescriptor(Location.prototype, 'href');
                     if (hrefDesc && hrefDesc.set) {
@@ -111,6 +115,37 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                                 record(v, 'location.href');
                                 if (isCustomScheme(v)) return;
                                 return origSet.call(this, v);
+                            }
+                        });
+                    }
+                } catch (e) {}
+                // window.location = "..."  ←— 天猫活动页常用这条路径，必须 hook Window.prototype.location
+                try {
+                    var winLocDesc = Object.getOwnPropertyDescriptor(window, 'location')
+                        || Object.getOwnPropertyDescriptor(Window.prototype, 'location');
+                    if (winLocDesc && winLocDesc.set) {
+                        var origWinLocSet = winLocDesc.set;
+                        Object.defineProperty(window, 'location', {
+                            configurable: true, enumerable: true, get: winLocDesc.get,
+                            set: function (v) {
+                                record(typeof v === 'string' ? v : (v && v.href), 'window.location=');
+                                if (typeof v === 'string' && isCustomScheme(v)) return;
+                                return origWinLocSet.call(this, v);
+                            }
+                        });
+                    }
+                } catch (e) {}
+                // document.location = "..."
+                try {
+                    var docLocDesc = Object.getOwnPropertyDescriptor(Document.prototype, 'location');
+                    if (docLocDesc && docLocDesc.set) {
+                        var origDocLocSet = docLocDesc.set;
+                        Object.defineProperty(Document.prototype, 'location', {
+                            configurable: true, enumerable: true, get: docLocDesc.get,
+                            set: function (v) {
+                                record(typeof v === 'string' ? v : (v && v.href), 'document.location=');
+                                if (typeof v === 'string' && isCustomScheme(v)) return;
+                                return origDocLocSet.call(this, v);
                             }
                         });
                     }
@@ -145,6 +180,29 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                         return origClick.apply(this, arguments);
                     };
                 } catch (e) {}
+                // iframe 内部也可能 top.location / parent.location = "tbopen://..."
+                // 这两个的 setter 在某些浏览器版本只读，try/catch 包住即可
+                try {
+                    ['top','parent'].forEach(function(name){
+                        try {
+                            var d = Object.getOwnPropertyDescriptor(window, name);
+                            if (!d) return;
+                        } catch(e) {}
+                    });
+                } catch (e) {}
+                // 兜底：周期性扫描 document.location.href（某些场景拉端会先改 href 再被浏览器拦）
+                try {
+                    var lastHref = location.href;
+                    setInterval(function () {
+                        try {
+                            var h = location.href;
+                            if (h !== lastHref) {
+                                record(h, 'href-poll');
+                                lastHref = h;
+                            }
+                        } catch (e) {}
+                    }, 100);
+                } catch (e) {}
             })();
             """
             driver.execute_cdp_cmd('Page.addScriptToEvaluateOnNewDocument', {'source': hook_script})
@@ -167,12 +225,49 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
         # 活动页（如 pages.tmall.com/wow/...）的 tbopen 请求通常在 1.5-3s 才发出，
         # 必须真等，否则脚本会在请求发生之前就读完日志返回 None。
         import json as _json
+        # 累计所有 perf log（get_log 是消费型的，每次读完就清空，必须自己累积），
+        # 顺便累计所有 ping/method 用于失败时诊断到底见过哪些 URL。
+        seen_urls = []
+        url_scan_prefixes = ('tbopen://', 'taobao://', 'tmall://')
+
+        def _scan_perf_logs():
+            nonlocal deeplink
+            try:
+                logs = driver.get_log('performance')
+            except Exception:
+                return
+            for entry in logs:
+                try:
+                    msg = _json.loads(entry.get('message', '{}')).get('message', {})
+                    method = msg.get('method', '')
+                    params = msg.get('params', {}) or {}
+                    # 三类来源都看：Network 请求 / Page 顶层导航 / Page 计划导航
+                    candidates = []
+                    if method == 'Network.requestWillBeSent':
+                        candidates.append(params.get('request', {}).get('url', ''))
+                        candidates.append(params.get('documentURL', ''))
+                    elif method in ('Page.frameRequestedNavigation',
+                                    'Page.frameScheduledNavigation',
+                                    'Page.navigatedWithinDocument',
+                                    'Page.windowOpen'):
+                        candidates.append(params.get('url', ''))
+                    for url in candidates:
+                        if not url:
+                            continue
+                        if url.startswith(url_scan_prefixes):
+                            seen_urls.append((method, url))
+                            if not deeplink:
+                                deeplink = url
+                                print(f"从 perf log 捕获 ({method}): {deeplink}")
+                except Exception:
+                    continue
+
         for _ in range(20):
             try:
                 captured = driver.execute_script("return window.__capturedTaobao || [];") or []
                 for item in captured:
                     url = item.get('url') if isinstance(item, dict) else None
-                    if url and (url.startswith('tbopen://') or url.startswith('taobao://') or url.startswith('tmall://')):
+                    if url and url.startswith(url_scan_prefixes):
                         deeplink = url
                         print(f"从 hook 捕获 ({item.get('source')}): {deeplink}")
                         break
@@ -180,23 +275,7 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                 print(f"读取 hook 出错: {e}")
             if deeplink:
                 break
-            # 同步轮询 performance log，避免漏掉只在 Network 层发起、没走 JS hook 的 tbopen
-            try:
-                logs = driver.get_log('performance')
-                for entry in logs:
-                    try:
-                        msg = _json.loads(entry.get('message', '{}')).get('message', {})
-                        if msg.get('method') != 'Network.requestWillBeSent':
-                            continue
-                        url = msg.get('params', {}).get('request', {}).get('url', '')
-                        if url.startswith('tbopen://') or url.startswith('taobao://') or url.startswith('tmall://'):
-                            deeplink = url
-                            print(f"从 Network log 捕获(轮询): {deeplink}")
-                            break
-                    except Exception:
-                        continue
-            except Exception:
-                pass
+            _scan_perf_logs()
             if deeplink:
                 break
             time.sleep(0.5)
@@ -228,25 +307,8 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                 print(f"替换 h5Url 时出错: {e}，使用原始 Deeplink")
             return deeplink, process_deeplink(deeplink, platform)
 
-        # 策略 3：从 Chrome performance log 解析 Network 事件，抓 tbopen:// 请求
-        # （hook 拦不到的场景：iframe 内 navigation / SDK 直接发起的资源请求等）
-        try:
-            import json as _json
-            logs = driver.get_log('performance')
-            for entry in logs:
-                try:
-                    msg = _json.loads(entry.get('message', '{}')).get('message', {})
-                    if msg.get('method') != 'Network.requestWillBeSent':
-                        continue
-                    url = msg.get('params', {}).get('request', {}).get('url', '')
-                    if url.startswith('tbopen://') or url.startswith('taobao://') or url.startswith('tmall://'):
-                        deeplink = url
-                        print(f"从 Network log 捕获: {deeplink}")
-                        break
-                except Exception:
-                    continue
-        except Exception as e:
-            print(f"读取 performance log 失败: {e}")
+        # 策略 3：循环结束后再扫一次 perf log（兜底）
+        _scan_perf_logs()
 
         if deeplink:
             try:
@@ -262,6 +324,13 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
             return deeplink, process_deeplink(deeplink, platform)
 
         print(f"未能提取 Deeplink，落地 URL: {current_url}")
+        # 失败时打印诊断信息：到底见过什么
+        try:
+            captured = driver.execute_script("return window.__capturedTaobao || [];") or []
+            print(f"[diag] hook 捕获条目数={len(captured)}, 内容={captured}")
+        except Exception:
+            pass
+        print(f"[diag] perf log 中见过的 tb/taobao/tmall URL（{len(seen_urls)} 条）: {seen_urls[:5]}")
 
     except Exception as e:
         print(f"提取deeplink过程中发生错误: {e}")
