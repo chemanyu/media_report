@@ -58,6 +58,17 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
         chrome_options.add_argument("--disable-dev-shm-usage")
         chrome_options.add_argument("--disable-blink-features=AutomationControlled")
         chrome_options.add_argument('log-level=3')
+        # 持久化 user-data-dir：第一次手动登录一次淘宝（在弹出的窗口里输手机号/扫码），
+        # 之后所有调用都会复用这份 cookie，绕过风控弹登录。
+        # 路径用环境变量 TAOBAO_DEEPLINK_PROFILE 覆盖；默认放在脚本同目录下 .chrome-profile/
+        profile_dir = os.environ.get('TAOBAO_DEEPLINK_PROFILE') or os.path.join(
+            os.path.dirname(os.path.abspath(__file__)), '.chrome-profile'
+        )
+        try:
+            os.makedirs(profile_dir, exist_ok=True)
+        except Exception:
+            pass
+        chrome_options.add_argument(f"--user-data-dir={profile_dir}")
         # 开启 performance log，让 Chrome 把 Network.requestWillBeSent 事件写入日志，
         # 兜底捕获 tbopen://（hook 不一定能拦到，但浏览器发起请求时一定有 Network 事件）
         chrome_options.set_capability("goog:loggingPrefs", {"performance": "ALL", "browser": "ALL"})
@@ -66,18 +77,45 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
         # 但 Page.frameRequestedNavigation 一定会带着 URL 触发。
         chrome_options.set_capability("goog:perfLoggingPrefs", {"enableNetwork": True, "enablePage": True})
 
+        # 默认用 undetected-chromedriver 绕开淘宝风控；
+        # 设 TAOBAO_DEEPLINK_USE_UC=0 可以回退到原生 selenium 用于对比。
+        use_uc = os.environ.get('TAOBAO_DEEPLINK_USE_UC', '1') != '0'
         try:
-            service = Service(CHROME_DRIVER_PATH)
-            driver = webdriver.Chrome(service=service, options=chrome_options)  # 用 seleniumwire 的 webdriver
+            if use_uc:
+                import undetected_chromedriver as uc
+                # uc 自己管理 chromedriver 二进制，CHROME_DRIVER_PATH 仅在回退路径用
+                # 把已经构造好的 chrome_options 转成 uc.ChromeOptions（属性兼容）
+                uc_options = uc.ChromeOptions()
+                for arg in chrome_options.arguments:
+                    uc_options.add_argument(arg)
+                # mobileEmulation / excludeSwitches 必须重新加，experimental_options 不会自动迁移
+                for k, v in chrome_options.experimental_options.items():
+                    try:
+                        uc_options.add_experimental_option(k, v)
+                    except Exception:
+                        pass
+                # uc 不支持 set_capability 的 perfLog 设置走 desired_capabilities 路径，
+                # 改用 enable_cdp_events=True，后续用 driver.execute_cdp_cmd 自取
+                driver = uc.Chrome(options=uc_options, use_subprocess=True)
+                print("[init] 使用 undetected-chromedriver")
+            else:
+                service = Service(CHROME_DRIVER_PATH)
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+                print("[init] 使用原生 selenium webdriver")
         except Exception as e:
-            print(f"初始化 ChromeDriver 时出错 (路径: '{CHROME_DRIVER_PATH}'): {e}")
-            print("尝试从系统 PATH 初始化 ChromeDriver...")
+            print(f"初始化驱动时出错: {e}")
+            print("回退到原生 selenium webdriver...")
             try:
-                driver = webdriver.Chrome(options=chrome_options)
-            except Exception as e_path:
-                print(f"从 PATH 初始化 ChromeDriver 时出错: {e_path}")
-                print("请确保 Chrome/Chromium 和正确的 ChromeDriver 已安装并配置。")
-                return None
+                service = Service(CHROME_DRIVER_PATH)
+                driver = webdriver.Chrome(service=service, options=chrome_options)
+            except Exception as e2:
+                print(f"回退也失败 (路径 '{CHROME_DRIVER_PATH}'): {e2}")
+                try:
+                    driver = webdriver.Chrome(options=chrome_options)
+                except Exception as e_path:
+                    print(f"从 PATH 初始化 ChromeDriver 时出错: {e_path}")
+                    print("请确保 Chrome/Chromium 和正确的 ChromeDriver 已安装并配置。")
+                    return None, None
 
     deeplink = None
     try:
