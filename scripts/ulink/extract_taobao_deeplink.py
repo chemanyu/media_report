@@ -39,10 +39,14 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
             "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"
         }
         chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
-        chrome_options.add_argument("--headless")
+        chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
+        chrome_options.add_experimental_option("useAutomationExtension", False)
+        chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+        chrome_options.add_argument("--user-agent=Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1")
         chrome_options.add_argument('log-level=3')
 
         try:
@@ -148,7 +152,7 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
             print("页面加载等待超时，继续后续处理")
 
         # 策略 1：从 hook 捕获（最可靠 —— 包含 location.href / a.click / window.open 等）
-        for _ in range(10):
+        for _ in range(20):
             try:
                 captured = driver.execute_script("return window.__capturedTaobao || [];") or []
                 for item in captured:
@@ -161,7 +165,7 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                 print(f"读取 hook 出错: {e}")
             if deeplink:
                 break
-            time.sleep(0.5)
+            # time.sleep(0.5)  # 已注释：无需等待
 
         # 策略 2：从 <a> 标签查找（旧逻辑，作为兜底）
         if not deeplink:

@@ -71,6 +71,7 @@ func (l *TaobaoExtractLogic) ExtractSingle(req *types.TaobaoExtractReq) (*types.
 		l.Errorf("调用 taobao_deeplink.py 失败: %v, output: %s", err, string(out))
 		return &types.TaobaoExtractResp{Code: 500, Message: "调用 Python 脚本失败: " + err.Error()}, nil
 	}
+	l.Infof("taobao_deeplink.py stdout: %s", string(out))
 
 	var result taobaoScriptResult
 	if err := json.Unmarshal(lastJSONLine(out), &result); err != nil {
