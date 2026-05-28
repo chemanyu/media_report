@@ -314,46 +314,62 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
         # 适用场景：活动页（如天猫红包封面）把 schemaUrl 直接写进 __INITIAL_DATA__ /
         # SDK 配置数据块，但需要用户点击才会真的拉端 —— headless 没人点，但数据已经在 DOM 里了。
         if not deeplink:
+            print("[strategy4] 开始扫 page source / window 数据")
             try:
                 import re as _re
                 sources = []
                 try:
-                    sources.append(driver.page_source or '')
-                except Exception:
-                    pass
-                # 把所有 <script> 标签的 innerText 也拼进来（page_source 里有但保险）
+                    src = driver.page_source or ''
+                    sources.append(('page_source', src))
+                    print(f"[strategy4] page_source 长度={len(src)}")
+                except Exception as e:
+                    print(f"[strategy4] page_source 读取失败: {e}")
                 try:
                     js_blob = driver.execute_script(
                         "return Array.from(document.scripts).map(s=>s.textContent||'').join('\\n');"
                     ) or ''
-                    sources.append(js_blob)
-                except Exception:
-                    pass
-                # 也扫 window 顶层属性里常见的数据容器
+                    sources.append(('scripts', js_blob))
+                    print(f"[strategy4] <script> 文本总长={len(js_blob)}")
+                except Exception as e:
+                    print(f"[strategy4] 读 scripts 失败: {e}")
                 try:
                     win_blob = driver.execute_script(
-                        "try { return JSON.stringify(window.__INITIAL_DATA__||window.__INIT_DATA__||window.pageData||{}); } catch(e){ return ''; }"
+                        "try { return JSON.stringify(window.__INITIAL_DATA__||window.__INIT_DATA__||window.pageData||window.g_config||{}); } catch(e){ return ''; }"
                     ) or ''
-                    sources.append(win_blob)
-                except Exception:
-                    pass
+                    sources.append(('window_data', win_blob))
+                    print(f"[strategy4] window 数据块长度={len(win_blob)}")
+                except Exception as e:
+                    print(f"[strategy4] 读 window 失败: {e}")
                 pattern = _re.compile(r'(tbopen://[^"\'\\\s<>]+|taobao://[^"\'\\\s<>]+|tmall://[^"\'\\\s<>]+)')
-                for blob in sources:
+                for name, blob in sources:
                     m = pattern.search(blob)
                     if m:
                         deeplink = m.group(1)
-                        # tbopen 里的 / 之类的转义字符要还原
                         try:
                             deeplink = deeplink.encode('utf-8').decode('unicode_escape')
                         except Exception:
                             pass
-                        print(f"从 page source 扫到: {deeplink[:200]}")
+                        print(f"[strategy4] 命中 ({name}): {deeplink[:200]}")
                         break
+                    else:
+                        # 退而求其次：看看里面有没有 schemaUrl / schema_url / linkUrl 字样，便于诊断
+                        for kw in ('schemaUrl', 'schema_url', 'tbopen', 'tmall://', 'taobao://'):
+                            if kw in blob:
+                                idx = blob.find(kw)
+                                print(f"[strategy4] {name} 里见到 '{kw}' @ {idx}: {blob[max(0,idx-30):idx+200]!r}")
+                                break
             except Exception as e:
-                print(f"扫 page source 出错: {e}")
+                print(f"[strategy4] 异常: {e}")
 
         # 策略 5：尝试自动点击页面上看起来像「拉起 App」的按钮，然后再扫一遍
         if not deeplink:
+            print("[strategy5] 开始尝试自动点击")
+            # 先打印页面上所有可见文字 + 所有可点击元素轮廓，便于诊断
+            try:
+                body_text = driver.execute_script("return document.body && document.body.innerText || '';") or ''
+                print(f"[strategy5] body 可见文字（前 500 字符）: {body_text[:500]!r}")
+            except Exception:
+                pass
             try:
                 btn_xpaths = [
                     "//*[contains(text(),'立即打开')]",
@@ -368,20 +384,24 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                 for xp in btn_xpaths:
                     try:
                         els = driver.find_elements(By.XPATH, xp)
+                        if els:
+                            print(f"[strategy5] xpath 命中 {xp} -> {len(els)} 个元素")
                         for el in els:
                             try:
                                 driver.execute_script("arguments[0].click();", el)
-                                print(f"已自动点击元素: {xp}")
+                                print(f"[strategy5] 已点击: {xp}")
                                 clicked = True
                                 break
-                            except Exception:
+                            except Exception as e:
+                                print(f"[strategy5] 点击失败: {e}")
                                 continue
                         if clicked:
                             break
                     except Exception:
                         continue
-                if clicked:
-                    # 等点击后产生的 tbopen 请求
+                if not clicked:
+                    print("[strategy5] 没有命中任何拉端按钮 xpath")
+                else:
                     for _ in range(10):
                         try:
                             captured = driver.execute_script("return window.__capturedTaobao || [];") or []
@@ -389,7 +409,7 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                                 u = item.get('url') if isinstance(item, dict) else None
                                 if u and u.startswith(url_scan_prefixes):
                                     deeplink = u
-                                    print(f"点击后从 hook 捕获 ({item.get('source')}): {deeplink}")
+                                    print(f"[strategy5] 点击后 hook 捕获 ({item.get('source')}): {deeplink}")
                                     break
                         except Exception:
                             pass
@@ -400,7 +420,49 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                             break
                         time.sleep(0.5)
             except Exception as e:
-                print(f"自动点击拉端按钮失败: {e}")
+                print(f"[strategy5] 异常: {e}")
+
+        # 策略 6：调用淘宝 starlink/mtop 的 evoke 接口获取 schemaUrl（兜底）
+        # 活动页 starlink.sdk.evoke 请求 cancelled 的响应里其实带 schemaUrl，
+        # 我们把已经出现的 starlink.sdk.evoke 请求拦截一下，从响应体里取
+        if not deeplink:
+            print("[strategy6] 尝试从 starlink.sdk.evoke 响应解析")
+            try:
+                import json as _json
+                logs = driver.get_log('performance')
+                req_ids = []
+                for entry in logs:
+                    try:
+                        msg = _json.loads(entry.get('message', '{}')).get('message', {})
+                        if msg.get('method') != 'Network.responseReceived':
+                            continue
+                        params = msg.get('params', {}) or {}
+                        url = (params.get('response') or {}).get('url', '')
+                        if 'starlink.sdk.evoke' in url or 'mtop.taobao.starlink' in url:
+                            req_ids.append((params.get('requestId'), url))
+                    except Exception:
+                        continue
+                print(f"[strategy6] 找到 {len(req_ids)} 条 evoke 响应")
+                for rid, url in req_ids:
+                    try:
+                        body = driver.execute_cdp_cmd('Network.getResponseBody', {'requestId': rid})
+                        text = body.get('body', '') if body else ''
+                        import re as _re
+                        m = _re.search(r'(tbopen://[^"\'\\\s<>]+|taobao://[^"\'\\\s<>]+|tmall://[^"\'\\\s<>]+)', text)
+                        if m:
+                            deeplink = m.group(1)
+                            try:
+                                deeplink = deeplink.encode('utf-8').decode('unicode_escape')
+                            except Exception:
+                                pass
+                            print(f"[strategy6] 从 evoke 响应命中: {deeplink[:200]}")
+                            break
+                        else:
+                            print(f"[strategy6] {url[:80]} 响应无 tbopen，体长={len(text)}, 前 200: {text[:200]!r}")
+                    except Exception as e:
+                        print(f"[strategy6] getResponseBody 失败: {e}")
+            except Exception as e:
+                print(f"[strategy6] 异常: {e}")
 
         if deeplink:
             try:
