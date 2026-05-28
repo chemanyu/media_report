@@ -103,7 +103,9 @@ def batch_mode(input_file, output_file, platform, driver_path):
             "userAgent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1"
         }
         chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
-        chrome_options.add_argument("--headless")
+        # 与 single 模式对齐：默认有头，避免淘宝活动页风控让 starlink SDK 卡死
+        if os.environ.get('TAOBAO_DEEPLINK_HEADLESS') == '1':
+            chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")

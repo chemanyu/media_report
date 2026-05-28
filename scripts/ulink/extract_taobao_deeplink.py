@@ -1,4 +1,5 @@
 import sys
+import os
 # Go 通过 pipe 调用本脚本时，Windows Python 默认 stdout 退到 GBK，
 # 任何中文/emoji print 会 UnicodeEncodeError 导致脚本崩溃，Go 拿不到 JSON。
 try:
@@ -43,7 +44,15 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
         chrome_options.add_experimental_option("mobileEmulation", mobile_emulation)
         chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         chrome_options.add_experimental_option("useAutomationExtension", False)
-        chrome_options.add_argument("--headless=new")
+        # 默认走有头模式 —— 淘宝活动页有风控，--headless 会让 starlink SDK 卡死在 loading,
+        # tbopen 请求根本不会发出。Linux 虚拟机请用 Xvfb 提供虚拟显示器:
+        #   sudo apt install xvfb
+        #   Xvfb :99 -screen 0 1280x1024x24 &
+        #   export DISPLAY=:99
+        # 或者用 xvfb-run 启动调用方进程。
+        # 如果调试时想强制走 headless，设置环境变量 TAOBAO_DEEPLINK_HEADLESS=1。
+        if os.environ.get('TAOBAO_DEEPLINK_HEADLESS') == '1':
+            chrome_options.add_argument("--headless=new")
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--no-sandbox")
         chrome_options.add_argument("--disable-dev-shm-usage")
@@ -74,7 +83,6 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
     try:
         # 启用 CDP Network 域：浏览器发起的任何 request（含 tbopen://）都会被记录
         # 即使被浏览器拦截/无 handler 也会有 requestWillBeSent 事件
-        captured_network = []
         try:
             driver.execute_cdp_cmd('Network.enable', {})
         except Exception as e:
