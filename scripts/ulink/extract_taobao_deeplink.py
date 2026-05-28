@@ -262,7 +262,7 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
                 except Exception:
                     continue
 
-        for _ in range(20):
+        for i in range(60):  # 最长 ~30s，活动页有时加载非常慢
             try:
                 captured = driver.execute_script("return window.__capturedTaobao || [];") or []
                 for item in captured:
@@ -278,6 +278,14 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
             _scan_perf_logs()
             if deeplink:
                 break
+            # 每 5 次循环（~2.5s）做一次"是否还卡在 loading"诊断；
+            # 若 body 仍是 loading 且时间还充裕，就继续等而不是过早放弃
+            if i > 0 and i % 10 == 0:
+                try:
+                    body_text = driver.execute_script("return (document.body && document.body.innerText || '').slice(0,200);") or ''
+                    print(f"[wait] {i*0.5:.1f}s 时 body 文字: {body_text[:80]!r}")
+                except Exception:
+                    pass
             time.sleep(0.5)
 
         # 策略 2：从 <a> 标签查找（旧逻辑，作为兜底）
