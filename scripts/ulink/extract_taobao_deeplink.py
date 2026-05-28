@@ -310,6 +310,98 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
         # 策略 3：循环结束后再扫一次 perf log（兜底）
         _scan_perf_logs()
 
+        # 策略 4：直接从 page source / 全量 JS 上下文里正则扫 tbopen://
+        # 适用场景：活动页（如天猫红包封面）把 schemaUrl 直接写进 __INITIAL_DATA__ /
+        # SDK 配置数据块，但需要用户点击才会真的拉端 —— headless 没人点，但数据已经在 DOM 里了。
+        if not deeplink:
+            try:
+                import re as _re
+                sources = []
+                try:
+                    sources.append(driver.page_source or '')
+                except Exception:
+                    pass
+                # 把所有 <script> 标签的 innerText 也拼进来（page_source 里有但保险）
+                try:
+                    js_blob = driver.execute_script(
+                        "return Array.from(document.scripts).map(s=>s.textContent||'').join('\\n');"
+                    ) or ''
+                    sources.append(js_blob)
+                except Exception:
+                    pass
+                # 也扫 window 顶层属性里常见的数据容器
+                try:
+                    win_blob = driver.execute_script(
+                        "try { return JSON.stringify(window.__INITIAL_DATA__||window.__INIT_DATA__||window.pageData||{}); } catch(e){ return ''; }"
+                    ) or ''
+                    sources.append(win_blob)
+                except Exception:
+                    pass
+                pattern = _re.compile(r'(tbopen://[^"\'\\\s<>]+|taobao://[^"\'\\\s<>]+|tmall://[^"\'\\\s<>]+)')
+                for blob in sources:
+                    m = pattern.search(blob)
+                    if m:
+                        deeplink = m.group(1)
+                        # tbopen 里的 / 之类的转义字符要还原
+                        try:
+                            deeplink = deeplink.encode('utf-8').decode('unicode_escape')
+                        except Exception:
+                            pass
+                        print(f"从 page source 扫到: {deeplink[:200]}")
+                        break
+            except Exception as e:
+                print(f"扫 page source 出错: {e}")
+
+        # 策略 5：尝试自动点击页面上看起来像「拉起 App」的按钮，然后再扫一遍
+        if not deeplink:
+            try:
+                btn_xpaths = [
+                    "//*[contains(text(),'立即打开')]",
+                    "//*[contains(text(),'打开淘宝')]",
+                    "//*[contains(text(),'打开APP')]",
+                    "//*[contains(text(),'打开app')]",
+                    "//*[contains(text(),'去淘宝')]",
+                    "//*[contains(text(),'开红包')]",
+                    "//*[normalize-space(text())='开']",
+                ]
+                clicked = False
+                for xp in btn_xpaths:
+                    try:
+                        els = driver.find_elements(By.XPATH, xp)
+                        for el in els:
+                            try:
+                                driver.execute_script("arguments[0].click();", el)
+                                print(f"已自动点击元素: {xp}")
+                                clicked = True
+                                break
+                            except Exception:
+                                continue
+                        if clicked:
+                            break
+                    except Exception:
+                        continue
+                if clicked:
+                    # 等点击后产生的 tbopen 请求
+                    for _ in range(10):
+                        try:
+                            captured = driver.execute_script("return window.__capturedTaobao || [];") or []
+                            for item in captured:
+                                u = item.get('url') if isinstance(item, dict) else None
+                                if u and u.startswith(url_scan_prefixes):
+                                    deeplink = u
+                                    print(f"点击后从 hook 捕获 ({item.get('source')}): {deeplink}")
+                                    break
+                        except Exception:
+                            pass
+                        if deeplink:
+                            break
+                        _scan_perf_logs()
+                        if deeplink:
+                            break
+                        time.sleep(0.5)
+            except Exception as e:
+                print(f"自动点击拉端按钮失败: {e}")
+
         if deeplink:
             try:
                 parsed = urlparse(deeplink)
