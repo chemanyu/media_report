@@ -146,11 +146,15 @@ func (l *TaobaoExtractLogic) ExtractBatch(w http.ResponseWriter, r *http.Request
 
 // applyPythonEnv 给 Python 子进程设置 UTF-8 环境，避免 Windows GBK 编码崩溃，
 // 并把工作目录设到脚本所在目录，保证相对 import 正常。
+// TAOBAO_DEEPLINK_DEBUGGER_ADDR：让 selenium 接管手动启动并登录过的常驻 Chrome：
+//   chrome.exe --remote-debugging-port=9222 --user-data-dir=D:\148\chrome-debug-profile
+// 部署到没有该 Chrome 的机器时记得删掉这一行。
 func applyPythonEnv(cmd *exec.Cmd, scriptPath string) {
 	cmd.Dir = filepath.Dir(scriptPath)
 	cmd.Env = append(os.Environ(),
 		"PYTHONIOENCODING=utf-8",
 		"PYTHONUTF8=1",
+		"TAOBAO_DEEPLINK_DEBUGGER_ADDR=127.0.0.1:9222",
 	)
 }
 

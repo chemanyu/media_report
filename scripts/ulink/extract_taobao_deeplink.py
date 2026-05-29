@@ -24,6 +24,14 @@ CHROME_DRIVER_PATH = "D:\\148\\chromedriver-win64\\chromedriver.exe"
 
 URL_PREFIXES = ('tbopen://', 'taobao://', 'tmall://')
 
+MOBILE_UA = ("Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) "
+             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36")
+
+# 设置该环境变量后走 attach 模式：连到一个手动启动并登录过淘宝的 Chrome：
+#   chrome.exe --remote-debugging-port=9222 --user-data-dir=D:\148\chrome-debug-profile
+# 之后每次跑只在该 Chrome 里新开 tab，跑完关 tab、不退浏览器，登录态永远在
+DEBUG_ADDR_ENV = 'TAOBAO_DEEPLINK_DEBUGGER_ADDR'
+
 HOOK_SCRIPT = r"""
 (function () {
     window.__capturedTaobao = [];
@@ -109,11 +117,20 @@ HOOK_SCRIPT = r"""
 
 def _build_chrome_options():
     opts = Options()
+
+    # attach 模式：UA / 屏幕 / profile 全部由现有 Chrome 决定，mobile 在 attach 后用 CDP 动态加
+    debug_addr = os.environ.get(DEBUG_ADDR_ENV)
+    if debug_addr:
+        opts.add_experimental_option("debuggerAddress", debug_addr)
+        opts.set_capability("goog:loggingPrefs", {"performance": "ALL"})
+        opts.set_capability("goog:perfLoggingPrefs", {"enableNetwork": True, "enablePage": True})
+        return opts
+
     # 与浏览器 DevTools 手机模式一致：Android UA + 移动屏幕，
     # Android 下淘宝直接下发 tbopen://，iOS 走 universal link 走不通这条路径
     opts.add_experimental_option("mobileEmulation", {
         "deviceMetrics": {"width": 375, "height": 812, "pixelRatio": 3.0},
-        "userAgent": "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Mobile Safari/537.36"
+        "userAgent": MOBILE_UA,
     })
     opts.add_experimental_option("excludeSwitches", ["enable-automation"])
     opts.add_experimental_option("useAutomationExtension", False)
@@ -142,6 +159,14 @@ def _build_chrome_options():
 def _create_driver():
     """优先 undetected-chromedriver（绕风控），失败回退原生 selenium。"""
     chrome_options = _build_chrome_options()
+
+    # attach 模式：接管已运行的 Chrome，uc 不适用（也不需要绕检测，本来就是真人会话）
+    if os.environ.get(DEBUG_ADDR_ENV):
+        try:
+            return webdriver.Chrome(options=chrome_options)
+        except Exception:
+            return webdriver.Chrome(service=Service(CHROME_DRIVER_PATH), options=chrome_options)
+
     use_uc = os.environ.get('TAOBAO_DEEPLINK_USE_UC', '1') != '0'
     if use_uc:
         try:
@@ -220,12 +245,34 @@ def _replace_h5url(deeplink, short_url):
 def get_taobao_deeplink(short_url, driver=None, platform="ios"):
     """从淘宝短链提取 tbopen:// deeplink。"""
     internal_driver = driver is None
+    attach_mode = bool(os.environ.get(DEBUG_ADDR_ENV))
     if internal_driver:
         driver = _create_driver()
         if driver is None:
             return None, None
 
+    # attach 模式：在已登录的 Chrome 中新开 tab，跑完关 tab，保留登录态给下次
+    original_handle = None
+    new_tab_opened = False
+    if internal_driver and attach_mode:
+        try:
+            original_handle = driver.current_window_handle
+            driver.switch_to.new_window('tab')
+            new_tab_opened = True
+        except Exception as e:
+            print(f"新开 tab 失败: {e}")
+
     try:
+        # attach 模式下 options.mobileEmulation 无效，用 CDP 在当前 target 上动态设
+        if attach_mode:
+            try:
+                driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', {
+                    'width': 375, 'height': 812, 'deviceScaleFactor': 3.0, 'mobile': True
+                })
+                driver.execute_cdp_cmd('Network.setUserAgentOverride', {'userAgent': MOBILE_UA})
+            except Exception as e:
+                print(f"mobile emulation 设置失败: {e}")
+
         try:
             driver.execute_cdp_cmd('Network.enable', {})
             driver.execute_cdp_cmd('Page.enable', {})
@@ -273,10 +320,20 @@ def get_taobao_deeplink(short_url, driver=None, platform="ios"):
         print(f"提取 deeplink 过程中发生错误: {e}")
     finally:
         if internal_driver and driver is not None:
-            try:
-                driver.quit()
-            except Exception:
-                pass
+            if attach_mode:
+                # 关 tab，不退浏览器：保留登录态 + 风控指纹给下次跑用
+                try:
+                    if new_tab_opened:
+                        driver.close()
+                    if original_handle and original_handle in driver.window_handles:
+                        driver.switch_to.window(original_handle)
+                except Exception:
+                    pass
+            else:
+                try:
+                    driver.quit()
+                except Exception:
+                    pass
     return None, None
 
 
