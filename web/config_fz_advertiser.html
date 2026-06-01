@@ -75,11 +75,25 @@
                     </el-input>
                 </el-form-item>
                 <el-form-item label="账户名称">
-                    <el-input 
-                        v-model="newAccount.media_adv_name" 
+                    <el-input
+                        v-model="newAccount.media_adv_name"
                         placeholder="请输入账户名称"
                         style="width: 250px;"
                         @keyup.enter="addAccount">
+                    </el-input>
+                </el-form-item>
+                <el-form-item label="Client ID" v-if="newAccount.media === 'honor'">
+                    <el-input
+                        v-model="newAccount.client_id"
+                        placeholder="OAuth2 Client ID"
+                        style="width: 250px;">
+                    </el-input>
+                </el-form-item>
+                <el-form-item label="Client Secret" v-if="newAccount.media === 'honor'">
+                    <el-input
+                        v-model="newAccount.client_secret"
+                        placeholder="OAuth2 Client Secret"
+                        style="width: 250px;">
                     </el-input>
                 </el-form-item>
                 <el-form-item>
@@ -132,6 +146,16 @@
                 </el-table-column>
                 <el-table-column prop="media_adv_id" label="账户ID" width="180"></el-table-column>
                 <el-table-column prop="media_adv_name" label="账户名称" min-width="200"></el-table-column>
+                <el-table-column prop="client_id" label="Client ID" width="160">
+                    <template #default="scope">
+                        {{ scope.row.client_id || '-' }}
+                    </template>
+                </el-table-column>
+                <el-table-column prop="client_secret" label="Client Secret" width="160">
+                    <template #default="scope">
+                        {{ scope.row.client_secret ? '******' : '-' }}
+                    </template>
+                </el-table-column>
                 <el-table-column prop="create_time" label="创建时间" width="180">
                     <template #default="scope">
                         {{ formatTime(scope.row.create_time) }}
@@ -194,6 +218,12 @@
                 <el-form-item label="账户名称">
                     <el-input v-model="editForm.media_adv_name" placeholder="请输入账户名称"></el-input>
                 </el-form-item>
+                <el-form-item label="Client ID" v-if="editForm.media === 'honor'">
+                    <el-input v-model="editForm.client_id" placeholder="OAuth2 Client ID"></el-input>
+                </el-form-item>
+                <el-form-item label="Client Secret" v-if="editForm.media === 'honor'">
+                    <el-input v-model="editForm.client_secret" placeholder="OAuth2 Client Secret"></el-input>
+                </el-form-item>
             </el-form>
             <template #footer>
                 <el-button @click="editDialogVisible = false">取消</el-button>
@@ -226,13 +256,17 @@
                     newAccount: {
                         media: 'oppo',
                         media_adv_id: '',
-                        media_adv_name: ''
+                        media_adv_name: '',
+                        client_id: '',
+                        client_secret: ''
                     },
                     editForm: {
                         id: null,
                         media: '',
                         media_adv_id: '',
-                        media_adv_name: ''
+                        media_adv_name: '',
+                        client_id: '',
+                        client_secret: ''
                     },
                     loading: false,
                     deleteLoadingId: null,
@@ -303,15 +337,19 @@
                         const response = await axios.post(`${API_BASE_URL}/api/fz_advertiser/add`, {
                             media: this.newAccount.media,
                             media_adv_id: this.newAccount.media_adv_id.trim(),
-                            media_adv_name: this.newAccount.media_adv_name.trim()
+                            media_adv_name: this.newAccount.media_adv_name.trim(),
+                            client_id: this.newAccount.client_id.trim(),
+                            client_secret: this.newAccount.client_secret.trim()
                         });
-                        
+
                         if (response.data.code === 0) {
                             ElMessage.success('添加成功');
                             this.newAccount = {
                                 media: 'oppo',
                                 media_adv_id: '',
-                                media_adv_name: ''
+                                media_adv_name: '',
+                                client_id: '',
+                                client_secret: ''
                             };
                             await this.loadAccounts();
                         } else {
@@ -330,7 +368,9 @@
                         id: account.id,
                         media: account.media,
                         media_adv_id: account.media_adv_id,
-                        media_adv_name: account.media_adv_name
+                        media_adv_name: account.media_adv_name,
+                        client_id: account.client_id || '',
+                        client_secret: account.client_secret || ''
                     };
                     this.editDialogVisible = true;
                 },
@@ -346,7 +386,9 @@
                     try {
                         const response = await axios.post(`${API_BASE_URL}/api/fz_advertiser/update`, {
                             id: this.editForm.id,
-                            media_adv_name: this.editForm.media_adv_name.trim()
+                            media_adv_name: this.editForm.media_adv_name.trim(),
+                            client_id: this.editForm.client_id.trim(),
+                            client_secret: this.editForm.client_secret.trim()
                         });
                         
                         if (response.data.code === 0) {

@@ -62,6 +62,8 @@ func (l *FzAdvertiserLogic) Add(req *types.FzAdvertiserAddReq) (*types.CommonRes
 		Media:        req.Media,
 		MediaAdvId:   req.MediaAdvId,
 		MediaAdvName: req.MediaAdvName,
+		ClientID:     req.ClientID,
+		ClientSecret: req.ClientSecret,
 	}
 
 	if err := advertiserModel.Insert(advertiser); err != nil {
@@ -84,8 +86,10 @@ func (l *FzAdvertiserLogic) Update(req *types.FzAdvertiserUpdateReq) (*types.Com
 		return nil, fmt.Errorf("账户不存在: id=%d", req.Id)
 	}
 
-	// 更新账户名称
+	// 更新账户名称及 OAuth2 凭证（honor专用）
 	existing.MediaAdvName = req.MediaAdvName
+	existing.ClientID = req.ClientID
+	existing.ClientSecret = req.ClientSecret
 
 	if err := advertiserModel.Update(existing); err != nil {
 		return nil, fmt.Errorf("更新账户失败: %w", err)

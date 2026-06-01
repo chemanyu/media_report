@@ -26,6 +26,8 @@ CREATE TABLE `fz_media_advertiser` (
   `media` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '媒体简称，oppo, xiaomi, adn',
   `media_adv_id` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '媒体账户ID',
   `media_adv_name` varchar(200) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '媒体账户名称',
+  `client_id` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT 'OAuth2 Client ID（honor专用）',
+  `client_secret` varchar(200) COLLATE utf8mb4_unicode_ci DEFAULT '' COMMENT 'OAuth2 Client Secret（honor专用）',
   `create_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),

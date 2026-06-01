@@ -7,12 +7,16 @@ type FzAdvertiserAddReq struct {
 	Media        string `json:"media" binding:"required"`          // 媒体类型：oppo, xiaomi, adn
 	MediaAdvId   string `json:"media_adv_id" binding:"required"`   // 媒体账户ID
 	MediaAdvName string `json:"media_adv_name" binding:"required"` // 媒体账户名称
+	ClientID     string `json:"client_id"`                         // OAuth2 Client ID（honor专用）
+	ClientSecret string `json:"client_secret"`                     // OAuth2 Client Secret（honor专用）
 }
 
 // 更新飞猪媒体账户请求
 type FzAdvertiserUpdateReq struct {
 	Id           int64  `json:"id" binding:"required"`             // 账户ID
 	MediaAdvName string `json:"media_adv_name" binding:"required"` // 媒体账户名称
+	ClientID     string `json:"client_id"`                         // OAuth2 Client ID（honor专用）
+	ClientSecret string `json:"client_secret"`                     // OAuth2 Client Secret（honor专用）
 }
 
 // 删除飞猪媒体账户请求
