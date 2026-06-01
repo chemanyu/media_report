@@ -121,6 +121,7 @@
                         <el-option label="OPPO" value="oppo"></el-option>
                         <el-option label="小米" value="xiaomi"></el-option>
                         <el-option label="ADN" value="adn"></el-option>
+                        <el-option label="荣耀" value="honor"></el-option>
                     </el-select>
                 </el-form-item>
                 <el-form-item label="报表日期">
@@ -371,7 +372,7 @@
                     try {
                         const syncDateText = this.syncDate ? `（${this.syncDate}）` : '（今日）';
                         await ElMessageBox.confirm(
-                            `确定要同步${syncDateText}的数据吗？将依次同步OPPO和小米的数据。`,
+                            `确定要同步${syncDateText}的数据吗？将依次同步OPPO和小米，荣耀的数据。`,
                             '同步确认',
                             {
                                 confirmButtonText: '确定',
@@ -390,6 +391,7 @@
                         if (response.data.success) {
                             const oppo = response.data.data.oppo;
                             const xiaomi = response.data.data.xiaomi;
+                            const honor = response.data.data.honor;
                             
                             let message = '同步结果：';
                             if (oppo.success) {
@@ -402,8 +404,13 @@
                             } else {
                                 message += `小米失败(${xiaomi.error})`;
                             }
+                            if (honor.success) {
+                                message += `荣耀成功(${honor.count}个账户)`;
+                            } else {
+                                message += `荣耀失败(${honor.error})`;
+                            }
                             
-                            if (oppo.success || xiaomi.success) {
+                            if (oppo.success || xiaomi.success|| honor.success) {
                                 ElMessage.success(message);
                                 await this.loadReportList();
                             } else {
@@ -489,7 +496,8 @@
                     const names = {
                         'oppo': 'OPPO',
                         'xiaomi': '小米',
-                        'adn': 'ADN'
+                        'adn': 'ADN',
+                        'honor': '荣耀'
                     };
                     return names[media] || media;
                 },
