@@ -41,12 +41,21 @@ func (l *FzHourlyReportLogic) SyncOppoData(reportDate string) (int, error) {
 		return 0, fmt.Errorf("未找到OPPO账户")
 	}
 
-	// 2. 创建OPPO API客户端（从配置中获取API密钥）
-	oppoClient := oppo.NewOppoAPIClient(
+	// 2. 创建共享OPPO API客户端（代理凭据，从配置中获取）
+	sharedClient := oppo.NewOppoAPIClient(
 		l.svcCtx.Config.OppoAPI.OwnerId,
 		l.svcCtx.Config.OppoAPI.ApiId,
 		l.svcCtx.Config.OppoAPI.ApiKey,
 	)
+
+	// 自管账户：使用各自独立的 API-ID/API-KEY（不走共享代理凭据）
+	oppoSelfCreds := map[string]struct {
+		apiId  string
+		apiKey string
+	}{
+		"1001430036": {"40ef3e71288842a690823daafb13b3ce", "6ce3c91fdf84486bbdc7f39652e0487d"}, // ZLjl-飞猪-信息流-拉活2
+		"1001430030": {"e48a0586a4444decaa5084143d30cd12", "cf2034564b8a441385e4d2eb94464733"}, // ZLjl-飞猪-信息流-拉活1
+	}
 
 	// 3. 遍历账户，调用API获取数据
 	reportModel := model.NewFzHourlyReportModel(l.svcCtx.DB)
@@ -58,6 +67,12 @@ func (l *FzHourlyReportLogic) SyncOppoData(reportDate string) (int, error) {
 		if err != nil {
 			fmt.Printf("账户ID转换失败: %s, err: %v\n", advertiser.MediaAdvId, err)
 			continue
+		}
+
+		// 选择 API 客户端：自管账户用各自独立凭据，否则回退到共享代理凭据
+		oppoClient := sharedClient
+		if creds, ok := oppoSelfCreds[advertiser.MediaAdvId]; ok {
+			oppoClient = oppo.NewOppoAPIClient(int(ownerId), creds.apiId, creds.apiKey)
 		}
 
 		// 构建请求参数
