@@ -654,4 +654,24 @@ BEGIN;
 INSERT INTO `users` (`id`, `username`, `password_hash`, `email`, `created_at`, `is_active`) VALUES (1, 'admin', '0192023a7bbd73250516f069df18b500', 'admin@example.com', '2025-08-20 10:41:32', 1);
 COMMIT;
 
+-- ----------------------------
+-- Table structure for fz_config
+-- ----------------------------
+DROP TABLE IF EXISTS `fz_config`;
+CREATE TABLE `fz_config` (
+  `id` int unsigned NOT NULL AUTO_INCREMENT,
+  `coefficient` decimal(6,4) NOT NULL DEFAULT '1.7000',
+  `base_num` decimal(6,4) NOT NULL DEFAULT '0.8500',
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- ----------------------------
+-- Records of fz_config
+-- ----------------------------
+BEGIN;
+INSERT INTO `fz_config` (`id`, `coefficient`, `base_num`) VALUES (1, 1.7000, 0.8500);
+COMMIT;
+
 SET FOREIGN_KEY_CHECKS = 1;

@@ -125,6 +125,24 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 	)
 
+	// 飞猪系数配置路由
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// 查询 fz_config 系数配置
+				Method:  http.MethodGet,
+				Path:    "/api/fz/config",
+				Handler: fz.FzGetConfigHandler(serverCtx),
+			},
+			{
+				// 修改 fz_config 系数配置
+				Method:  http.MethodPost,
+				Path:    "/api/fz/config/update",
+				Handler: fz.FzUpdateConfigHandler(serverCtx),
+			},
+		},
+	)
+
 	// 菜鸟基数配置路由
 	server.AddRoutes(
 		[]rest.Route{

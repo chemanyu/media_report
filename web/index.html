@@ -273,6 +273,9 @@
                         <div class="submenu-item" :class="{active: currentPage === 'fz_hourly_report'}" @click="navigateTo('fz_hourly_report', '飞猪数据报表')">
                             数据报表
                         </div>
+                        <div class="submenu-item" :class="{active: currentPage === 'fz_config'}" @click="navigateTo('fz_config', '系数配置')">
+                            系数配置
+                        </div>
                     </div>
                 </div>
 
@@ -419,6 +422,10 @@
                         'fz_hourly_report': {
                             url: `${pathPrefix}/web/fz_hourly_report.html`,
                             subtitle: '查看飞猪媒体小时报数据'
+                        },
+                        'fz_config': {
+                            url: `${pathPrefix}/web/config_fz_coefficient.html`,
+                            subtitle: '配置飞猪现金消耗系数与基数'
                         },
                         'qczj_config': {
                             url: `${pathPrefix}/web/qczj_config.html`,

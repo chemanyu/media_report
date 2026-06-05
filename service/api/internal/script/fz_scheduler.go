@@ -84,6 +84,15 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 		return
 	}
 
+	// 读取现金消耗系数配置（读取失败回退默认值）
+	coefficient, baseNum := 1.7, 0.85
+	if cfg, cfgErr := model.GetFzConfig(db); cfgErr == nil {
+		coefficient, baseNum = cfg.Coefficient, cfg.BaseNum
+	} else {
+		logx.Errorf("查询飞猪系数配置失败，使用默认值 1.7*0.85: %v", cfgErr)
+	}
+	logx.Infof("飞猪时报现金消耗计算 - 系数: %.4f, 基数: %.4f", coefficient, baseNum)
+
 	if len(reports) == 0 {
 		logx.Info("今天暂无飞猪数据，跳过发送钉钉通知")
 		return
@@ -141,7 +150,7 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	totalConvertDp := regularConvertDp + energyConvertDp
 	totalDpAppOrderNums := regularDpAppOrderNums + energyDpAppOrderNums
 	totalCostYuan := (regularCost + energyCost) / 100
-	totalCashCost := totalCostYuan * 1.7 * 0.85
+	totalCashCost := totalCostYuan * coefficient * baseNum
 	totalConvertDpPrice := 0.0
 	if totalConvertDp > 0 {
 		totalConvertDpPrice = totalCashCost / totalConvertDp
@@ -262,6 +271,15 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 		return
 	}
 
+	// 读取现金消耗系数配置（读取失败回退默认值）
+	coefficient, baseNum := 1.7, 0.85
+	if cfg, cfgErr := model.GetFzConfig(db); cfgErr == nil {
+		coefficient, baseNum = cfg.Coefficient, cfg.BaseNum
+	} else {
+		logx.Errorf("查询飞猪系数配置失败，使用默认值 1.7*0.85: %v", cfgErr)
+	}
+	logx.Infof("飞猪日报现金消耗计算 - 系数: %.4f, 基数: %.4f", coefficient, baseNum)
+
 	if len(reports) == 0 {
 		logx.Info("昨天暂无飞猪数据，跳过发送钉钉日报")
 		return
@@ -291,7 +309,7 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 	_ = energyDpAppOrderNums
 
 	energyCostYuan := energyCost / 100
-	energyCashCost := energyCostYuan * 1.7 * 0.85
+	energyCashCost := energyCostYuan * coefficient * baseNum
 	energyConvertDpPrice := 0.0
 	if energyConvertDp > 0 {
 		energyConvertDpPrice = energyCashCost / energyConvertDp
@@ -301,7 +319,7 @@ func SendFzDailyReport(ctx context.Context, db *gorm.DB, dingConfig config.DingT
 	totalConvertDp := regularConvertDp + energyConvertDp
 	totalDpAppOrderNums := regularDpAppOrderNums + energyDpAppOrderNums
 	totalCostYuan := (regularCost + energyCost) / 100
-	totalCashCost := totalCostYuan * 1.7 * 0.85
+	totalCashCost := totalCostYuan * coefficient * baseNum
 	totalConvertDpPrice := 0.0
 	if totalConvertDp > 0 {
 		totalConvertDpPrice = totalCashCost / totalConvertDp
