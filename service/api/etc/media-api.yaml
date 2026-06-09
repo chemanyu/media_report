@@ -67,7 +67,7 @@ Schedule:
   JuliangReportCron: "4 * * * *"  #巨量时报：每天10点、12点、14点、16点、18点、22点 4分
   JuliangDayReportCron: "5 10 * * *" 
   TanxCron: "15 12 * * *"         # Tanx 数据抓取任务，每天12:15执行
-  FzHourCron: "1 10,14,18,20 * * *"
+  FzHourCron: "5 1 10,14,18,20 * * *"
   #FzDayReportCron: "58 23 * * *"
   #FzDayCron: "20 10 * * *"
   QczjHourCron: "3 10-23 * * *"   # QCZJ 分时监控，每天 09-23 时整点执行
