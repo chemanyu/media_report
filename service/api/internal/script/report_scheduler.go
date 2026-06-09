@@ -111,6 +111,7 @@ func Cron(config config.Config, db *gorm.DB) {
 
 	//飞猪时报
 	if config.Schedule.FzHourCron != "" {
+		time.Sleep(5 * time.Second)
 		_, err := cronScheduler.AddFunc(config.Schedule.FzHourCron, func() {
 			ExecuteFzDataSyncJob(db, config)
 			SendFzDingTalkNotification(context.Background(), db, config.DingTalk)
