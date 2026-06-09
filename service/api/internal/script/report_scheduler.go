@@ -120,15 +120,15 @@ func Cron(config config.Config, db *gorm.DB) {
 		}
 		logx.Infof("飞猪时报数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.FzHourCron)
 	}
-	if config.Schedule.FzDayReportCron != "" {
-		_, err := cronScheduler.AddFunc(config.Schedule.FzDayReportCron, func() {
-			ExecuteFzDataSyncJob(db, config)
-		})
-		if err != nil {
-			log.Fatalf("添加飞猪日报数据更新定时任务失败: %v", err)
-		}
-		logx.Infof("飞猪日报数据更新定时任务已启动，Cron 表达式: %s", config.Schedule.FzDayReportCron)
-	}
+	// if config.Schedule.FzDayReportCron != "" {
+	// 	_, err := cronScheduler.AddFunc(config.Schedule.FzDayReportCron, func() {
+	// 		ExecuteFzDataSyncJob(db, config)
+	// 	})
+	// 	if err != nil {
+	// 		log.Fatalf("添加飞猪日报数据更新定时任务失败: %v", err)
+	// 	}
+	// 	logx.Infof("飞猪日报数据更新定时任务已启动，Cron 表达式: %s", config.Schedule.FzDayReportCron)
+	// }
 	//飞猪日报
 	// if config.Schedule.FzDayCron != "" {
 	// 	_, err := cronScheduler.AddFunc(config.Schedule.FzDayCron, func() {
