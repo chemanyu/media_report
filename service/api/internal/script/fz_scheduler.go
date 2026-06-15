@@ -50,6 +50,7 @@ func ExecuteFzDataSyncJob(db *gorm.DB, config config.Config) {
 	}
 
 	// 同步今天的荣耀数据
+	time.Sleep(5 * time.Second)
 	honorCount, honorErr = l.SyncTodayHonorData()
 	if honorErr != nil {
 		logx.Errorf("同步荣耀数据失败: %v", honorErr)

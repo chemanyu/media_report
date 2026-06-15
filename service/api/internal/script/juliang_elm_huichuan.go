@@ -6,8 +6,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -18,6 +20,203 @@ import (
 	"media_report/service/api/internal/model"
 	"media_report/service/api/internal/types"
 )
+
+// ErrJuliangRateLimit 表示巨量接口返回请求频率超限（code=40110），调用方可据此重试。
+var ErrJuliangRateLimit = errors.New("巨量请求频率超限")
+
+// isRateLimitErr 判断错误是否为巨量限频错误。
+func isRateLimitErr(err error) bool {
+	return errors.Is(err, ErrJuliangRateLimit)
+}
+
+// elmHcRetryBackoffs 限频重试的退避间隔（递增，给上游让出请求窗口）；超过长度后取最后一档。
+var elmHcRetryBackoffs = []time.Duration{
+	30 * time.Second,
+	60 * time.Second,
+	120 * time.Second,
+	300 * time.Second,
+}
+
+// elmHcTask 一个待抓取的账户任务（客户 + 媒体账户）。
+type elmHcTask struct {
+	perf  model.ElmHcPerformanceReport
+	media model.ElmHcMediaReport
+}
+
+// collectElmHcTasks 把所有客户及其媒体账户平铺成任务列表。
+func collectElmHcTasks(db *gorm.DB) ([]elmHcTask, error) {
+	performances, err := model.GetAllElmHcPerformanceReports(db)
+	if err != nil {
+		return nil, fmt.Errorf("获取客户列表失败: %w", err)
+	}
+	if len(performances) == 0 {
+		return nil, nil
+	}
+
+	var tasks []elmHcTask
+	for _, performance := range performances {
+		logx.Infof("处理客户: %s (%s)", performance.CustomerName, performance.CustomerShort)
+
+		mediaReports, err := model.GetElmHcMediaReportsByPerformanceId(db, int(performance.ID))
+		if err != nil {
+			logx.Errorf("获取客户 %s 的媒体账户失败: %v", performance.CustomerShort, err)
+			continue
+		}
+		if len(mediaReports) == 0 {
+			logx.Infof("客户 %s 暂无媒体账户配置", performance.CustomerShort)
+			continue
+		}
+		for _, media := range mediaReports {
+			tasks = append(tasks, elmHcTask{perf: performance, media: media})
+		}
+	}
+	return tasks, nil
+}
+
+// fetchElmHcReportsWithRetry 对任务列表逐个抓取报表，限频失败的账户按退避表多轮重试，
+// 直到全部成功、或达到 deadline 时间预算（避免与下一次 cron 重叠）。
+// statDate 为巨量维度（stat_time_day / stat_time_hour），buildRow 把单账户响应转换为 ADX 数据。
+func fetchElmHcReportsWithRetry(
+	juliangConfig config.JuliangConfig,
+	token string,
+	tasks []elmHcTask,
+	startTime, endTime, statDate string,
+	deadline time.Time,
+	buildRow func(t elmHcTask, resp *types.JuliangCustomReportResp) []types.ADXReportData,
+) []types.ADXReportData {
+	var allReportData []types.ADXReportData
+	remaining := tasks
+
+	for round := 0; len(remaining) > 0; round++ {
+		var stillFailed []elmHcTask
+
+		for _, t := range remaining {
+			logx.Infof("  正在获取账户 %s (汇川ID: %d) 的报表数据...", t.media.MediaAdvName, t.media.HuichuanAdvId)
+
+			advertiserId, _ := strconv.Atoi(t.media.MediaAdvId)
+			resp, err := getJuliangReportData(juliangConfig, token, advertiserId, startTime, endTime, statDate)
+			if err != nil {
+				if isRateLimitErr(err) {
+					logx.Infof("  账户 %s 被限频，加入重试队列: %v", t.media.MediaAdvName, err)
+					stillFailed = append(stillFailed, t)
+				} else {
+					logx.Errorf("获取账户 %s 的报表数据失败(非限频，跳过): %v", t.media.MediaAdvName, err)
+				}
+				continue
+			}
+
+			if len(resp.Data.Rows) > 0 {
+				allReportData = append(allReportData, buildRow(t, resp)...)
+				logx.Infof("  账户 %s 获取到 %d 条记录", t.media.MediaAdvName, len(resp.Data.Rows))
+			} else {
+				logx.Infof("  账户 %s 暂无数据", t.media.MediaAdvName)
+			}
+		}
+
+		if len(stillFailed) == 0 {
+			break
+		}
+
+		wait := elmHcRetryBackoffs[len(elmHcRetryBackoffs)-1]
+		if round < len(elmHcRetryBackoffs) {
+			wait = elmHcRetryBackoffs[round]
+		}
+		if time.Now().Add(wait).After(deadline) {
+			logx.Errorf("仍有 %d 个账户因限频未成功，已达时间预算上限，放弃本次重试（避免与下一次任务重叠）", len(stillFailed))
+			break
+		}
+
+		logx.Infof("本轮第 %d 次重试结束，仍有 %d 个账户被限频，%v 后重试…", round+1, len(stillFailed), wait)
+		time.Sleep(wait)
+		remaining = stillFailed
+	}
+
+	return allReportData
+}
+
+// buildElmHcReportData 把单个账户的巨量响应行转换为 ADX 回传数据。
+// isHourly=true 为小时级（RedirectNum/PayNum 固定 0，带 hh）；
+// isHourly=false 为日级（按 update_time 是否为今天决定 RedirectNum/PayNum）。
+func buildElmHcReportData(
+	perf model.ElmHcPerformanceReport,
+	media model.ElmHcMediaReport,
+	resp *types.JuliangCustomReportResp,
+	dt, hh string,
+	isHourly bool,
+) []types.ADXReportData {
+	// 日级：检查 update_time 是否为今天，不是今天则 RedirectNum 和 PayNum 设置为 0
+	redirectNum := media.RedirectNum
+	payNum := media.PayNum
+	if isHourly {
+		redirectNum = 0
+		payNum = 0
+	} else {
+		today := time.Now().Format("2006-01-02")
+		updateDate := media.UpdateTime.Format("2006-01-02")
+		if updateDate != today {
+			redirectNum = 0
+			payNum = 0
+			logx.Infof("  账户 %s 的 update_time (%s) 不是今天，RedirectNum 和 PayNum 设置为 0", media.MediaAdvName, updateDate)
+		}
+	}
+
+	var result []types.ADXReportData
+	for _, row := range resp.Data.Rows {
+		// 从 map 中提取数据（巨量接口返回的是字符串类型）
+		var cost float64
+		if v, ok := row.Metrics["stat_cost"]; ok {
+			if val, ok := v.(string); ok {
+				cost, _ = strconv.ParseFloat(val, 64)
+			} else if val, ok := v.(float64); ok {
+				cost = val
+			}
+		}
+
+		var showNum, clickNum, convertNum int64
+		if v, ok := row.Metrics["show_cnt"]; ok {
+			if val, ok := v.(string); ok {
+				showNum, _ = strconv.ParseInt(val, 10, 64)
+			} else if val, ok := v.(float64); ok {
+				showNum = int64(val)
+			}
+		}
+		if v, ok := row.Metrics["click_cnt"]; ok {
+			if val, ok := v.(string); ok {
+				clickNum, _ = strconv.ParseInt(val, 10, 64)
+			} else if val, ok := v.(float64); ok {
+				clickNum = int64(val)
+			}
+		}
+		if v, ok := row.Metrics["convert_cnt"]; ok {
+			if val, ok := v.(string); ok {
+				convertNum, _ = strconv.ParseInt(val, 10, 64)
+			} else if val, ok := v.(float64); ok {
+				convertNum = int64(val)
+			}
+		}
+
+		result = append(result, types.ADXReportData{
+			CustomerName:      perf.CustomerName,
+			CustomerShort:     perf.CustomerShort,
+			AgentName:         perf.AgentName,
+			AgentShort:        perf.AgentShort,
+			MediaPlatformName: perf.MediaPlatformName,
+			HuichuanAdvId:     media.HuichuanAdvId,
+			Cost:              cost,
+			ShowNum:           showNum,
+			ClickNum:          clickNum,
+			ConvertNum:        convertNum,
+			DeepConvertNum:    media.PayNum,
+			ConvertType:       "调起",
+			DeepConvertType:   "付费",
+			RedirectNum:       redirectNum,
+			PayNum:            payNum,
+			Dt:                dt,
+			Hh:                hh,
+		})
+	}
+	return result
+}
 
 // refreshJuliangDLSAccessToken 刷新巨量DLS的 access token
 func refreshJuliangDLSAccessToken(db *gorm.DB, juliangConfig config.JuliangConfig) {
@@ -152,124 +351,25 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 		return
 	}
 
-	// 从数据库获取所有客户及其媒体账户
-	performances, err := model.GetAllElmHcPerformanceReports(db)
+	// 从数据库获取所有客户及其媒体账户，平铺成任务列表
+	tasks, err := collectElmHcTasks(db)
 	if err != nil {
-		logx.Errorf("获取客户列表失败: %v", err)
+		logx.Errorf("%v", err)
+		return
+	}
+	if len(tasks) == 0 {
+		logx.Info("暂无客户/媒体账户配置")
 		return
 	}
 
-	if len(performances) == 0 {
-		logx.Info("暂无客户配置")
-		return
-	}
-
-	// 收集所有需要发送的数据
-	var allReportData []types.ADXReportData
-
-	// 遍历所有客户
-	for _, performance := range performances {
-		logx.Infof("处理客户: %s (%s)", performance.CustomerName, performance.CustomerShort)
-
-		// 获取该客户的所有媒体账户
-		mediaReports, err := model.GetElmHcMediaReportsByPerformanceId(db, int(performance.ID))
-		if err != nil {
-			logx.Errorf("获取客户 %s 的媒体账户失败: %v", performance.CustomerShort, err)
-			continue
-		}
-
-		if len(mediaReports) == 0 {
-			logx.Infof("客户 %s 暂无媒体账户配置", performance.CustomerShort)
-			continue
-		}
-
-		// 遍历该客户的所有媒体账户
-		for _, media := range mediaReports {
-			logx.Infof("  正在获取账户 %s (汇川ID: %d) 的报表数据...", media.MediaAdvName, media.HuichuanAdvId)
-
-			// 调用巨量引擎API获取报表数据
-			advertiser_id, _ := strconv.Atoi(media.MediaAdvId)
-			resp, err := getJuliangReportData(juliangConfig, mediaToken.Token, advertiser_id, startTime, endTime, "stat_time_day")
-			if err != nil {
-				logx.Errorf("获取账户 %s 的报表数据失败: %v", media.MediaAdvName, err)
-				continue
-			}
-
-			// 处理报表数据并转换为ADX格式
-			if len(resp.Data.Rows) > 0 {
-				// 检查 update_time 是否为今天，如果不是今天则 RedirectNum 和 PayNum 设置为 0
-				redirectNum := media.RedirectNum
-				payNum := media.PayNum
-				today := time.Now().Format("2006-01-02")
-				updateDate := media.UpdateTime.Format("2006-01-02")
-				if updateDate != today {
-					redirectNum = 0
-					payNum = 0
-					logx.Infof("  账户 %s 的 update_time (%s) 不是今天，RedirectNum 和 PayNum 设置为 0", media.MediaAdvName, updateDate)
-				}
-
-				for _, row := range resp.Data.Rows {
-					// 从 map 中提取数据（巨量接口返回的是字符串类型）
-					var cost float64
-					if v, ok := row.Metrics["stat_cost"]; ok {
-						if val, ok := v.(string); ok {
-							cost, _ = strconv.ParseFloat(val, 64)
-						} else if val, ok := v.(float64); ok {
-							cost = val
-						}
-					}
-
-					var showNum, clickNum, convertNum int64
-					if v, ok := row.Metrics["show_cnt"]; ok {
-						if val, ok := v.(string); ok {
-							showNum, _ = strconv.ParseInt(val, 10, 64)
-						} else if val, ok := v.(float64); ok {
-							showNum = int64(val)
-						}
-					}
-					if v, ok := row.Metrics["click_cnt"]; ok {
-						if val, ok := v.(string); ok {
-							clickNum, _ = strconv.ParseInt(val, 10, 64)
-						} else if val, ok := v.(float64); ok {
-							clickNum = int64(val)
-						}
-					}
-					if v, ok := row.Metrics["convert_cnt"]; ok {
-						if val, ok := v.(string); ok {
-							convertNum, _ = strconv.ParseInt(val, 10, 64)
-						} else if val, ok := v.(float64); ok {
-							convertNum = int64(val)
-						}
-					}
-
-					reportData := types.ADXReportData{
-						CustomerName:      performance.CustomerName,
-						CustomerShort:     performance.CustomerShort,
-						AgentName:         performance.AgentName,
-						AgentShort:        performance.AgentShort,
-						MediaPlatformName: performance.MediaPlatformName,
-						// MediaAdvId:        media.MediaAdvId,
-						// MediaAdvName:      media.MediaAdvName,
-						HuichuanAdvId:   media.HuichuanAdvId,
-						Cost:            cost,
-						ShowNum:         showNum,
-						ClickNum:        clickNum,
-						ConvertNum:      convertNum,
-						DeepConvertNum:  media.PayNum,
-						ConvertType:     "调起",
-						DeepConvertType: "付费",
-						RedirectNum:     redirectNum,
-						PayNum:          payNum,
-						Dt:              dt,
-					}
-					allReportData = append(allReportData, reportData)
-				}
-				logx.Infof("  账户 %s 获取到 %d 条记录", media.MediaAdvName, len(resp.Data.Rows))
-			} else {
-				logx.Infof("  账户 %s 暂无数据", media.MediaAdvName)
-			}
-		}
-	}
+	// 限频自动重试：失败账户按退避表重试，预算 40 分钟（11:00 启动，避开 ~11:20 拥塞窗口尾部且不与次日重叠）
+	deadline := time.Now().Add(40 * time.Minute)
+	allReportData := fetchElmHcReportsWithRetry(
+		juliangConfig, mediaToken.Token, tasks, startTime, endTime, "stat_time_day", deadline,
+		func(t elmHcTask, resp *types.JuliangCustomReportResp) []types.ADXReportData {
+			return buildElmHcReportData(t.perf, t.media, resp, dt, "", false)
+		},
+	)
 
 	// 发送数据到ADX接口（暂时注释，改为保存到数据库）
 	if len(allReportData) > 0 {
@@ -311,7 +411,7 @@ func FetchHuichuanElmReports(db *gorm.DB, juliangConfig config.JuliangConfig, ad
 				Hh:              data.Hh,
 			}
 			if err := model.InsertOrUpdateElmHcReportData(db, record); err != nil {
-				logx.Errorf("保存数据失败 (账户:%s, 日期:%s): %v", data.HuichuanAdvId, data.Dt, err)
+				logx.Errorf("保存数据失败 (账户:%d, 日期:%s): %v", data.HuichuanAdvId, data.Dt, err)
 			} else {
 				successCount++
 			}
@@ -382,6 +482,10 @@ func getJuliangReportData(juliangConfig config.JuliangConfig, accessToken string
 	// 检查响应
 	if resp.Code != 0 {
 		logx.Errorf("获取巨量引擎报表失败: code=%d, message=%s", resp.Code, resp.Message)
+		// 限频错误（code=40110，或 message 含“频率超限”兜底）包装为可重试的哨兵错误
+		if resp.Code == 40110 || strings.Contains(resp.Message, "频率超限") {
+			return nil, fmt.Errorf("%w: code=%d, message=%s", ErrJuliangRateLimit, resp.Code, resp.Message)
+		}
 		return nil, fmt.Errorf("获取报表失败: %s", resp.Message)
 	}
 
@@ -421,114 +525,25 @@ func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConf
 		return
 	}
 
-	// 从数据库获取所有客户及其媒体账户
-	performances, err := model.GetAllElmHcPerformanceReports(db)
+	// 从数据库获取所有客户及其媒体账户，平铺成任务列表
+	tasks, err := collectElmHcTasks(db)
 	if err != nil {
-		logx.Errorf("获取客户列表失败: %v", err)
+		logx.Errorf("%v", err)
+		return
+	}
+	if len(tasks) == 0 {
+		logx.Info("暂无客户/媒体账户配置")
 		return
 	}
 
-	if len(performances) == 0 {
-		logx.Info("暂无客户配置")
-		return
-	}
-
-	// 收集所有需要发送的数据
-	var allReportData []types.ADXReportData
-
-	// 遍历所有客户
-	for _, performance := range performances {
-		logx.Infof("处理客户: %s (%s)", performance.CustomerName, performance.CustomerShort)
-
-		// 获取该客户的所有媒体账户
-		mediaReports, err := model.GetElmHcMediaReportsByPerformanceId(db, int(performance.ID))
-		if err != nil {
-			logx.Errorf("获取客户 %s 的媒体账户失败: %v", performance.CustomerShort, err)
-			continue
-		}
-
-		if len(mediaReports) == 0 {
-			logx.Infof("客户 %s 暂无媒体账户配置", performance.CustomerShort)
-			continue
-		}
-
-		// 遍历该客户的所有媒体账户
-		for _, media := range mediaReports {
-			logx.Infof("  正在获取账户 %s (汇川ID: %d) 的小时级报表数据...", media.MediaAdvName, media.HuichuanAdvId)
-
-			// 调用巨量引擎API获取报表数据
-			advertiser_id, _ := strconv.Atoi(media.MediaAdvId)
-			resp, err := getJuliangReportData(juliangConfig, mediaToken.Token, advertiser_id, startTime, endTime, "stat_time_hour")
-			if err != nil {
-				logx.Errorf("获取账户 %s 的小时级报表数据失败: %v", media.MediaAdvName, err)
-				continue
-			}
-
-			// 处理报表数据并转换为ADX格式
-			if len(resp.Data.Rows) > 0 {
-				for _, row := range resp.Data.Rows {
-					// 从 map 中提取数据（巨量接口返回的是字符串类型）
-					var cost float64
-					if v, ok := row.Metrics["stat_cost"]; ok {
-						if val, ok := v.(string); ok {
-							cost, _ = strconv.ParseFloat(val, 64)
-						} else if val, ok := v.(float64); ok {
-							cost = val
-						}
-					}
-
-					var showNum, clickNum, convertNum int64
-					if v, ok := row.Metrics["show_cnt"]; ok {
-						if val, ok := v.(string); ok {
-							showNum, _ = strconv.ParseInt(val, 10, 64)
-						} else if val, ok := v.(float64); ok {
-							showNum = int64(val)
-						}
-					}
-					if v, ok := row.Metrics["click_cnt"]; ok {
-						if val, ok := v.(string); ok {
-							clickNum, _ = strconv.ParseInt(val, 10, 64)
-						} else if val, ok := v.(float64); ok {
-							clickNum = int64(val)
-						}
-					}
-					if v, ok := row.Metrics["convert_cnt"]; ok {
-						if val, ok := v.(string); ok {
-							convertNum, _ = strconv.ParseInt(val, 10, 64)
-						} else if val, ok := v.(float64); ok {
-							convertNum = int64(val)
-						}
-					}
-
-					reportData := types.ADXReportData{
-						CustomerName:      performance.CustomerName,
-						CustomerShort:     performance.CustomerShort,
-						AgentName:         performance.AgentName,
-						AgentShort:        performance.AgentShort,
-						MediaPlatformName: performance.MediaPlatformName,
-						// MediaAdvId:        media.MediaAdvId,
-						// MediaAdvName:      media.MediaAdvName,
-						HuichuanAdvId:   media.HuichuanAdvId,
-						Cost:            cost,
-						ShowNum:         showNum,
-						ClickNum:        clickNum,
-						ConvertNum:      convertNum,
-						DeepConvertNum:  media.PayNum,
-						ConvertType:     "调起",
-						DeepConvertType: "付费",
-						RedirectNum:     0,
-						PayNum:          0,
-						Dt:              dt,
-						Hh:              hh,
-					}
-					allReportData = append(allReportData, reportData)
-				}
-				logx.Infof("  账户 %s 获取到 %d 条记录", media.MediaAdvName, len(resp.Data.Rows))
-			} else {
-				logx.Infof("  账户 %s 暂无数据", media.MediaAdvName)
-			}
-		}
-	}
+	// 限频自动重试：失败账户按退避表重试，预算 45 分钟（时报每小时跑一次，留足余量给下次 :02 启动，避免重叠）
+	deadline := time.Now().Add(45 * time.Minute)
+	allReportData := fetchElmHcReportsWithRetry(
+		juliangConfig, mediaToken.Token, tasks, startTime, endTime, "stat_time_hour", deadline,
+		func(t elmHcTask, resp *types.JuliangCustomReportResp) []types.ADXReportData {
+			return buildElmHcReportData(t.perf, t.media, resp, dt, hh, true)
+		},
+	)
 
 	// 发送数据到ADX小时接口
 	if len(allReportData) > 0 {
