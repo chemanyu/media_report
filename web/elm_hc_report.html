@@ -37,13 +37,13 @@
             <el-button type="success" @click="triggerDailyReport" icon="Position" style="margin-left: 10px;">手动回传日报</el-button>
             <el-date-picker
                 v-model="reportHour"
-                type="datetime"
-                placeholder="选择小时"
-                value-format="YYYYMMDDHH"
-                format="YYYY-MM-DD HH:00"
-                style="width: 170px; margin-left: 10px;">
+                type="date"
+                placeholder="选择日期"
+                value-format="YYYYMMDD"
+                format="YYYY-MM-DD"
+                style="width: 140px; margin-left: 10px;">
             </el-date-picker>
-            <el-button type="primary" @click="triggerHourlyReport" icon="Position" style="margin-left: 10px;">手动回传小时报</el-button>
+            <el-button type="primary" @click="triggerHourlyReport" icon="Position" style="margin-left: 10px;">手动回传小时报（按天）</el-button>
             <el-button type="warning" @click="showDownloadDialog" icon="Download" style="margin-left: 10px;">下载报表</el-button>
             <el-button @click="loadList" icon="Refresh">刷新</el-button>
         </div>
@@ -392,8 +392,8 @@
 
                 const triggerHourlyReport = async () => {
                     try {
-                        const hourText = reportHour.value ? `（${reportHour.value.slice(0,8)} ${reportHour.value.slice(8,10)}时）` : '（上一小时）';
-                        await ElMessageBox.confirm(`确定要手动触发汇川饿了么小时报任务${hourText}吗？该操作会立即执行数据回传。`, '确认操作', {
+                        const dateText = reportHour.value ? `（${reportHour.value}）` : '（今天）';
+                        await ElMessageBox.confirm(`确定要手动触发汇川饿了么小时报任务${dateText}吗？将依次回传当天每个小时的数据（今天则只到当前小时），该操作会立即在后台执行。`, '确认操作', {
                             type: 'info',
                             confirmButtonText: '确定触发',
                             cancelButtonText: '取消'
@@ -401,7 +401,7 @@
 
                         const params = {};
                         if (reportHour.value) {
-                            params.hour = reportHour.value;
+                            params.date = reportHour.value;
                         }
                         const response = await axios.post(`${API_BASE_URL}/config/elmhc/trigger_hourly_report`, null, { params });
                         if (response.data.code === 0) {

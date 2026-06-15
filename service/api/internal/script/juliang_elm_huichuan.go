@@ -561,6 +561,43 @@ func FetchHuichuanElmReportsByHour(db *gorm.DB, juliangConfig config.JuliangConf
 	logx.Infof("回传饿了么小时级报表数据获取完成")
 }
 
+// FetchHuichuanElmReportsByDayHours 按天回传饿了么小时级报表：依次回传指定日期当天每个小时。
+// reportDate: 指定日期，格式 "20060102"（如 "20260326"），为空则使用今天。
+// 若 reportDate 为今天，则只回传 00 时到当前小时（未来小时无数据，跳过）。
+func FetchHuichuanElmReportsByDayHours(db *gorm.DB, juliangConfig config.JuliangConfig, adxConfig config.ADXConfig, reportDate string) {
+	logx.Infof("开始按天回传饿了么小时级报表数据 - %s", time.Now().Format("2006-01-02 15:04:05"))
+
+	now := time.Now()
+	var day time.Time
+	if reportDate != "" {
+		t, err := time.ParseInLocation("20060102", reportDate, time.Local)
+		if err != nil {
+			logx.Errorf("解析日期参数失败: %v", err)
+			return
+		}
+		day = t
+	} else {
+		day = now
+	}
+
+	// 确定该天需要回传的最后一个小时：如果是今天，只到当前小时；否则到 23 时
+	lastHour := 23
+	if day.Format("20060102") == now.Format("20060102") {
+		lastHour = now.Hour()
+	}
+
+	dt := day.Format("20060102")
+	logx.Infof("按天回传日期: %s, 小时范围: 00 ~ %02d", dt, lastHour)
+
+	for h := 0; h <= lastHour; h++ {
+		reportHour := fmt.Sprintf("%s%02d", dt, h)
+		logx.Infof("=== 按天回传：开始第 %02d 小时 (%s) ===", h, reportHour)
+		FetchHuichuanElmReportsByHour(db, juliangConfig, adxConfig, reportHour)
+	}
+
+	logx.Infof("按天回传饿了么小时级报表数据全部完成，日期: %s, 共 %d 个小时", dt, lastHour+1)
+}
+
 // generateSignature 生成 HMAC-SHA256 签名
 func generateSignature(secret string, path string, timestamp string) string {
 	h := hmac.New(sha256.New, []byte(secret))

@@ -246,20 +246,21 @@ func NewTriggerElmHcHourlyReportLogic(ctx context.Context, svcCtx *svc.ServiceCo
 	}
 }
 
-// TriggerElmHcHourlyReport 触发小时报，reportHour 格式 "2006010215"，为空则取上一个小时
-func (l *TriggerElmHcHourlyReportLogic) TriggerElmHcHourlyReport(reportHour string) (*types.ElmHcReportCommonResp, error) {
-	if reportHour != "" {
-		l.Logger.Infof("手动触发汇川饿了么小时报任务，小时: %s", reportHour)
+// TriggerElmHcHourlyReport 按天触发小时报，reportDate 格式 "20060102"，为空则取今天；
+// 会依次回传该天每个小时（今天则只到当前小时）。
+func (l *TriggerElmHcHourlyReportLogic) TriggerElmHcHourlyReport(reportDate string) (*types.ElmHcReportCommonResp, error) {
+	if reportDate != "" {
+		l.Logger.Infof("手动触发汇川饿了么小时报任务（按天），日期: %s", reportDate)
 	} else {
-		l.Logger.Info("手动触发汇川饿了么小时报任务（上一小时数据）")
+		l.Logger.Info("手动触发汇川饿了么小时报任务（按天，今天数据）")
 	}
 
 	go func() {
-		script.FetchHuichuanElmReportsByHour(l.svcCtx.DB, l.svcCtx.Config.JuliangDLS, l.svcCtx.Config.ADX, reportHour)
+		script.FetchHuichuanElmReportsByDayHours(l.svcCtx.DB, l.svcCtx.Config.JuliangDLS, l.svcCtx.Config.ADX, reportDate)
 	}()
 
 	return &types.ElmHcReportCommonResp{
 		Code:    0,
-		Message: "小时报任务已触发，正在后台执行",
+		Message: "小时报任务已触发（按天回传），正在后台执行",
 	}, nil
 }

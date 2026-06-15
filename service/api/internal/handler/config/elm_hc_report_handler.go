@@ -80,11 +80,11 @@ func TriggerElmHcDailyReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc
 // TriggerElmHcHourlyReportHandler 手动触发汇川饿了么小时报
 func TriggerElmHcHourlyReportHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 获取小时参数（可选，格式: 2026032614）
-		reportHour := r.URL.Query().Get("hour")
+		// 获取日期参数（可选，格式: 20260326）；按天回传当天所有小时
+		reportDate := r.URL.Query().Get("date")
 
 		l := config.NewTriggerElmHcHourlyReportLogic(r.Context(), svcCtx)
-		resp, err := l.TriggerElmHcHourlyReport(reportHour)
+		resp, err := l.TriggerElmHcHourlyReport(reportDate)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
