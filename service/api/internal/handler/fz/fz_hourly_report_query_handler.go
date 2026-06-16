@@ -6,6 +6,7 @@ import (
 	"github.com/zeromicro/go-zero/rest/httpx"
 
 	fz "media_report/service/api/internal/logic/fz"
+	"media_report/service/api/internal/response"
 	"media_report/service/api/internal/svc"
 	"media_report/service/api/internal/types"
 )
@@ -24,7 +25,9 @@ func FzHourlyReportListHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
-			httpx.OkJsonCtx(r.Context(), w, resp)
+			// 使用自定义 OkJsonCtx：强制 Content-Length，避免大响应走 chunked
+			// 被前置 nginx 截断（导致浏览器 Network Error）
+			response.OkJsonCtx(r.Context(), w, resp)
 		}
 	}
 }
