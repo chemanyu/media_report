@@ -456,6 +456,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/api/fz/sync_adn_data",
 				Handler: fz.FzSyncAdnDataHandler(serverCtx),
 			},
+			{
+				// 同步华为媒体数据
+				Method:  http.MethodPost,
+				Path:    "/api/fz/sync_huawei_data",
+				Handler: fz.FzSyncHuaweiDataHandler(serverCtx),
+			},
 		},
 	)
 

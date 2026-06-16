@@ -291,6 +291,41 @@ func (l *FzHourlyReportLogic) SaveAdnData(req *types.FzSyncAdnDataReq) error {
 	return nil
 }
 
+// SaveHuaweiData 保存华为媒体数据（外部回传，与 ADN 同形态）
+func (l *FzHourlyReportLogic) SaveHuaweiData(req *types.FzSyncHuaweiDataReq) error {
+	// 将日期字符串转换为int（例如: "20260211" -> 20260211）
+	reportDateInt, err := strconv.Atoi(req.ReportDate)
+	if err != nil {
+		return fmt.Errorf("报表日期格式错误: %w", err)
+	}
+
+	// 构建报表数据
+	report := &model.FzHourlyReport{
+		Media:           "huawei",
+		MediaAdvId:      req.MediaAdvId,
+		MediaAdvName:    req.MediaAdvName,
+		ReportDate:      reportDateInt,
+		Cost:            req.Cost * 100,
+		ConvertDp:       req.ConvertDp,
+		DpAppOrderNums:  req.DpAppOrderNums,
+		Click:           req.Click,
+		Expose:          req.Expose,
+		ConvertDpPrice:  req.ConvertDpPrice * 100,
+		DpAppOrderPrice: req.DpAppOrderPrice * 100,
+	}
+
+	// 保存到数据库（插入或更新）
+	reportModel := model.NewFzHourlyReportModel(l.svcCtx.DB)
+	if err := reportModel.InsertOrUpdate(report); err != nil {
+		return fmt.Errorf("保存数据失败: %w", err)
+	}
+
+	fmt.Printf("成功保存华为账户 %s(%s) 数据: 消耗=%.2f, 拉活=%d, 订单=%d, 点击=%d, 曝光=%d\n",
+		req.MediaAdvName, req.MediaAdvId, req.Cost, req.ConvertDp, req.DpAppOrderNums, req.Click, req.Expose)
+
+	return nil
+}
+
 // SyncHonorData 同步荣耀媒体数据
 func (l *FzHourlyReportLogic) SyncHonorData(reportDate string) (int, error) {
 	// 1. 从数据库获取所有荣耀账户

@@ -74,3 +74,17 @@ type FzSyncAdnDataReq struct {
 	ConvertDpPrice  float64 `json:"convert_dp_price"`   // 拉活成本（单位：分）
 	DpAppOrderPrice float64 `json:"dp_app_order_price"` // 订单成本（单位：分）
 }
+
+// 华为数据同步请求（字段与外部回传一致，cost/成本单位为元，入库时 ×100 转分）
+type FzSyncHuaweiDataReq struct {
+	MediaAdvId      string  `json:"media_adv_id"`       // 媒体账户ID
+	MediaAdvName    string  `json:"media_adv_name"`     // 媒体账户名称
+	ReportDate      string  `json:"report_date"`        // 报表日期，格式: 20260211
+	Cost            float64 `json:"cost"`               // 消耗（单位：元）
+	ConvertDp       int64   `json:"convert_dp"`         // 拉活数
+	DpAppOrderNums  int64   `json:"dp_app_order_nums"`  // 订单数
+	Click           int64   `json:"click"`              // 点击数
+	Expose          int64   `json:"expose"`             // 曝光数
+	ConvertDpPrice  float64 `json:"convert_dp_price"`   // 拉活成本（单位：元）
+	DpAppOrderPrice float64 `json:"dp_app_order_price"` // 订单成本（单位：元）
+}

@@ -43,6 +43,14 @@
             background: #F3E5F5;
             color: #7B1FA2;
         }
+        .media-honor {
+            background: #E3F2FD;
+            color: #1565C0;
+        }
+        .media-huawei {
+            background: #FDECEA;
+            color: #C62828;
+        }
     </style>
 </head>
 <body>
@@ -64,6 +72,7 @@
                         <el-option label="小米" value="xiaomi"></el-option>
                         <el-option label="ADN" value="adn"></el-option>
                         <el-option label="荣耀" value="honor"></el-option>
+                        <el-option label="华为" value="huawei"></el-option>
                     </el-select>
                 </el-form-item>
                 <el-form-item label="账户ID">
@@ -117,6 +126,7 @@
                         <el-option label="小米" value="xiaomi"></el-option>
                         <el-option label="ADN" value="adn"></el-option>
                         <el-option label="荣耀" value="honor"></el-option>
+                        <el-option label="华为" value="huawei"></el-option>
                     </el-select>
                 </el-form-item>
                 <el-form-item label="搜索">
@@ -210,6 +220,7 @@
                         <el-option label="小米" value="xiaomi"></el-option>
                         <el-option label="ADN" value="adn"></el-option>
                         <el-option label="荣耀" value="honor"></el-option>
+                        <el-option label="华为" value="huawei"></el-option>
                     </el-select>
                 </el-form-item>
                 <el-form-item label="账户ID">
@@ -444,7 +455,8 @@
                         'oppo': 'OPPO',
                         'xiaomi': '小米',
                         'adn': 'ADN',
-                        'honor': '荣耀'
+                        'honor': '荣耀',
+                        'huawei': '华为'
                     };
                     return names[media] || media;
                 },
