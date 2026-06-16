@@ -152,6 +152,7 @@ media_report/
 **流程**：
 - 每天 0:01 用 App Key/Secret 自动刷新巨量开放平台 Access Token
 - 从 `elm_hc_performance_report` 表读取客户-媒体账户映射，逐账户拉取数据
+- 单账户遇巨量限频（code=40110）时按退避表自动重试（时报预算 45min / 日报 40min），超预算记日志放弃，避免与下次任务重叠
 - 调用 ADX 外部接口 `https://agent.kkforce.com/assistant-external` 写入数据
 
 **相关接口**：
@@ -340,3 +341,4 @@ make docker-run    # 监听 8888 端口
 4. **幂等写入**：GORM `clause.OnConflict` 实现 Upsert，多次同步相同日期不重复。
 5. **多钉钉通道**：4 个独立 Webhook，对应菜鸟时报、巨量时报、飞猪时报（小时/日报）。
 6. **go-zero 分层**：Handler（请求解析）→ Logic（业务逻辑）→ Model（数据库）严格三层分离。
+7. **大响应强制定长**：前置 nginx 不正确转发 chunked 响应，body 超过 ~2KB 会被截断（表现为浏览器 axios `Network Error`、服务端却是 200）。返回列表类大响应的接口须用 `internal/response.OkJsonCtx`（显式 Content-Length），而非 `httpx.OkJsonCtx`。来源：session-log §2026-06-16 11:43 / commit 4a6c68c

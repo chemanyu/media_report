@@ -36,6 +36,7 @@ media_report/
 │       │   ├── config/  # 配置结构
 │       │   ├── handler/ # HTTP 处理器
 │       │   ├── logic/   # 业务逻辑
+│       │   ├── response/# 响应封装（强制 Content-Length，避免大响应 chunked）
 │       │   ├── svc/     # 服务上下文
 │       │   └── types/   # 类型定义
 │       └── media.go     # 服务入口
