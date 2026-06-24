@@ -106,6 +106,11 @@
                     <span class="field-value" style="color: #67C23A;">{{ config.base_num }}</span>
                     <span class="field-desc">现金消耗计算基数</span>
                 </div>
+                <div class="field-row">
+                    <span class="field-label">日预算</span>
+                    <span class="field-value" style="color: #E6A23C;">{{ config.daily_budget }}</span>
+                    <span class="field-desc">钉钉简报展示的日预算</span>
+                </div>
                 <div class="formula">
                     现金消耗 = 实际消耗（元） × 系数（{{ config.coefficient }}） × 基数（{{ config.base_num }}）
                 </div>
@@ -144,6 +149,17 @@
                         style="width: 100%">
                     </el-input-number>
                 </el-form-item>
+                <el-form-item label="日预算">
+                    <el-input-number
+                        v-model="form.daily_budget"
+                        :min="0"
+                        :max="99999999"
+                        :step="1000"
+                        :precision="2"
+                        controls-position="right"
+                        style="width: 100%">
+                    </el-input-number>
+                </el-form-item>
             </el-form>
             <template #footer>
                 <el-button @click="dialogVisible = false">取消</el-button>
@@ -168,7 +184,7 @@
                 const submitting = ref(false);
                 const dialogVisible = ref(false);
                 const config = ref(null);
-                const form = ref({ coefficient: 1.7, base_num: 0.85 });
+                const form = ref({ coefficient: 1.7, base_num: 0.85, daily_budget: 18000 });
 
                 const loadConfig = async () => {
                     loading.value = true;
@@ -185,7 +201,8 @@
                 const openDialog = () => {
                     form.value = {
                         coefficient: config.value?.coefficient ?? 1.7,
-                        base_num: config.value?.base_num ?? 0.85
+                        base_num: config.value?.base_num ?? 0.85,
+                        daily_budget: config.value?.daily_budget ?? 18000
                     };
                     dialogVisible.value = true;
                 };

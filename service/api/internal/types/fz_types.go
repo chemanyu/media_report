@@ -50,15 +50,17 @@ type FzHourlyReportListReq struct {
 // 飞猪系数配置响应
 type FzConfigResp struct {
 	Id          uint    `json:"id"`
-	Coefficient float64 `json:"coefficient"` // 系数
-	BaseNum     float64 `json:"base_num"`    // 基数
+	Coefficient float64 `json:"coefficient"`  // 系数
+	BaseNum     float64 `json:"base_num"`     // 基数
+	DailyBudget float64 `json:"daily_budget"` // 日预算
 	UpdateTime  string  `json:"update_time"`
 }
 
 // 更新飞猪系数配置请求
 type FzUpdateConfigReq struct {
-	Coefficient float64 `json:"coefficient"` // 系数
-	BaseNum     float64 `json:"base_num"`    // 基数
+	Coefficient float64 `json:"coefficient"`  // 系数
+	BaseNum     float64 `json:"base_num"`     // 基数
+	DailyBudget float64 `json:"daily_budget"` // 日预算
 }
 
 // ADN数据同步请求

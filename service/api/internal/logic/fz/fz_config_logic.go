@@ -33,10 +33,11 @@ func (l *FzConfigLogic) GetConfig() (*types.FzConfigResp, error) {
 		Id:          config.Id,
 		Coefficient: config.Coefficient,
 		BaseNum:     config.BaseNum,
+		DailyBudget: config.DailyBudget,
 		UpdateTime:  config.UpdateTime.Format("2006-01-02 15:04:05"),
 	}, nil
 }
 
 func (l *FzConfigLogic) UpdateConfig(req *types.FzUpdateConfigReq) error {
-	return model.UpdateFzConfig(l.svcCtx.DB, req.Coefficient, req.BaseNum)
+	return model.UpdateFzConfig(l.svcCtx.DB, req.Coefficient, req.BaseNum, req.DailyBudget)
 }

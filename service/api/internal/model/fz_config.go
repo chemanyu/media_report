@@ -9,8 +9,9 @@ import (
 // FzConfig 飞猪现金消耗系数配置
 type FzConfig struct {
 	Id          uint      `gorm:"column:id;primaryKey;autoIncrement" json:"id"`
-	Coefficient float64   `gorm:"column:coefficient;type:decimal(6,4);not null;default:1.7000" json:"coefficient"` // 系数
-	BaseNum     float64   `gorm:"column:base_num;type:decimal(6,4);not null;default:0.8500" json:"base_num"`        // 基数
+	Coefficient float64   `gorm:"column:coefficient;type:decimal(6,4);not null;default:1.7000" json:"coefficient"`   // 系数
+	BaseNum     float64   `gorm:"column:base_num;type:decimal(6,4);not null;default:0.8500" json:"base_num"`          // 基数
+	DailyBudget float64   `gorm:"column:daily_budget;type:decimal(12,2);not null;default:18000.00" json:"daily_budget"` // 日预算
 	UpdateTime  time.Time `gorm:"column:update_time;autoUpdateTime" json:"update_time"`
 	CreateTime  time.Time `gorm:"column:create_time;autoCreateTime" json:"create_time"`
 }
@@ -30,11 +31,12 @@ func GetFzConfig(db *gorm.DB) (*FzConfig, error) {
 }
 
 // UpdateFzConfig 更新配置（ID=1）
-func UpdateFzConfig(db *gorm.DB, coefficient, baseNum float64) error {
+func UpdateFzConfig(db *gorm.DB, coefficient, baseNum, dailyBudget float64) error {
 	return db.Model(&FzConfig{}).
 		Where("id = ?", 1).
 		Updates(map[string]interface{}{
-			"coefficient": coefficient,
-			"base_num":    baseNum,
+			"coefficient":  coefficient,
+			"base_num":     baseNum,
+			"daily_budget": dailyBudget,
 		}).Error
 }

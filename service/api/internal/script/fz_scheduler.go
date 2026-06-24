@@ -86,13 +86,13 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 	}
 
 	// 读取现金消耗系数配置（读取失败回退默认值）
-	coefficient, baseNum := 1.7, 0.85
+	coefficient, baseNum, dailyBudget := 1.7, 0.85, 18000.0
 	if cfg, cfgErr := model.GetFzConfig(db); cfgErr == nil {
-		coefficient, baseNum = cfg.Coefficient, cfg.BaseNum
+		coefficient, baseNum, dailyBudget = cfg.Coefficient, cfg.BaseNum, cfg.DailyBudget
 	} else {
 		logx.Errorf("查询飞猪系数配置失败，使用默认值 1.7*0.85: %v", cfgErr)
 	}
-	logx.Infof("飞猪时报现金消耗计算 - 系数: %.4f, 基数: %.4f", coefficient, baseNum)
+	logx.Infof("飞猪时报现金消耗计算 - 系数: %.4f, 基数: %.4f, 日预算: %.2f", coefficient, baseNum, dailyBudget)
 
 	if len(reports) == 0 {
 		logx.Info("今天暂无飞猪数据，跳过发送钉钉通知")
@@ -172,12 +172,13 @@ func SendFzDingTalkNotification(ctx context.Context, db *gorm.DB, dingConfig con
 		markdownText += fmt.Sprintf(
 			"**汇总-海纳【飞猪app拉活 %s简报】**  \n"+
 				"**唤起量**：%d  \n"+
-				"**现金消耗**：%.2f（日预算 18000）  \n"+
+				"**现金消耗**：%.2f（日预算 %.0f）  \n"+
 				"**唤起成本**：%.2f（考核 0.5）  \n"+
 				"**下单 pv 成本**：%.2f（考核 55）  \n\n",
 			displayDate,
 			int64(totalConvertDp),
 			totalCashCost,
+			dailyBudget,
 			totalConvertDpPrice,
 			totalDpOrderPrice,
 		)
