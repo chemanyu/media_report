@@ -46,7 +46,7 @@ func Cron(config config.Config, db *gorm.DB) {
 	if config.Schedule.TokenRefreshCron != "" {
 		_, err := cronScheduler.AddFunc(config.Schedule.TokenRefreshCron, func() {
 			refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
-			refreshJuliangDLSAccessToken(db, config.JuliangDLS)
+			//refreshJuliangDLSAccessToken(db, config.JuliangDLS)
 		})
 		if err != nil {
 			log.Fatalf("添加 token 刷新定时任务失败: %v", err)
@@ -55,25 +55,25 @@ func Cron(config config.Config, db *gorm.DB) {
 	}
 
 	// 添加巨量时报表任务
-	if config.Schedule.JuliangReportCron != "" {
-		_, err := cronScheduler.AddFunc(config.Schedule.JuliangReportCron, func() {
-			executeJuliangReportJob(db, config.DingTalk, config.FileServer, false)
-		})
-		if err != nil {
-			log.Fatalf("添加巨量报表定时任务失败: %v", err)
-		}
-		logx.Infof("巨量报表定时任务已启动，Cron 表达式: %s", config.Schedule.JuliangReportCron)
-	}
+	// if config.Schedule.JuliangReportCron != "" {
+	// 	_, err := cronScheduler.AddFunc(config.Schedule.JuliangReportCron, func() {
+	// 		executeJuliangReportJob(db, config.DingTalk, config.FileServer, false)
+	// 	})
+	// 	if err != nil {
+	// 		log.Fatalf("添加巨量报表定时任务失败: %v", err)
+	// 	}
+	// 	logx.Infof("巨量报表定时任务已启动，Cron 表达式: %s", config.Schedule.JuliangReportCron)
+	// }
 	// 添加巨量日报表任务
-	if config.Schedule.JuliangDayReportCron != "" {
-		_, err := cronScheduler.AddFunc(config.Schedule.JuliangDayReportCron, func() {
-			executeJuliangReportJob(db, config.DingTalk, config.FileServer, true)
-		})
-		if err != nil {
-			log.Fatalf("添加巨量日报表定时任务失败: %v", err)
-		}
-		logx.Infof("巨量报表定日任务已启动，Cron 表达式: %s", config.Schedule.JuliangDayReportCron)
-	}
+	// if config.Schedule.JuliangDayReportCron != "" {
+	// 	_, err := cronScheduler.AddFunc(config.Schedule.JuliangDayReportCron, func() {
+	// 		executeJuliangReportJob(db, config.DingTalk, config.FileServer, true)
+	// 	})
+	// 	if err != nil {
+	// 		log.Fatalf("添加巨量日报表定时任务失败: %v", err)
+	// 	}
+	// 	logx.Infof("巨量报表定日任务已启动，Cron 表达式: %s", config.Schedule.JuliangDayReportCron)
+	// }
 
 	// 添加汇川饿了么日报表任务
 	if config.Schedule.HuichuanElmDailyCron != "" {
@@ -161,7 +161,7 @@ func Cron(config config.Config, db *gorm.DB) {
 	if config.Schedule.TokenRefreshCron != "" {
 		logx.Info("立即刷新一次 token...")
 		refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
-		refreshJuliangDLSAccessToken(db, config.JuliangDLS)
+		//refreshJuliangDLSAccessToken(db, config.JuliangDLS)
 		//refreshJuliangKHAccessToken(db, config.JuliangKH)
 		//FetchHuichuanElmReports(db, config.JuliangDLS, config.ADX)
 	}
