@@ -46,7 +46,7 @@ func Cron(config config.Config, db *gorm.DB) {
 	if config.Schedule.TokenRefreshCron != "" {
 		_, err := cronScheduler.AddFunc(config.Schedule.TokenRefreshCron, func() {
 			refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
-			//refreshJuliangDLSAccessToken(db, config.JuliangDLS)
+			refreshJuliangDLSAccessToken(db, config.JuliangDLS)
 		})
 		if err != nil {
 			log.Fatalf("添加 token 刷新定时任务失败: %v", err)
@@ -161,7 +161,7 @@ func Cron(config config.Config, db *gorm.DB) {
 	if config.Schedule.TokenRefreshCron != "" {
 		logx.Info("立即刷新一次 token...")
 		refreshAccessToken(db, config.Kuaishou, config.OAuthConfig)
-		//refreshJuliangDLSAccessToken(db, config.JuliangDLS)
+		refreshJuliangDLSAccessToken(db, config.JuliangDLS)
 		//refreshJuliangKHAccessToken(db, config.JuliangKH)
 		//FetchHuichuanElmReports(db, config.JuliangDLS, config.ADX)
 	}
