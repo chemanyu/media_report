@@ -20,7 +20,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import TimeoutException
 
 # 回退路径用：uc 自带 chromedriver 管理，正常不会走到这里
-CHROME_DRIVER_PATH = "D:\\148\\chromedriver-win64\\chromedriver.exe"
+CHROME_DRIVER_PATH = "D:\\150\\chromedriver-win64\\chromedriver.exe"
 
 URL_PREFIXES = ('tbopen://', 'taobao://', 'tmall://')
 
