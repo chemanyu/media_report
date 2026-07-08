@@ -274,7 +274,7 @@ func parseExtInfo(extInfoStr, eventId string) map[string]interface{} {
 	}
 
 	switch eventId {
-	case "5080256": // 福利购
+	case "6568361": // 福利购
 		result["crowd1_reward_uv"] = getFirstNonEmpty(extData, "人群1结算奖励uv", "人群1预估奖励uv")
 		result["crowd2_reward_uv"] = getFirstNonEmpty(extData, "人群2结算奖励uv", "人群2预估奖励uv")
 		result["crowd3_reward_uv"] = getFirstNonEmpty(extData, "人群3结算奖励uv", "人群3预估奖励uv")
@@ -306,7 +306,7 @@ func buildActivityReportExcel(outputPath string, results []pidQueryResult, event
 	headers = append(headers, "pid", "统计日期", "符合奖励要求的累计用户数", "奖励金额")
 
 	switch eventId {
-	case "5080256": // 福利购
+	case "6568361": // 福利购
 		headers = append(headers,
 			"人群1奖励uv", "人群2奖励uv", "人群3奖励uv", "人群4奖励uv", "人群5奖励uv",
 			"账号总开奖率", "开奖率", "更新时间",
@@ -348,7 +348,7 @@ func buildActivityReportExcel(outputPath string, results []pidQueryResult, event
 		ext := r.current.ExtInfoParsed
 
 		switch eventId {
-		case "5080256": // 福利购
+		case "6568361": // 福利购
 			data["人群1奖励uv"] = ext["crowd1_reward_uv"]
 			data["人群2奖励uv"] = ext["crowd2_reward_uv"]
 			data["人群3奖励uv"] = ext["crowd3_reward_uv"]
