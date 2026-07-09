@@ -195,8 +195,7 @@ func queryActivityReport(ctx context.Context, appKey, appSecret, eventId, bizDat
 	if err != nil {
 		return nil
 	}
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := taobaoHTTPClient.Do(req)
 	if err != nil {
 		return nil
 	}

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"os/exec"
@@ -17,6 +18,30 @@ import (
 	"media_report/service/api/internal/svc"
 	"media_report/service/api/internal/types"
 )
+
+// taobaoHTTPClient 调用淘宝开放平台 API 的共享 client。
+//
+// 为什么单独定义：线上服务器解析 gw.api.taobao.com 的 AAAA(IPv6) 记录会卡住，
+// 导致默认 client 每次请求都要等 IPv6 连接超时回退到 IPv4，单次耗时高达 ~19s，
+// 叠加多 pid 后总耗时超过 nginx proxy_read_timeout，nginx 重置 HTTP/2 流，
+// 浏览器报 ERR_HTTP2_PROTOCOL_ERROR（服务端日志却是 200）。
+//   - 强制 IPv4（tcp4）拨号，跳过卡顿的 IPv6 解析
+//   - 复用连接池，避免每次新建 TCP
+//   - 缩短超时，外部慢时快速失败降级为 No data，而非拖垮整个批量任务
+var taobaoHTTPClient = &http.Client{
+	Timeout: 8 * time.Second,
+	Transport: &http.Transport{
+		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+			d := &net.Dialer{Timeout: 5 * time.Second, KeepAlive: 30 * time.Second}
+			return d.DialContext(ctx, "tcp4", addr) // 强制 IPv4
+		},
+		MaxIdleConns:          100,
+		MaxIdleConnsPerHost:   20,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   5 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	},
+}
 
 // TaobaoExtractLogic 淘宝 deeplink 提取（单链 + 批量）
 type TaobaoExtractLogic struct {

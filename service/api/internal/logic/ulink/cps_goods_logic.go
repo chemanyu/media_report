@@ -163,8 +163,7 @@ func fetchCpsMaterialPage(appKey, appSecret, materialId, adzoneId string, pageNo
 		queryValues.Set(k, v)
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Get(taobaoAPIURL + "?" + queryValues.Encode())
+	resp, err := taobaoHTTPClient.Get(taobaoAPIURL + "?" + queryValues.Encode())
 	if err != nil {
 		return nil, err
 	}
