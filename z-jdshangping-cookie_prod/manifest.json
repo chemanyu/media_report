@@ -1,0 +1,30 @@
+{
+  "manifest_version": 3,
+  "name": "京东商品Cookie更新",
+  "version": "1.0",
+  "description": "用于获取京东联盟(union.jd.com)的Cookie、x-api-eid-token、h5st",
+  "permissions": [
+    "cookies",
+    "activeTab",
+    "alarms",
+    "notifications",
+    "tabs",
+    "storage",
+    "scripting",
+    "debugger"
+  ],
+  "host_permissions": [
+    "http://*/*",
+    "https://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "更新Cookie"
+  },
+  "icons": {
+    "48": "icon48.png"
+  }
+}
