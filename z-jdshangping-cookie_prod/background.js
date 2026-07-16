@@ -1,5 +1,5 @@
 // 定时任务：每 5 分钟自动刷新一次页面并抓取信息
-const UPDATE_INTERVAL = 5; // 分钟
+const UPDATE_INTERVAL = 3; // 分钟
 
 // 目标接口：京东联盟 api.m.jd.com/api 上任意带签名参数的请求即可
 // 不挑 functionId（会变，如 union_orange_goods_api / union_orange_material_api ...）
@@ -197,7 +197,7 @@ function reportInfo(cookie, eidToken, h5st, uuid, tabId) {
 }
 
 // 上报接口：application/x-www-form-urlencoded，带 X-Secret 头
-const REPORT_ENDPOINT = 'http://ad-ocpx.atd.com/index.php?r=tool%2Fjd-material-token%2Fsave';
+const REPORT_ENDPOINT = 'https://rta.zhltech.net/index.php?r=tool%2Fjd-material-token%2Fsave';
 const REPORT_SECRET = 'b8e04f21a7c93d65f018e2b4c7a95d3e61f0a8c2d94b7e35';
 
 function sendToServer(payload) {
