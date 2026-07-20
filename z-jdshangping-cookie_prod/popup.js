@@ -80,8 +80,11 @@ document.addEventListener('DOMContentLoaded', function() {
     return { eidToken, h5st, uuid };
   }
 
-  // 上报接口
-  const REPORT_ENDPOINT = 'http://ad-ocpx.atd.com/index.php?r=tool%2Fjd-material-token%2Fsave';
+  // 上报接口：两个域名都上报，路径/格式/密钥一致
+  const REPORT_ENDPOINTS = [
+    'http://rta.zhltech.net/index.php?r=tool%2Fjd-material-token%2Fsave',
+    'http://ad-ocpx.atd.com/index.php?r=tool%2Fjd-material-token%2Fsave'
+  ];
   const REPORT_SECRET = 'b8e04f21a7c93d65f018e2b4c7a95d3e61f0a8c2d94b7e35';
 
   function sendToServer(payload) {
@@ -91,15 +94,27 @@ document.addEventListener('DOMContentLoaded', function() {
       cookie: payload.cookie || '',
       uuid: payload.uuid || ''
     });
-    return fetch(REPORT_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'X-Secret': REPORT_SECRET,
-        'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: body.toString()
-    })
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); });
+    const tasks = REPORT_ENDPOINTS.map(endpoint =>
+      fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'X-Secret': REPORT_SECRET,
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: body.toString()
+      })
+        .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+        .then(text => ({ endpoint, ok: true, text }))
+        .catch(err => ({ endpoint, ok: false, error: err.message }))
+    );
+    return Promise.all(tasks).then(results => {
+      const failed = results.filter(r => !r.ok);
+      if (failed.length) {
+        const detail = failed.map(f => `${f.endpoint} (${f.error})`).join('; ');
+        throw new Error(`${failed.length}/${results.length} 上报失败: ${detail}`);
+      }
+      return `已上报 ${results.length} 个接口`;
+    });
   }
 
   sendButton.addEventListener('click', function() {

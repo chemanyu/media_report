@@ -197,7 +197,11 @@ function reportInfo(cookie, eidToken, h5st, uuid, tabId) {
 }
 
 // 上报接口：application/x-www-form-urlencoded，带 X-Secret 头
-const REPORT_ENDPOINT = 'https://rta.zhltech.net/index.php?r=tool%2Fjd-material-token%2Fsave';
+// 两个域名都上报，路径/格式/密钥一致
+const REPORT_ENDPOINTS = [
+  'http://rta.zhltech.net/index.php?r=tool%2Fjd-material-token%2Fsave',
+  'http://ad-ocpx.atd.com/index.php?r=tool%2Fjd-material-token%2Fsave'
+];
 const REPORT_SECRET = 'b8e04f21a7c93d65f018e2b4c7a95d3e61f0a8c2d94b7e35';
 
 function sendToServer(payload) {
@@ -208,17 +212,19 @@ function sendToServer(payload) {
     uuid: payload.uuid || ''
   });
 
-  fetch(REPORT_ENDPOINT, {
-    method: 'POST',
-    headers: {
-      'X-Secret': REPORT_SECRET,
-      'Content-Type': 'application/x-www-form-urlencoded'
-    },
-    body: body.toString()
-  })
-    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
-    .then(text => console.log('上报成功:', text))
-    .catch(err => console.error('上报失败:', err.message));
+  REPORT_ENDPOINTS.forEach(endpoint => {
+    fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'X-Secret': REPORT_SECRET,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: body.toString()
+    })
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.text(); })
+      .then(text => console.log('上报成功:', endpoint, text))
+      .catch(err => console.error('上报失败:', endpoint, err.message));
+  });
 }
 
 // 监听来自 popup 的消息（手动触发）

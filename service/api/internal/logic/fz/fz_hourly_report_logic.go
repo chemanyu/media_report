@@ -55,6 +55,7 @@ func (l *FzHourlyReportLogic) SyncOppoData(reportDate string) (int, error) {
 	}{
 		"1001430036": {"40ef3e71288842a690823daafb13b3ce", "6ce3c91fdf84486bbdc7f39652e0487d"}, // ZLjl-飞猪-信息流-拉活2
 		"1001430030": {"e48a0586a4444decaa5084143d30cd12", "cf2034564b8a441385e4d2eb94464733"}, // ZLjl-飞猪-信息流-拉活1
+		"1001525467": {"8deae8d63ecc4b20a172b51657d43bb0", "416075bd8c77415fa738e229112ee6a9"}, // ZLjl-飞猪-信息流-拉活3
 	}
 
 	// 3. 遍历账户，调用API获取数据
@@ -410,13 +411,13 @@ func (l *FzHourlyReportLogic) SyncHonorData(reportDate string) (int, error) {
 			MediaAdvId:      advertiser.MediaAdvId,
 			MediaAdvName:    advertiser.MediaAdvName,
 			ReportDate:      reportDateInt,
-			Cost:            totalCost / 10000,             // 微→分（1元=1000000微，1分=10000微）
-			ConvertDp:       totalHonorPull,                // 全网首唤数
-			DpAppOrderNums:  totalPayment,                  // 付费数
+			Cost:            totalCost / 10000, // 微→分（1元=1000000微，1分=10000微）
+			ConvertDp:       totalHonorPull,    // 全网首唤数
+			DpAppOrderNums:  totalPayment,      // 付费数
 			Click:           totalClick,
 			Expose:          totalImpression,
-			ConvertDpPrice:  avgHonorPullCost / 10000,      // 微→分
-			DpAppOrderPrice: avgPaymentCost / 10000,        // 微→分
+			ConvertDpPrice:  avgHonorPullCost / 10000, // 微→分
+			DpAppOrderPrice: avgPaymentCost / 10000,   // 微→分
 		}
 
 		if err := reportModel.InsertOrUpdate(report); err != nil {
