@@ -8,6 +8,8 @@ document.addEventListener('DOMContentLoaded', function() {
   const savedDomainText = document.getElementById('savedDomainText');
 
   const TARGET_URL_PATTERN = 'api.m.jd.com/api';
+  // 默认页面域名（顶级域名匹配），与 background.js 保持一致
+  const DEFAULT_PAGE_DOMAIN = 'jd.com';
 
   // 只要 URL 命中目标接口且带 h5st + x-api-eid-token 就算目标请求（functionId 不限）
   function isTargetRequest(url) {
@@ -117,6 +119,127 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
+  // 对指定标签页执行抓取；autoClose=true 表示该标签页是临时新开的，抓完/超时/失败要关掉
+  function captureFromTab(tab, autoClose) {
+    const target = { tabId: tab.id };
+    let topLevelDomain = '';
+    try {
+      topLevelDomain = new URL(tab.url).hostname.split('.').slice(-2).join('.');
+    } catch (e) {}
+
+    function closeIfTemp() {
+      if (autoClose) {
+        chrome.tabs.remove(tab.id, () => { void chrome.runtime.lastError; });
+      }
+    }
+
+    function finish() {
+      sendButton.disabled = false;
+      sendButton.textContent = '立即抓取';
+    }
+
+    chrome.debugger.detach(target, () => {
+      void chrome.runtime.lastError;
+      chrome.debugger.attach(target, '1.3', () => {
+        if (chrome.runtime.lastError) {
+          showError('attach debugger 失败: ' + chrome.runtime.lastError.message);
+          closeIfTemp();
+          return;
+        }
+
+        const pending = new Map(); // requestId -> { eidToken, h5st }
+
+        chrome.debugger.sendCommand(target, 'Network.enable', {}, () => {
+          const onEvent = (source, method, params) => {
+            if (source.tabId !== tab.id) return;
+
+            if (method === 'Network.requestWillBeSent') {
+              const url = params.request.url || '';
+              if (isTargetRequest(url)) {
+                pending.set(params.requestId, parseTokensFromUrl(url));
+              }
+              return;
+            }
+
+            if (method !== 'Network.requestWillBeSentExtraInfo') return;
+            if (!pending.has(params.requestId)) return;
+            const tokens = pending.get(params.requestId);
+            pending.delete(params.requestId);
+
+            const headers = params.headers || {};
+            const cookie = headers['cookie'] || headers['Cookie'] || '';
+            if (!cookie) {
+              showError('目标接口请求头中未找到 Cookie');
+              closeIfTemp();
+              return;
+            }
+
+            // 诊断：CDP 的 headers.cookie 只含"实际发送"的 cookie；被 Chrome 策略拦截的不在此
+            const blocked = (params.associatedCookies || [])
+              .filter(c => c.blockedReasons && c.blockedReasons.length);
+            if (blocked.length) {
+              console.warn('[诊断] 以下 cookie 被 Chrome 拦截、未随本次请求发送:',
+                blocked.map(c => `${c.cookie.name}(${c.blockedReasons.join(',')})`).join('; '));
+            }
+            console.log('[诊断] 本次发送 cookie 含 __jdu=?', cookie.includes('__jdu='),
+              ' __jdv=?', cookie.includes('__jdv='), ' 长度:', cookie.length);
+
+            chrome.debugger.onEvent.removeListener(onEvent);
+            chrome.debugger.detach(target, () => {});
+
+            // 打印到 console
+            console.log('==== 京东商品信息抓取成功 ====');
+            console.log('cookie:', cookie);
+            console.log('x-api-eid-token:', tokens.eidToken);
+            console.log('h5st:', tokens.h5st);
+            console.log('uuid:', tokens.uuid);
+
+            statusDiv.textContent = '抓取成功，上报中...';
+            resultDiv.textContent =
+              `cookie(${cookie.length}):\n${cookie}\n\n` +
+              `x-api-eid-token:\n${tokens.eidToken}\n\n` +
+              `h5st:\n${tokens.h5st}\n\n` +
+              `uuid:\n${tokens.uuid}`;
+            resultDiv.style.backgroundColor = '#d4edda';
+            resultDiv.style.borderColor = '#c3e6cb';
+
+            // 只在使用手动选择的（非临时）标签页时更新已保存的 URL/域名
+            if (!autoClose && topLevelDomain) {
+              chrome.storage.local.set({
+                'savedDomain': topLevelDomain,
+                'savedUrl': tab.url,
+                'savedTitle': tab.title,
+                'savedTabId': tab.id   // 记住第一次选择的具体标签页，定时更新优先复用
+              }, function() {
+                console.log('已保存域名:', topLevelDomain, '标签页ID:', tab.id);
+                showSavedDomain();
+              });
+            }
+
+            sendToServer({ cookie, eidToken: tokens.eidToken, h5st: tokens.h5st, uuid: tokens.uuid })
+              .then(text => { statusDiv.textContent = '上报成功: ' + text; })
+              .catch(err => { statusDiv.textContent = '抓取成功，但上报失败: ' + err.message; });
+
+            closeIfTemp();
+            finish();
+          };
+
+          chrome.debugger.onEvent.addListener(onEvent);
+          chrome.tabs.reload(tab.id);
+
+          // 超时保护：30秒
+          setTimeout(() => {
+            chrome.debugger.onEvent.removeListener(onEvent);
+            chrome.debugger.detach(target, () => {});
+            showError('超时未捕获到目标接口，请确认页面为京东联盟商品页');
+            closeIfTemp();
+            finish();
+          }, 30000);
+        });
+      });
+    });
+  }
+
   sendButton.addEventListener('click', function() {
     const selectedTabId = parseInt(tabSelect.value);
     if (!selectedTabId) {
@@ -124,108 +247,42 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    sendButton.disabled = true;
-    sendButton.textContent = '抓取中...';
-    statusDiv.textContent = '刷新页面中，等待接口请求...';
-
     const selectedTab = allTabs.find(tab => tab.id === selectedTabId);
     if (!selectedTab) {
       showError('所选标签页不存在，请刷新标签页列表');
       return;
     }
 
-    try {
-      const currentUrl = new URL(selectedTab.url);
-      const topLevelDomain = currentUrl.hostname.split('.').slice(-2).join('.');
-      const target = { tabId: selectedTab.id };
+    sendButton.disabled = true;
+    sendButton.textContent = '抓取中...';
 
-      chrome.debugger.detach(target, () => {
-        void chrome.runtime.lastError;
-        chrome.debugger.attach(target, '1.3', () => {
-          if (chrome.runtime.lastError) {
-            showError('attach debugger 失败: ' + chrome.runtime.lastError.message);
+    // 判断选中标签页域名是否匹配（已保存域名，或本身就是 jd.com）
+    let selectedDomain = '';
+    try {
+      selectedDomain = new URL(selectedTab.url).hostname.split('.').slice(-2).join('.');
+    } catch (e) {}
+
+    chrome.storage.local.get(['savedDomain', 'savedUrl'], function(result) {
+      const expectedDomain = result.savedDomain || DEFAULT_PAGE_DOMAIN;
+      const domainMatches = selectedDomain === expectedDomain;
+
+      if (domainMatches) {
+        statusDiv.textContent = '刷新页面中，等待接口请求...';
+        captureFromTab(selectedTab, false);
+      } else if (result.savedUrl) {
+        // 选中的不是京东页：用已保存的 URL 后台新开临时标签页抓取，抓完自动关闭
+        statusDiv.textContent = `所选标签页非 ${expectedDomain}，后台新开临时页抓取...`;
+        chrome.tabs.create({ url: result.savedUrl, active: false }, function(tab) {
+          if (chrome.runtime.lastError || !tab) {
+            showError('新开标签页失败: ' + (chrome.runtime.lastError ? chrome.runtime.lastError.message : '未知错误'));
             return;
           }
-
-          const pending = new Map(); // requestId -> { eidToken, h5st }
-
-          chrome.debugger.sendCommand(target, 'Network.enable', {}, () => {
-            const onEvent = (source, method, params) => {
-              if (source.tabId !== selectedTab.id) return;
-
-              if (method === 'Network.requestWillBeSent') {
-                const url = params.request.url || '';
-                if (isTargetRequest(url)) {
-                  pending.set(params.requestId, parseTokensFromUrl(url));
-                }
-                return;
-              }
-
-              if (method !== 'Network.requestWillBeSentExtraInfo') return;
-              if (!pending.has(params.requestId)) return;
-              const tokens = pending.get(params.requestId);
-              pending.delete(params.requestId);
-
-              const headers = params.headers || {};
-              const cookie = headers['cookie'] || headers['Cookie'] || '';
-              if (!cookie) {
-                showError('目标接口请求头中未找到 Cookie');
-                return;
-              }
-
-              chrome.debugger.onEvent.removeListener(onEvent);
-              chrome.debugger.detach(target, () => {});
-
-              // 打印到 console
-              console.log('==== 京东商品信息抓取成功 ====');
-              console.log('cookie:', cookie);
-              console.log('x-api-eid-token:', tokens.eidToken);
-              console.log('h5st:', tokens.h5st);
-              console.log('uuid:', tokens.uuid);
-
-              statusDiv.textContent = '抓取成功，上报中...';
-              resultDiv.textContent =
-                `cookie(${cookie.length}):\n${cookie}\n\n` +
-                `x-api-eid-token:\n${tokens.eidToken}\n\n` +
-                `h5st:\n${tokens.h5st}\n\n` +
-                `uuid:\n${tokens.uuid}`;
-              resultDiv.style.backgroundColor = '#d4edda';
-              resultDiv.style.borderColor = '#c3e6cb';
-
-              chrome.storage.local.set({
-                'savedDomain': topLevelDomain,
-                'savedUrl': selectedTab.url,
-                'savedTitle': selectedTab.title
-              }, function() {
-                console.log('已保存域名:', topLevelDomain);
-                showSavedDomain();
-              });
-
-              sendToServer({ cookie, eidToken: tokens.eidToken, h5st: tokens.h5st, uuid: tokens.uuid })
-                .then(text => { statusDiv.textContent = '上报成功: ' + text; })
-                .catch(err => { statusDiv.textContent = '抓取成功，但上报失败: ' + err.message; });
-
-              sendButton.disabled = false;
-              sendButton.textContent = '立即抓取';
-            };
-
-            chrome.debugger.onEvent.addListener(onEvent);
-            chrome.tabs.reload(selectedTab.id);
-
-            // 超时保护：30秒
-            setTimeout(() => {
-              chrome.debugger.onEvent.removeListener(onEvent);
-              chrome.debugger.detach(target, () => {});
-              showError('超时未捕获到目标接口，请确认页面为京东联盟商品页');
-              sendButton.disabled = false;
-              sendButton.textContent = '立即抓取';
-            }, 30000);
-          });
+          captureFromTab(tab, true);
         });
-      });
-    } catch (error) {
-      showError('URL解析错误: ' + error.message);
-    }
+      } else {
+        showError(`所选标签页非 ${expectedDomain}，且无已保存 URL；请选中一个京东联盟页再抓取`);
+      }
+    });
   });
 
   function showError(message) {

@@ -38,31 +38,28 @@ chrome.runtime.onStartup.addListener(() => {
   });
 });
 
-// 自动更新：优先用已保存的域名，否则找 jd.com 相关页面
+// 自动更新：优先复用第一次选择的具体标签页，其次按已保存域名匹配，否则临时新开
 function updateCookieAutomatically() {
-  chrome.storage.local.get(['savedDomain', 'savedUrl', 'savedTitle'], function(result) {
+  chrome.storage.local.get(['savedDomain', 'savedUrl', 'savedTitle', 'savedTabId'], function(result) {
     if (result.savedDomain) {
-      console.log('使用已保存的域名:', result.savedDomain);
-      chrome.tabs.query({}, function(allTabs) {
-        const matchingTab = allTabs.find(tab => {
-          if (!tab.url) return false;
-          try {
-            const tabUrl = new URL(tab.url);
-            const tabDomain = tabUrl.hostname.split('.').slice(-2).join('.');
-            return tabDomain === result.savedDomain;
-          } catch (e) {
-            return false;
+      console.log('使用已保存的域名:', result.savedDomain, '标签页ID:', result.savedTabId);
+
+      // 1. 优先：第一次选择的那个具体标签页仍然打开 → 直接复用
+      if (result.savedTabId != null) {
+        chrome.tabs.get(result.savedTabId, function(savedTab) {
+          if (!chrome.runtime.lastError && savedTab && savedTab.url) {
+            console.log('复用第一次选择的标签页:', savedTab.title);
+            reloadAndFetchCookies(savedTab);
+          } else {
+            // 标签页已关闭/失效（tabId 不跨浏览器重启保留），走域名匹配兜底
+            void chrome.runtime.lastError;
+            console.log('已保存标签页不存在，回退到域名匹配');
+            findByDomainOrTempTab(result);
           }
         });
-
-        if (matchingTab) {
-          console.log('找到匹配的标签页:', matchingTab.title);
-          reloadAndFetchCookies(matchingTab);
-        } else {
-          console.log('未找到匹配域名的标签页:', result.savedDomain);
-          console.log('请打开', result.savedUrl, '或在弹窗手动选择标签页');
-        }
-      });
+      } else {
+        findByDomainOrTempTab(result);
+      }
     } else {
       console.log('未保存域名，尝试查找京东联盟相关页面');
       chrome.tabs.query({}, function(allTabs) {
@@ -76,6 +73,41 @@ function updateCookieAutomatically() {
           console.log('未找到京东联盟相关页面，跳过本次更新');
         }
       });
+    }
+  });
+}
+
+// 按已保存域名匹配打开的标签页，找不到则用 savedUrl 临时新开
+function findByDomainOrTempTab(result) {
+  chrome.tabs.query({}, function(allTabs) {
+    const matchingTab = allTabs.find(tab => {
+      if (!tab.url) return false;
+      try {
+        const tabUrl = new URL(tab.url);
+        const tabDomain = tabUrl.hostname.split('.').slice(-2).join('.');
+        return tabDomain === result.savedDomain;
+      } catch (e) {
+        return false;
+      }
+    });
+
+    if (matchingTab) {
+      console.log('找到匹配的标签页:', matchingTab.title);
+      reloadAndFetchCookies(matchingTab);
+    } else if (result.savedUrl) {
+      // 没有打开的匹配标签页：用已保存的 URL 在后台新开一个临时标签页抓取，抓完自动关闭
+      console.log('未找到匹配标签页，后台新开临时标签页抓取:', result.savedUrl);
+      chrome.tabs.create({ url: result.savedUrl, active: false }, function(tab) {
+        if (chrome.runtime.lastError || !tab) {
+          console.error('新开标签页失败:', chrome.runtime.lastError && chrome.runtime.lastError.message);
+          return;
+        }
+        // 标记该标签页由本任务临时创建，抓取完成/超时后应关闭
+        reloadAndFetchCookies(tab, true);
+      });
+    } else {
+      console.log('未找到匹配域名的标签页且无已保存 URL:', result.savedDomain);
+      console.log('请在弹窗手动选择一次标签页以保存 URL');
     }
   });
 }
@@ -97,15 +129,24 @@ function parseTokensFromUrl(url) {
 }
 
 // 刷新标签页，attach debugger 监听目标接口，拿到真实 Cookie + URL 中的 token
-function reloadAndFetchCookies(tab) {
+// autoClose=true 表示该标签页由定时任务临时创建，抓取完成/超时/失败后应关闭
+function reloadAndFetchCookies(tab, autoClose) {
   console.log('刷新标签页，准备用 debugger 抓取信息:', tab.title);
   const target = { tabId: tab.id };
+
+  // 关闭临时标签页（仅当由本任务创建时）
+  function closeIfTemp() {
+    if (autoClose) {
+      chrome.tabs.remove(tab.id, () => { void chrome.runtime.lastError; });
+    }
+  }
 
   chrome.debugger.detach(target, () => {
     void chrome.runtime.lastError;
     chrome.debugger.attach(target, '1.3', () => {
       if (chrome.runtime.lastError) {
         console.error('attach debugger 失败:', chrome.runtime.lastError.message);
+        closeIfTemp();
         return;
       }
 
@@ -137,11 +178,23 @@ function reloadAndFetchCookies(tab) {
             return;
           }
 
+          // 诊断：CDP 的 headers.cookie 只含"实际发送"的 cookie；被 Chrome 策略拦截的不在此
+          const blocked = (params.associatedCookies || [])
+            .filter(c => c.blockedReasons && c.blockedReasons.length);
+          if (blocked.length) {
+            console.warn('[诊断] 以下 cookie 被 Chrome 拦截、未随本次请求发送:',
+              blocked.map(c => `${c.cookie.name}(${c.blockedReasons.join(',')})`).join('; '));
+          }
+          console.log('[诊断] 本次发送 cookie 含 __jdu=?', cookie.includes('__jdu='),
+            ' __jdv=?', cookie.includes('__jdv='), ' 长度:', cookie.length,
+            ' 请求URL:', (params.headers && params.headers[':path']) || '');
+
           // 拿到后立即 detach，不再监听
           chrome.debugger.onEvent.removeListener(onEvent);
           chrome.debugger.detach(target, () => {});
 
-          reportInfo(cookie, tokens.eidToken, tokens.h5st, tokens.uuid, tab.id);
+          reportInfo(cookie, tokens.eidToken, tokens.h5st, tokens.uuid, autoClose ? null : tab.id);
+          closeIfTemp();
         };
 
         chrome.debugger.onEvent.addListener(onEvent);
@@ -154,6 +207,7 @@ function reloadAndFetchCookies(tab) {
           chrome.debugger.onEvent.removeListener(onEvent);
           chrome.debugger.detach(target, () => {});
           console.log('超时未捕获到目标接口，已 detach debugger');
+          closeIfTemp();
         }, 30000);
       });
     });
@@ -193,7 +247,8 @@ function reportInfo(cookie, eidToken, h5st, uuid, tabId) {
   });
 
   // 上报到后端
-  sendToServer({ cookie, eidToken, h5st, uuid });
+  sendToServer({ cookie,
+     eidToken, h5st, uuid });
 }
 
 // 上报接口：application/x-www-form-urlencoded，带 X-Secret 头
