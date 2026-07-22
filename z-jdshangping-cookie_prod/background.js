@@ -1,5 +1,6 @@
-// 定时任务：每 5 分钟自动刷新一次页面并抓取信息
-const UPDATE_INTERVAL = 3; // 分钟
+// 定时任务：每 3 秒自动刷新一次页面并抓取信息
+// 注意：chrome.alarms 最小周期为 30 秒，无法达到秒级，这里改用 setInterval。
+const UPDATE_INTERVAL = 3; // 秒
 
 // 目标接口：京东联盟 api.m.jd.com/api 上任意带签名参数的请求即可
 // 不挑 functionId（会变，如 union_orange_goods_api / union_orange_material_api ...）
@@ -14,29 +15,30 @@ function isTargetRequest(url) {
          url.includes('x-api-eid-token=');
 }
 
-// 监听定时器触发
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'updateJdCookie') {
+// 高频轮询（3 秒）：setInterval，兼顾 service worker 被回收后的重建
+let updateTimer = null;
+function startUpdateTimer() {
+  if (updateTimer !== null) return;
+  updateTimer = setInterval(() => {
     console.log('定时抓取京东Cookie任务触发:', new Date().toLocaleString());
     updateCookieAutomatically();
-  }
-});
+  }, UPDATE_INTERVAL * 1000);
+}
 
-// 扩展安装或更新时，创建定时器
+// 扩展安装或更新时，启动定时器
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Chrome扩展已安装/更新（京东商品Cookie更新）');
-  chrome.alarms.create('updateJdCookie', {
-    periodInMinutes: UPDATE_INTERVAL
-  });
+  startUpdateTimer();
 });
 
 // 扩展启动时，确保定时器存在
 chrome.runtime.onStartup.addListener(() => {
   console.log('Chrome扩展启动（京东商品Cookie更新）');
-  chrome.alarms.create('updateJdCookie', {
-    periodInMinutes: UPDATE_INTERVAL
-  });
+  startUpdateTimer();
 });
+
+// service worker 被唤醒（首次加载脚本）时也启动一次
+startUpdateTimer();
 
 // 自动更新：优先复用第一次选择的具体标签页，其次按已保存域名匹配，否则临时新开
 function updateCookieAutomatically() {
