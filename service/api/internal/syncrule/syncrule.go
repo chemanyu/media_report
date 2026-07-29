@@ -119,7 +119,7 @@ var filters = map[string]Filter{
 	// 只滚动同步最近 30 天：回传报表过了几天就不再修订，更早的历史无需反复传输。
 	"fz_hourly_report": {
 		Column:          "media",
-		Values:          []string{"huawei"},
+		Values:          []string{"huawei", "adn"},
 		DateColumn:      "report_date",
 		IncrementalDays: 7,
 		DropColumns:     []string{"id"},
