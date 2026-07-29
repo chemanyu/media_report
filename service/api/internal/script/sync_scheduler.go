@@ -15,6 +15,7 @@ import (
 	"gorm.io/gorm"
 
 	"media_report/service/api/internal/config"
+	"media_report/service/api/internal/syncrule"
 )
 
 const syncTokenHeader = "X-Sync-Token"
@@ -82,6 +83,12 @@ func syncOneTable(client *http.Client, db *gorm.DB, cfg config.SyncFromProdConfi
 	}
 	logx.Infof("[sync] %s 上游返回 %d 行, 准备写入本地", table, len(rows))
 
+	// 有部分同步规则的表（如 fz_hourly_report 只同步 media=huawei 的最近 30 天）：
+	// 只删除+重灌规则范围内的行，本地自采的其他媒体、以及窗口外的历史数据都保持不动。
+	if f, ok := syncrule.For(table); ok {
+		return syncPartial(db, table, f, rows)
+	}
+
 	// 覆盖式：事务内 TRUNCATE + 批量 INSERT
 	return db.Transaction(func(tx *gorm.DB) error {
 		// 反引号包表名，与 dump 接口白名单形成双重防线
@@ -96,6 +103,52 @@ func syncOneTable(client *http.Client, db *gorm.DB, cfg config.SyncFromProdConfi
 			return fmt.Errorf("insert: %w", err)
 		}
 		logx.Infof("[sync] %s 已覆盖 %d 行", table, len(rows))
+		return nil
+	})
+}
+
+// syncPartial 按规则做"部分覆盖"：只删除+重灌规则范围内的行。
+// 范围外的数据（其他媒体、日期窗口之外的历史）在从节点原地留存。
+func syncPartial(db *gorm.DB, table string, f syncrule.Filter, rows []map[string]any) error {
+	// now 只取一次：DELETE 的日期窗口和行过滤必须用同一个基准，
+	// 否则跨零点时两者窗口错位，可能删掉刚写进去的行。
+	now := time.Now()
+	desc := f.Desc(now)
+
+	kept := make([]map[string]any, 0, len(rows))
+	for _, row := range rows {
+		if !f.Match(row, now) {
+			continue
+		}
+		// 剔除自增主键等列，避免与本地自采数据的主键冲突
+		for _, col := range f.DropColumns {
+			delete(row, col)
+		}
+		kept = append(kept, row)
+	}
+	if skipped := len(rows) - len(kept); skipped > 0 {
+		logx.Errorf("[sync] %s 上游返回了 %d 行不在同步范围(%s)的数据，已丢弃（两端规则可能不一致）",
+			table, skipped, desc)
+	}
+
+	return db.Transaction(func(tx *gorm.DB) error {
+		q := tx.Table(table)
+		for _, c := range f.Conds(now) {
+			q = q.Where(c.SQL, c.Args...)
+		}
+		res := q.Delete(nil)
+		if res.Error != nil {
+			return fmt.Errorf("delete (%s): %w", desc, res.Error)
+		}
+		if len(kept) == 0 {
+			logx.Infof("[sync] %s 上游范围内(%s) 0 行，已清空本地对应数据 %d 行", table, desc, res.RowsAffected)
+			return nil
+		}
+		if err := tx.Table(table).CreateInBatches(kept, 500).Error; err != nil {
+			return fmt.Errorf("insert: %w", err)
+		}
+		logx.Infof("[sync] %s 部分覆盖完成(%s)：删除 %d 行，写入 %d 行",
+			table, desc, res.RowsAffected, len(kept))
 		return nil
 	})
 }

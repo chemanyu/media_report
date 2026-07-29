@@ -2,8 +2,11 @@ package sync
 
 import (
 	"net/http"
+	"time"
 
+	"media_report/service/api/internal/response"
 	"media_report/service/api/internal/svc"
+	"media_report/service/api/internal/syncrule"
 
 	"github.com/zeromicro/go-zero/rest/httpx"
 	"gorm.io/gorm"
@@ -52,7 +55,8 @@ func DumpHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		httpx.OkJsonCtx(r.Context(), w, map[string]any{
+		// 列表类大响应：走显式 Content-Length，避免前置 nginx 截断 chunked
+		response.OkJsonCtx(r.Context(), w, map[string]any{
 			"code":  200,
 			"table": table,
 			"count": len(rows),
@@ -70,10 +74,18 @@ func inWhitelist(name string, list []string) bool {
 	return false
 }
 
-// dumpTable 用反引号包表名（白名单已限制 SQL 注入面），SELECT * 全表
+// dumpTable 用反引号包表名（白名单已限制 SQL 注入面），SELECT * 全表。
+// 若该表在 syncrule 里配了部分同步规则（如 fz_hourly_report 只同步 media=huawei
+// 且只取最近 30 天），则只导出规则范围内的行。
 func dumpTable(db *gorm.DB, table string) ([]map[string]any, error) {
 	var rows []map[string]any
-	if err := db.Table(table).Find(&rows).Error; err != nil {
+	q := db.Table(table)
+	if f, ok := syncrule.For(table); ok {
+		for _, c := range f.Conds(time.Now()) {
+			q = q.Where(c.SQL, c.Args...)
+		}
+	}
+	if err := q.Find(&rows).Error; err != nil {
 		return nil, err
 	}
 	return rows, nil
