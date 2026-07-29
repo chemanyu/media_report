@@ -121,7 +121,7 @@ var filters = map[string]Filter{
 		Column:          "media",
 		Values:          []string{"huawei"},
 		DateColumn:      "report_date",
-		IncrementalDays: 30,
+		IncrementalDays: 7,
 		DropColumns:     []string{"id"},
 	},
 }
