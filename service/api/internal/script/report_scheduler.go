@@ -20,7 +20,7 @@ import (
 
 func Cron(config config.Config, db *gorm.DB) {
 	// 检查是否配置了定时任务（从节点可能只启用 SyncFromProd，不配置其它 cron）
-	if config.Schedule.ReportCron == "" && config.Schedule.TokenRefreshCron == "" && !config.SyncFromProd.Enabled {
+	if !config.SyncFromProd.Enabled {
 		logx.Info("未配置定时任务，跳过启动")
 		return
 	}
@@ -30,6 +30,9 @@ func Cron(config config.Config, db *gorm.DB) {
 
 	// 创建 cron 调度器
 	cronScheduler := cron.New()
+
+	// 从生产同步配置表（仅 SyncFromProd.Enabled=true 的实例响应）
+	RegisterSyncFromProd(cronScheduler, db, config.SyncFromProd)
 
 	// 添加报表任务
 	// if config.Schedule.ReportCron != "" {
@@ -140,9 +143,6 @@ func Cron(config config.Config, db *gorm.DB) {
 	// 	}
 	// 	logx.Infof("飞猪日报数据抓取定时任务已启动，Cron 表达式: %s", config.Schedule.FzDayCron)
 	// }
-
-	// 从生产同步配置表（仅 SyncFromProd.Enabled=true 的实例响应）
-	RegisterSyncFromProd(cronScheduler, db, config.SyncFromProd)
 
 	// QCZJ 分时监控（09-23 时每小时触发）
 	if config.Schedule.QczjHourCron != "" {
