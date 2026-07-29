@@ -20,10 +20,10 @@ import (
 
 func Cron(config config.Config, db *gorm.DB) {
 	// 检查是否配置了定时任务（从节点可能只启用 SyncFromProd，不配置其它 cron）
-	// if !config.SyncFromProd.Enabled {
-	// 	logx.Info("未配置定时任务，跳过启动")
-	// 	return
-	// }
+	if !config.SyncFromProd.Enabled {
+		logx.Info("未配置定时任务，跳过启动")
+		return
+	}
 
 	// 初始化 Tanx 配置
 	tanx.InitTanxConfig(config.Tanx)
