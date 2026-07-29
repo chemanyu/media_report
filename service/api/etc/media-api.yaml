@@ -165,7 +165,8 @@ SyncFromProd:
     - cainiao_cardinality
     - fz_media_advertiser
     - qczj_config
-    - fz_config
+    - qczj_report_data
+    - fz_configi
     - rebate
     - service_fee
     - task_type
@@ -182,6 +183,7 @@ SyncDump:
     - cainiao_cardinality
     - fz_media_advertiser
     - qczj_config
+    - qczj_report_data
     - fz_config
     - rebate
     - service_fee
