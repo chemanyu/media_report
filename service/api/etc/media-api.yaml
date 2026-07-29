@@ -166,7 +166,7 @@ SyncFromProd:
     - fz_media_advertiser
     - qczj_config
     - qczj_report_data
-    - fz_configi
+    - fz_config
     - rebate
     - service_fee
     - task_type
