@@ -172,7 +172,7 @@ SyncFromProd:
     - task_type
     - elm_hc_media_report
     - elm_hc_performance_report
-    - fz_hourly_report          # 部分同步：仅 media=huawei（见 internal/syncrule）
+    - fz_hourly_report        
 
 # 只读 dump 接口（仅在主生产启用，从节点保持 Enabled=false）
 SyncDump:
