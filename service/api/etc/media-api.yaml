@@ -198,7 +198,7 @@ Ulink:
   TaobaoAppKey: "35238422"
   TaobaoAppSecret: "3e2c5266e7a3689ac909659a203ce301"
   DefaultMaterialId: "20150318020010092"
-  DefaultEventId: "6568361"
+  DefaultEventId: "6954642"
   #PythonPath: "python3"
   PythonPath: "python"
   ScriptDir: "../../scripts/ulink"
