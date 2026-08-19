@@ -332,6 +332,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: report.GetJingchengCookieHandler(serverCtx),
 			},
 			{
+				// 获取京橙复投Cookie
+				Method:  http.MethodGet,
+				Path:    "/report/jingcheng/futou/cookie",
+				Handler: report.GetJingchengFutouCookieHandler(serverCtx),
+			},
+			{
 				// 获取大航海Cookie
 				Method:  http.MethodGet,
 				Path:    "/report/dhh/cookie",
@@ -377,6 +383,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPost,
 				Path:    "/update/jingcheng/cookie",
 				Handler: update.UpdateJingchengCookieHandler(serverCtx),
+			},
+			{
+				// 更新京橙复投Cookie
+				Method:  http.MethodPost,
+				Path:    "/update/jingcheng/futou/cookie",
+				Handler: update.UpdateJingchengFutouCookieHandler(serverCtx),
 			},
 			{
 				// 更新大航海Cookie
