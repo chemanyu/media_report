@@ -43,3 +43,10 @@ logs/
 # Temporary files
 tmp/
 temp/
+
+# Selenium 持久化 Chrome profile（含淘宝登录 cookie，禁止入库）
+scripts/ulink/.chrome-profile/
+
+# Session logs (shipping-dev skill) — personal per-dev, not shared via git
+docs/engineering/session*.md
+

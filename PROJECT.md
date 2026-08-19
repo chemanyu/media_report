@@ -87,6 +87,7 @@ media_report/
 | `juliang_pachong` | 巨量引擎业务后台 Cookie（插件维护）|
 | `tanx_pachong` | 淘宝联盟后台 Cookie |
 | `jingcheng_pachong` | 京橙后台 Cookie |
+| `jingcheng_futou` | 京橙复投后台 Cookie（插件 `z-jingcheng-futou-cookie_prod` 维护）|
 | `zfb_pachong` | 支付宝 Cookie |
 
 ---
@@ -160,7 +161,7 @@ media_report/
 
 ---
 
-### 4. 飞猪外投数据报表（OPPO + 小米 + ADN）
+### 4. 飞猪外投数据报表（OPPO + 小米 + ADN + 荣耀 + 华为）
 
 **目标**：同步 OPPO、小米广告平台的飞猪 App 拉活数据，推送钉钉时报。
 
@@ -176,7 +177,8 @@ media_report/
 
 **相关接口**：
 - `GET /api/fz/sync_all_data` — 手动触发 OPPO+小米 数据同步
-- `POST /api/fz/sync_adn_data` — 同步 ADN 媒体数据
+- `POST /api/fz/sync_adn_data` — 同步 ADN 媒体数据（外部回传，media=adn）
+- `POST /api/fz/sync_huawei_data` — 同步华为媒体数据（外部回传，media=huawei，字段同 ADN，cost 单位为元入库 ×100 转分）
 - `GET /api/fz_hourly_report/list` — 查询时报数据列表
 - `GET /api/fz_advertiser/list` / `POST` / `PUT` / `DELETE` — 账户 CRUD
 
