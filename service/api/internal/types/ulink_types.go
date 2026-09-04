@@ -55,5 +55,5 @@ type ActivityBatchReq struct {
 type ActivityReportReq struct {
 	BizDate   string `json:"biz_date" form:"biz_date"`     // 统计日期，格式 yyyyMMdd
 	QueryType string `json:"query_type" form:"query_type"` // 查询类型: 1=预估数据, 2=结算数据
-	EventId   string `json:"event_id" form:"event_id"`     // 活动ID: 6954642=福利购, 4297311=超级红包
+	EventId   string `json:"event_id" form:"event_id"`     // 活动ID: 7610424=福利购, 4297311=超级红包
 }
