@@ -1,30 +1,16 @@
-// Cookie 采集顺序与优先级说明见 background.js（同名只取先出现的那份）
-const COOKIE_SOURCES = [
-  { url: 'https://api.m.jd.com/' },       // 复投接口本身，鉴权 Cookie 以这份为准
-  { url: 'https://jcheng.jd.com/' },      // 京橙控制台 host-only：focus-*、me_saas_userInfo、switch_to_bpro
-  { url: 'https://passport.jd.com/' },    // 登录态：pt_key、pt_pin、pt_token、pwdt_id、pt_st、sdtoken
-  { url: 'https://www.jd.com/' },         // .jd.com 通用：__jdv、__jdb、visitkey、webp
-  { domain: 'jd.com' },                   // 兜底：其余任意 *.jd.com 子域的 host-only Cookie
-];
+// 京橙复投接口的真实请求地址，Cookie 按这个 URL 取，理由见 background.js
+const COOKIE_TARGET_URL = 'https://api.m.jd.com/api/';
 
 const REQUIRED_COOKIES = ['thor', 'pin', 'light_key', '3AB9D23F7A4B3C9B'];
 
+// 同 background.js：Chrome 按 RFC 6265 顺序返回，同名只留最贴近目标 URL 的那份
 async function collectJdCookies() {
   const merged = new Map();
 
-  for (const filter of COOKIE_SOURCES) {
-    let cookies;
-    try {
-      cookies = await chrome.cookies.getAll(filter);
-    } catch (error) {
-      console.warn('取Cookie失败，跳过该来源:', JSON.stringify(filter), error.message);
-      continue;
-    }
-
-    for (const cookie of cookies) {
-      if (merged.has(cookie.name)) continue;
-      merged.set(cookie.name, cookie.value);
-    }
+  const cookies = await chrome.cookies.getAll({ url: COOKIE_TARGET_URL });
+  for (const cookie of cookies) {
+    if (merged.has(cookie.name)) continue;
+    merged.set(cookie.name, cookie.value);
   }
 
   return merged;
@@ -48,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const merged = await collectJdCookies();
 
       if (merged.size === 0) {
-        showError('未找到 jd.com 的 Cookie，请先登录 https://jcheng.jd.com/ 并刷新后重试。');
+        showError('未找到Cookie，请先登录 https://jcheng.jd.com/ 并刷新后重试。');
         return;
       }
 

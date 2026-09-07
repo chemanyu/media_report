@@ -1,25 +1,18 @@
 // 定时任务：每 3 分钟自动更新一次cookie
 const UPDATE_INTERVAL = 3; // 分钟
 
-// Cookie 采集顺序（重要）：从「最贴近接口」到「最兜底」。
-// 同名 Cookie 只取先出现的那一份，所以越靠前的来源优先级越高。
+// 京橙复投接口的真实请求地址，Cookie 按这个 URL 取。
+// 基准来自浏览器 Network 里一次正常成功的请求（functionId=union_orange_user_api_new），
+// 它的 Cookie 头只有 18 个：shshshfpa/x/b、__jdu、__jda、__jdc、3AB9D23F7A4B3C9B/CSS、
+// thor、flash、light_key、pinId、pin、unick、ceshi3.com、_tp、_pst、logining。
 //
-// 为什么要分层而不是单取一个来源：
-//   · 只按 domain: 'jd.com' 取 —— Chrome 的 domain 过滤是后缀匹配，会把所有
-//     *.jd.com 子域的 host-only Cookie 混进来，__jda / __jdc / 3AB9D23F7A4B3C9B
-//     这类同名 Cookie 出现多份，值取错导致接口鉴权失败。
-//   · 只按 url: api.m.jd.com 取 —— 值是对的，但只剩浏览器真会发给该接口的那份，
-//     jcheng 控制台的 host-only Cookie（focus-* / me_saas_userInfo / switch_to_bpro）
-//     和登录态 Cookie（pt_key / pt_pin / pt_token / pwdt_id / pt_st / sdtoken）会全丢，
-//     入库字符串明显偏短。
-// 分层合并 = 范围取全量，冲突时接口域名的值优先。
-const COOKIE_SOURCES = [
-  { url: 'https://api.m.jd.com/' },       // 复投接口本身，鉴权 Cookie 以这份为准
-  { url: 'https://jcheng.jd.com/' },      // 京橙控制台 host-only：focus-*、me_saas_userInfo、switch_to_bpro
-  { url: 'https://passport.jd.com/' },    // 登录态：pt_key、pt_pin、pt_token、pwdt_id、pt_st、sdtoken
-  { url: 'https://www.jd.com/' },         // .jd.com 通用：__jdv、__jdb、visitkey、webp
-  { domain: 'jd.com' },                   // 兜底：其余任意 *.jd.com 子域的 host-only Cookie
-];
+// 为什么必须按 url 取，两种错法都试过了：
+//   · domain: 'jd.com' —— Chrome 的 domain 过滤是后缀匹配，把所有 *.jd.com 子域的
+//     host-only Cookie 混进来，__jda / __jdc / 3AB9D23F7A4B3C9B 出现多份，值取错。
+//   · 多域名合并 —— 会塞进 focus-* / me_saas_userInfo / pt_key / sdtoken 这类
+//     jcheng 控制台和登录页专属的 Cookie，浏览器根本不会发给本接口，纯属噪声。
+// getAll({url}) 让 Chrome 自己按 domain/path/secure 规则算，结果与真实请求头一致。
+const COOKIE_TARGET_URL = 'https://api.m.jd.com/api/';
 
 // 关键 Cookie，缺了基本就是登录态失效，只告警不阻断（京东随时可能改名）
 const REQUIRED_COOKIES = ['thor', 'pin', 'light_key', '3AB9D23F7A4B3C9B'];
@@ -72,28 +65,16 @@ function updateCookieAutomatically() {
   });
 }
 
-// 按 COOKIE_SOURCES 顺序合并，同名只留先出现的那份（前面的来源优先级更高）。
-// 单个来源内部 Chrome 已按 RFC 6265 排序（path 越长越靠前），所以同来源内也是
-// 最贴近目标 URL 的那份胜出。
+// 取接口域名的 Cookie 并按 Cookie 头格式拼好。
+// Chrome 按 RFC 6265 顺序返回（path 越长越靠前），同名只留第一个，即最贴近目标
+// URL 的那份，避免重复 key 覆盖出错误的值。
 async function collectJdCookies() {
   const merged = new Map();
 
-  for (const filter of COOKIE_SOURCES) {
-    let cookies;
-    try {
-      cookies = await chrome.cookies.getAll(filter);
-    } catch (error) {
-      console.warn('取Cookie失败，跳过该来源:', JSON.stringify(filter), error.message);
-      continue;
-    }
-
-    let added = 0;
-    for (const cookie of cookies) {
-      if (merged.has(cookie.name)) continue;
-      merged.set(cookie.name, cookie.value);
-      added++;
-    }
-    console.log(`来源 ${filter.url || 'domain:' + filter.domain}：返回 ${cookies.length} 个，新增 ${added} 个`);
+  const cookies = await chrome.cookies.getAll({ url: COOKIE_TARGET_URL });
+  for (const cookie of cookies) {
+    if (merged.has(cookie.name)) continue;
+    merged.set(cookie.name, cookie.value);
   }
 
   return merged;
@@ -109,7 +90,7 @@ async function fetchAndSendCookies() {
   const merged = await collectJdCookies();
 
   if (merged.size === 0) {
-    console.log('未找到任何 jd.com Cookie，请先登录并刷新京橙页面');
+    console.log('未找到Cookie，请先登录京橙页面并刷新:', COOKIE_TARGET_URL);
     return;
   }
 
