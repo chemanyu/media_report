@@ -10,7 +10,7 @@ import (
 type MediaToken struct {
 	ID           uint   `gorm:"primaryKey;autoIncrement" json:"id"`
 	Media        string `gorm:"column:media;type:varchar(64);default:''" json:"media"`                       // 媒体名称
-	Token        string `gorm:"column:token;type:varchar(255);default:''" json:"token"`                      // 媒体token
+	Token        string `gorm:"column:token;type:text" json:"token"`                                         // 媒体token（Cookie 类可达数千字符，务必保持 text）
 	RefreshToken string `gorm:"column:refresh_token;type:varchar(62);default:''" json:"refresh_token"`       // 媒体刷新token
 	AgentID      string `gorm:"column:agent_id;type:varchar(64);default:''" json:"agent_id"`                 // 代理商id
 	AdvertiserID string `gorm:"column:advertiser_id;type:varchar(64);default:''" json:"advertiser_id"`       // 账户ID

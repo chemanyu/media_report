@@ -1,12 +1,28 @@
 // 定时任务：每 3 分钟自动更新一次cookie
 const UPDATE_INTERVAL = 3; // 分钟
 
-// 京橙复投接口实际请求的域名，Cookie 必须按这个 URL 取。
-// 不能按 domain: 'jd.com' 取：Chrome 的 domain 过滤会把所有 *.jd.com 子域
-// （jcheng/www/passport…）的 host-only Cookie 一并返回，__jda / __jdc /
-// 3AB9D23F7A4B3C9B 这类同名 Cookie 会出现多份，拼出的字符串带重复 key、值取错，
-// 导致接口鉴权失败。
-const COOKIE_TARGET_URL = 'https://api.m.jd.com/';
+// Cookie 采集顺序（重要）：从「最贴近接口」到「最兜底」。
+// 同名 Cookie 只取先出现的那一份，所以越靠前的来源优先级越高。
+//
+// 为什么要分层而不是单取一个来源：
+//   · 只按 domain: 'jd.com' 取 —— Chrome 的 domain 过滤是后缀匹配，会把所有
+//     *.jd.com 子域的 host-only Cookie 混进来，__jda / __jdc / 3AB9D23F7A4B3C9B
+//     这类同名 Cookie 出现多份，值取错导致接口鉴权失败。
+//   · 只按 url: api.m.jd.com 取 —— 值是对的，但只剩浏览器真会发给该接口的那份，
+//     jcheng 控制台的 host-only Cookie（focus-* / me_saas_userInfo / switch_to_bpro）
+//     和登录态 Cookie（pt_key / pt_pin / pt_token / pwdt_id / pt_st / sdtoken）会全丢，
+//     入库字符串明显偏短。
+// 分层合并 = 范围取全量，冲突时接口域名的值优先。
+const COOKIE_SOURCES = [
+  { url: 'https://api.m.jd.com/' },       // 复投接口本身，鉴权 Cookie 以这份为准
+  { url: 'https://jcheng.jd.com/' },      // 京橙控制台 host-only：focus-*、me_saas_userInfo、switch_to_bpro
+  { url: 'https://passport.jd.com/' },    // 登录态：pt_key、pt_pin、pt_token、pwdt_id、pt_st、sdtoken
+  { url: 'https://www.jd.com/' },         // .jd.com 通用：__jdv、__jdb、visitkey、webp
+  { domain: 'jd.com' },                   // 兜底：其余任意 *.jd.com 子域的 host-only Cookie
+];
+
+// 关键 Cookie，缺了基本就是登录态失效，只告警不阻断（京东随时可能改名）
+const REQUIRED_COOKIES = ['thor', 'pin', 'light_key', '3AB9D23F7A4B3C9B'];
 
 // 监听定时器触发
 chrome.alarms.onAlarm.addListener((alarm) => {
@@ -56,97 +72,95 @@ function updateCookieAutomatically() {
   });
 }
 
-// 把 chrome.cookies 返回的列表拼成请求头用的 Cookie 字符串。
-// Chrome 按 RFC 6265 的顺序返回（path 越长越靠前），同名 Cookie 只保留第一个，
-// 也就是最贴近目标 URL 的那份，避免重复 key 覆盖出错误的值。
-function buildCookieHeader(cookies) {
-  const seen = new Set();
-  return cookies
-    .filter(cookie => {
-      if (seen.has(cookie.name)) return false;
-      seen.add(cookie.name);
-      return true;
-    })
-    .map(cookie => `${cookie.name}=${cookie.value}`)
-    .join('; ');
+// 按 COOKIE_SOURCES 顺序合并，同名只留先出现的那份（前面的来源优先级更高）。
+// 单个来源内部 Chrome 已按 RFC 6265 排序（path 越长越靠前），所以同来源内也是
+// 最贴近目标 URL 的那份胜出。
+async function collectJdCookies() {
+  const merged = new Map();
+
+  for (const filter of COOKIE_SOURCES) {
+    let cookies;
+    try {
+      cookies = await chrome.cookies.getAll(filter);
+    } catch (error) {
+      console.warn('取Cookie失败，跳过该来源:', JSON.stringify(filter), error.message);
+      continue;
+    }
+
+    let added = 0;
+    for (const cookie of cookies) {
+      if (merged.has(cookie.name)) continue;
+      merged.set(cookie.name, cookie.value);
+      added++;
+    }
+    console.log(`来源 ${filter.url || 'domain:' + filter.domain}：返回 ${cookies.length} 个，新增 ${added} 个`);
+  }
+
+  return merged;
+}
+
+// 拼成请求头用的 Cookie 字符串
+function buildCookieHeader(merged) {
+  return Array.from(merged, ([name, value]) => `${name}=${value}`).join('; ');
 }
 
 // 提取并发送Cookie的核心逻辑
-function fetchAndSendCookies() {
+async function fetchAndSendCookies() {
+  const merged = await collectJdCookies();
+
+  if (merged.size === 0) {
+    console.log('未找到任何 jd.com Cookie，请先登录并刷新京橙页面');
+    return;
+  }
+
+  const cookieString = buildCookieHeader(merged);
+
+  const missing = REQUIRED_COOKIES.filter(name => !merged.has(name));
+  if (missing.length > 0) {
+    // 只告警不拦截：京东改 Cookie 名时不至于把整条链路卡死
+    console.warn('缺少关键Cookie，可能已退出登录:', missing.join(', '));
+  }
+
+  // 提取 x-csrftoken（查找名为 csrftoken 的 cookie）
+  const csrfToken = merged.get('csrftoken') || '';
+
+  console.log(`Cookie获取成功，共 ${merged.size} 个 / ${cookieString.length} 字符，准备发送到后端...`);
+  console.log('所有Cookie名称:', Array.from(merged.keys()).join(', '));
+
   try {
-    console.log('正在获取接口域名的Cookie:', COOKIE_TARGET_URL);
-
-    // 按目标请求 URL 取 Cookie：等价于浏览器真正会发给 api.m.jd.com 的那一份
-    chrome.cookies.getAll({ url: COOKIE_TARGET_URL }, function(cookies) {
-      if (chrome.runtime.lastError) {
-        console.error('获取Cookie失败:', chrome.runtime.lastError.message);
-        return;
-      }
-
-      if (cookies.length === 0) {
-        console.log('未找到Cookie，请先登录并刷新京橙页面:', COOKIE_TARGET_URL);
-        return;
-      }
-
-      // 格式化cookies为字符串
-      const cookieString = buildCookieHeader(cookies);
-
-      // 提取 x-csrftoken（查找名为 X-Csrftoken 的 cookie）
-      const csrfCookie = cookies.find(cookie => 
-        cookie.name === 'csrftoken'
-      );
-      const csrfToken = csrfCookie ? csrfCookie.value : '';
-      
-      console.log('Cookie获取成功，准备发送到后端...');
-      console.log('所有Cookie名称:', cookies.map(c => c.name).join(', '));
-      if (csrfToken) {
-        console.log('X-CSRF-Token已找到');
-      } else {
-        console.log('未找到X-CSRF-Token');
-      }
-
-      // 发送到后端API
-      // Send POST request to the API
-      fetch('http://127.0.0.1:8888/update/jingcheng/futou/cookie', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ 
-          cookie: cookieString,
-          csrfToken: csrfToken
-        })
+    const response = await fetch('http://127.0.0.1:8888/update/jingcheng/futou/cookie', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        cookie: cookieString,
+        csrfToken: csrfToken
       })
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.text();
-      })
-      .then(body => {
-        console.log('Cookie更新成功:', body);
-        // 可以选择发送通知
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icon48.png',
-          title: '复投Cookie更新成功',
-          message: `更新时间: ${new Date().toLocaleString()}`,
-          priority: 1
-        });
-      })
-      .catch(error => {
-        console.error('发送Cookie失败:', error.message);
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icon48.png',
-          title: '复投Cookie更新失败',
-          message: error.message,
-          priority: 2
-        });
-      });
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const body = await response.text();
+    console.log('Cookie更新成功:', body);
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icon48.png',
+      title: '复投Cookie更新成功',
+      message: `${merged.size} 个Cookie / ${cookieString.length} 字符，${new Date().toLocaleString()}`,
+      priority: 1
     });
   } catch (error) {
-    console.error('处理URL时出错:', error.message);
+    console.error('发送Cookie失败:', error.message);
+    chrome.notifications.create({
+      type: 'basic',
+      iconUrl: 'icon48.png',
+      title: '复投Cookie更新失败',
+      message: error.message,
+      priority: 2
+    });
   }
 }
 
