@@ -1,19 +1,18 @@
 {
   "manifest_version": 3,
   "name": "京橙复投Cookie更新",
-  "version": "1.0",
+  "version": "1.1",
   "description": "用于更新京橙复投素材推送的Cookie",
   "permissions": [
-    "cookies",
-    "activeTab",
+    "webRequest",
     "alarms",
     "notifications",
-    "tabs",
     "storage"
   ],
   "host_permissions": [
-        "http://*/*",
-        "https://*/*"
+    "https://api.m.jd.com/*",
+    "https://jcheng.jd.com/*",
+    "http://127.0.0.1:8888/*"
   ],
   "background": {
     "service_worker": "background.js"

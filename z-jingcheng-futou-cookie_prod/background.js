@@ -1,122 +1,103 @@
-// 定时任务：每 3 分钟自动更新一次cookie
+// 定时任务：每 3 分钟把最近一次捕获的 Cookie 头重新上报一次
 const UPDATE_INTERVAL = 3; // 分钟
 
-// 京橙复投接口的真实请求地址，Cookie 按这个 URL 取。
-// 基准来自浏览器 Network 里一次正常成功的请求（functionId=union_orange_user_api_new），
-// 它的 Cookie 头只有 18 个：shshshfpa/x/b、__jdu、__jda、__jdc、3AB9D23F7A4B3C9B/CSS、
-// thor、flash、light_key、pinId、pin、unick、ceshi3.com、_tp、_pst、logining。
+// 复投接口的真实请求地址。京橙控制台刷新页面时会打这个接口，
+// 我们用 webRequest 抓它请求头里的 Cookie 原文整条上报。
 //
-// 为什么必须按 url 取，两种错法都试过了：
+// 为什么不用 chrome.cookies 拼：
 //   · domain: 'jd.com' —— Chrome 的 domain 过滤是后缀匹配，把所有 *.jd.com 子域的
 //     host-only Cookie 混进来，__jda / __jdc / 3AB9D23F7A4B3C9B 出现多份，值取错。
-//   · 多域名合并 —— 会塞进 focus-* / me_saas_userInfo / pt_key / sdtoken 这类
-//     jcheng 控制台和登录页专属的 Cookie，浏览器根本不会发给本接口，纯属噪声。
-// getAll({url}) 让 Chrome 自己按 domain/path/secure 规则算，结果与真实请求头一致。
-const COOKIE_TARGET_URL = 'https://api.m.jd.com/api/';
+//   · url: api.m.jd.com —— 范围对了，但仍然是「我们按规则重算一遍」，作用域、顺序、
+//     值的编码都可能和浏览器实际发出去的那条有差异。
+// 抓请求头 = 拿浏览器已经算好的最终结果，逐字节原样搬走，不做任何重组。
+const TARGET_FILTER = { urls: ['https://api.m.jd.com/api/*'] };
+
+// 只认京橙控制台发起的请求，避免抓到其它页面（可能是别的登录态）打的同一个接口
+const ALLOWED_INITIATOR = 'https://jcheng.jd.com';
+
+const REPORT_API = 'http://127.0.0.1:8888/update/jingcheng/futou/cookie';
 
 // 关键 Cookie，缺了基本就是登录态失效，只告警不阻断（京东随时可能改名）
 const REQUIRED_COOKIES = ['thor', 'pin', 'light_key', '3AB9D23F7A4B3C9B'];
 
-// 监听定时器触发
-chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === 'updateCookie') {
-    console.log('定时更新Cookie任务触发:', new Date().toLocaleString());
-    updateCookieAutomatically();
-  }
-});
+// Cookie 没变时的最小重报间隔，防止一次页面刷新打十几个请求就刷爆后端
+const MIN_REPOST_INTERVAL_MS = UPDATE_INTERVAL * 60 * 1000;
 
-// 扩展安装或更新时，创建定时器并立即执行一次
-chrome.runtime.onInstalled.addListener(() => {
-  console.log('Chrome扩展已安装/更新');
-  
-  // 创建定时器（每30分钟执行一次）
-  chrome.alarms.create('updateCookie', {
-    periodInMinutes: UPDATE_INTERVAL
-  });
-  
-  // console.log('定时器已创建，立即执行一次Cookie更新');
-  // updateCookieAutomatically();
-});
+// 上报互斥：一次刷新会并发触发多个监听回调
+let posting = false;
 
-// 扩展启动时，确保定时器存在
-chrome.runtime.onStartup.addListener(() => {
-  console.log('Chrome扩展启动');
-  
-  // 确保定时器存在
-  chrome.alarms.create('updateCookie', {
-    periodInMinutes: UPDATE_INTERVAL
-  });
-});
+// ---------------------------------------------------------------- 捕获
 
-// 自动更新Cookie。
-// Cookie 一律按 COOKIE_TARGET_URL 取，与打开的是哪个标签页无关；这里只用「有没有
-// 打开京橙/京东页面」当作用户仍在登录态的信号，没有就跳过本次上报，免得把过期
-// Cookie 覆盖上去。
-function updateCookieAutomatically() {
-  chrome.tabs.query({}, function(allTabs) {
-    const relevantTab = allTabs.find(tab => tab.url && tab.url.includes('jd.com'));
-
-    if (relevantTab) {
-      console.log('找到京东相关标签页:', relevantTab.title);
-      fetchAndSendCookies();
-    } else {
-      console.log('未找到京东相关页面，跳过本次更新');
+chrome.webRequest.onBeforeSendHeaders.addListener(
+  (details) => {
+    // initiator 缺失时不拦（部分请求拿不到），有值就必须是京橙控制台
+    if (details.initiator && !details.initiator.startsWith(ALLOWED_INITIATOR)) {
+      return;
     }
-  });
+
+    const cookieHeader = findCookieHeader(details.requestHeaders);
+    if (!cookieHeader) return;
+
+    captureCookieHeader(cookieHeader).catch(error => {
+      console.error('处理捕获的Cookie失败:', error.message);
+    });
+  },
+  TARGET_FILTER,
+  // extraHeaders 必须加，否则 Chrome 不会把 Cookie 这类敏感头交给扩展
+  ['requestHeaders', 'extraHeaders']
+);
+
+function findCookieHeader(headers) {
+  if (!headers) return '';
+  const header = headers.find(h => h.name.toLowerCase() === 'cookie');
+  return header && header.value ? header.value : '';
 }
 
-// 取接口域名的 Cookie 并按 Cookie 头格式拼好。
-// Chrome 按 RFC 6265 顺序返回（path 越长越靠前），同名只留第一个，即最贴近目标
-// URL 的那份，避免重复 key 覆盖出错误的值。
-async function collectJdCookies() {
-  const merged = new Map();
+// 存下最新的 Cookie 头；变了就立刻上报，没变则按 MIN_REPOST_INTERVAL_MS 节流
+async function captureCookieHeader(cookieHeader) {
+  const now = Date.now();
+  const state = await chrome.storage.session.get(['cookieHeader', 'postedHeader', 'postedAt']);
 
-  const cookies = await chrome.cookies.getAll({ url: COOKIE_TARGET_URL });
-  for (const cookie of cookies) {
-    if (merged.has(cookie.name)) continue;
-    merged.set(cookie.name, cookie.value);
+  if (cookieHeader !== state.cookieHeader) {
+    console.log(`捕获到新的Cookie头：${cookieHeader.length} 字符`);
   }
+  await chrome.storage.session.set({ cookieHeader: cookieHeader, capturedAt: now });
 
-  return merged;
+  const changed = cookieHeader !== state.postedHeader;
+  const stale = !state.postedAt || now - state.postedAt >= MIN_REPOST_INTERVAL_MS;
+  if (changed || stale) {
+    await reportCookieHeader(cookieHeader);
+  }
 }
 
-// 拼成请求头用的 Cookie 字符串
-function buildCookieHeader(merged) {
-  return Array.from(merged, ([name, value]) => `${name}=${value}`).join('; ');
-}
+// ---------------------------------------------------------------- 上报
 
-// 提取并发送Cookie的核心逻辑
-async function fetchAndSendCookies() {
-  const merged = await collectJdCookies();
-
-  if (merged.size === 0) {
-    console.log('未找到Cookie，请先登录京橙页面并刷新:', COOKIE_TARGET_URL);
-    return;
+// 原样上报，不解析、不重排、不重新编码；只额外数一下名字用于告警
+async function reportCookieHeader(cookieHeader) {
+  if (posting) {
+    return { ok: false, message: '已有上报进行中，跳过本次' };
   }
-
-  const cookieString = buildCookieHeader(merged);
-
-  const missing = REQUIRED_COOKIES.filter(name => !merged.has(name));
-  if (missing.length > 0) {
-    // 只告警不拦截：京东改 Cookie 名时不至于把整条链路卡死
-    console.warn('缺少关键Cookie，可能已退出登录:', missing.join(', '));
-  }
-
-  // 提取 x-csrftoken（查找名为 csrftoken 的 cookie）
-  const csrfToken = merged.get('csrftoken') || '';
-
-  console.log(`Cookie获取成功，共 ${merged.size} 个 / ${cookieString.length} 字符，准备发送到后端...`);
-  console.log('所有Cookie名称:', Array.from(merged.keys()).join(', '));
+  posting = true;
 
   try {
-    const response = await fetch('http://127.0.0.1:8888/update/jingcheng/futou/cookie', {
+    const names = cookieNames(cookieHeader);
+    const missing = REQUIRED_COOKIES.filter(name => !names.includes(name));
+    if (missing.length > 0) {
+      // 只告警不拦截：京东改 Cookie 名时不至于把整条链路卡死
+      console.warn('缺少关键Cookie，可能已退出登录:', missing.join(', '));
+    }
+
+    console.log(`准备上报：${names.length} 个Cookie / ${cookieHeader.length} 字符`);
+    console.log('所有Cookie名称:', names.join(', '));
+
+    const response = await fetch(REPORT_API, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        cookie: cookieString,
-        csrfToken: csrfToken
+        cookie: cookieHeader,
+        csrfToken: ''
       })
     });
 
@@ -125,14 +106,18 @@ async function fetchAndSendCookies() {
     }
 
     const body = await response.text();
+    await chrome.storage.session.set({ postedHeader: cookieHeader, postedAt: Date.now() });
+
     console.log('Cookie更新成功:', body);
     chrome.notifications.create({
       type: 'basic',
       iconUrl: 'icon48.png',
       title: '复投Cookie更新成功',
-      message: `${merged.size} 个Cookie / ${cookieString.length} 字符，${new Date().toLocaleString()}`,
+      message: `${names.length} 个Cookie / ${cookieHeader.length} 字符，${new Date().toLocaleString()}`,
       priority: 1
     });
+
+    return { ok: true, count: names.length, length: cookieHeader.length, missing: missing, body: body };
   } catch (error) {
     console.error('发送Cookie失败:', error.message);
     chrome.notifications.create({
@@ -142,14 +127,80 @@ async function fetchAndSendCookies() {
       message: error.message,
       priority: 2
     });
+    return { ok: false, message: error.message };
+  } finally {
+    posting = false;
   }
 }
 
-// 监听来自popup的消息（可选，用于手动触发）
+// 名字只用于「缺关键Cookie」告警和日志，不参与上报内容的拼装
+function cookieNames(cookieHeader) {
+  return cookieHeader
+    .split(';')
+    .map(part => part.trim().split('=')[0])
+    .filter(Boolean);
+}
+
+// 定时重报：把已捕获的最新 Cookie 头再推一次，保持后端时间戳新鲜
+async function updateCookieAutomatically() {
+  const state = await chrome.storage.session.get(['cookieHeader', 'capturedAt']);
+
+  if (!state.cookieHeader) {
+    console.log('尚未捕获到Cookie头，请打开并刷新 https://jcheng.jd.com/');
+    return;
+  }
+
+  const ageMin = Math.round((Date.now() - (state.capturedAt || 0)) / 60000);
+  console.log(`重报已捕获的Cookie头（${ageMin} 分钟前捕获）`);
+  await reportCookieHeader(state.cookieHeader);
+}
+
+// ---------------------------------------------------------------- 定时器与消息
+
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === 'updateCookie') {
+    console.log('定时更新Cookie任务触发:', new Date().toLocaleString());
+    updateCookieAutomatically();
+  }
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  console.log('Chrome扩展已安装/更新');
+  chrome.alarms.create('updateCookie', { periodInMinutes: UPDATE_INTERVAL });
+});
+
+chrome.runtime.onStartup.addListener(() => {
+  console.log('Chrome扩展启动');
+  chrome.alarms.create('updateCookie', { periodInMinutes: UPDATE_INTERVAL });
+});
+
+// popup 的手动触发与状态查询
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
   if (request.action === 'updateCookieNow') {
-    updateCookieAutomatically();
-    sendResponse({ status: 'started' });
+    (async () => {
+      const state = await chrome.storage.session.get(['cookieHeader']);
+      if (!state.cookieHeader) {
+        sendResponse({ ok: false, message: '尚未捕获到Cookie头，请打开并刷新 https://jcheng.jd.com/ 后重试' });
+        return;
+      }
+      sendResponse(await reportCookieHeader(state.cookieHeader));
+    })();
+    return true;
   }
-  return true;
+
+  if (request.action === 'getStatus') {
+    (async () => {
+      const state = await chrome.storage.session.get(['cookieHeader', 'capturedAt', 'postedAt']);
+      sendResponse({
+        captured: !!state.cookieHeader,
+        count: state.cookieHeader ? cookieNames(state.cookieHeader).length : 0,
+        length: state.cookieHeader ? state.cookieHeader.length : 0,
+        capturedAt: state.capturedAt || 0,
+        postedAt: state.postedAt || 0
+      });
+    })();
+    return true;
+  }
+
+  return false;
 });
